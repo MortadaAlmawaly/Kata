@@ -2,8 +2,9 @@
   "name": "كاتا",
   "short_name": "كاتا",
   "description": "إدارة المهام والمواعيد والموافقات لشركتك",
-  "start_url": "/dashboard",
-  "scope": "/",
+  "id": "./",
+  "start_url": "./dashboard/",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "ar",
@@ -16,8 +17,8 @@
     { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "التقويم", "url": "/calendar" },
-    { "name": "المهام", "url": "/tasks" },
-    { "name": "الطلبات", "url": "/requests" }
+    { "name": "التقويم", "url": "./calendar/" },
+    { "name": "المهام", "url": "./tasks/" },
+    { "name": "الطلبات", "url": "./requests/" }
   ]
 }

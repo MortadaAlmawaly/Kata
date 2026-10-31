@@ -201,18 +201,17 @@
 
   const DEMO_EMAIL = 'mrtdyalmawly3@gmail.com', DEMO_PASS = '12345678';
   const ACCOUNTS = { 'mrtdyalmawly3@gmail.com': ['12345678', 1] };
+  /* كلمة المرور الحالية: المخزّنة (بعد التغيير أو القبول بدعوة) وإلا الافتراضية للحساب الرئيسي */
+  const curPw = u => u.pw || (ACCOUNTS[String(u.email).toLowerCase()] || [])[0] || '';
   const authed = () => { try { return localStorage.getItem('pv-auth') === '1'; } catch (e) { return false; } };
   function authRoute(method, path, body) {
     if (path === '/api/auth/login' && method === 'POST') {
       const em = String(body.email || '').trim().toLowerCase();
-      const acc = ACCOUNTS[em];
-      /* الحساب الرئيسي، أو حساب أُنشئ بدعوة داخل هذا المتصفح */
-      const inv = !acc && users.find(x => x.active && x.pw && String(x.email).toLowerCase() === em && x.pw === body.password);
-      if ((acc && body.password === acc[0]) || inv) {
-        const uid = acc ? acc[1] : inv.id; meId = uid;
-        try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(uid)); } catch (e) {}
-        const lu = byId(uid);
-        return ok({ id: uid, name: lu.name, email: em, role: lu.role });
+      const lu = users.find(x => x.active && String(x.email).toLowerCase() === em);
+      if (lu && curPw(lu) && body.password === curPw(lu)) {
+        meId = lu.id;
+        try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(lu.id)); } catch (e) {}
+        return ok({ id: lu.id, name: lu.name, email: em, role: lu.role });
       }
       return err(401, 'البريد أو كلمة المرور غير صحيحة');
     }
@@ -224,10 +223,13 @@
       let inv; try { inv = JSON.parse(decodeURIComponent(escape(atob(tk.replace(/^demo-\d+-/, '').replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { inv = null; }
       if (!inv || !inv.e) return err(404, 'رابط الدعوة غير صالح أو منتهي');
       if (inv.x && inv.x < Date.now()) return err(410, 'انتهت صلاحية الدعوة');
+      { const li = invites.find(x => x.email === inv.e); if (li && li.status === 'REVOKED') return err(410, 'تم إلغاء هذه الدعوة'); }
       if (method === 'GET') return ok({ company: org.name, email: inv.e, name: inv.n || null, role: inv.r, roleLabel: ROLE_LABEL[inv.r] || null, inviter: inv.i || 'المدير', passwordMin: org.settings.passwordMin });
       if (method === 'POST' && path.endsWith('/accept')) {
         if (String(body.password || '').length < org.settings.passwordMin) return err(400, 'كلمة المرور لازم تكون ' + org.settings.passwordMin + ' أحرف على الأقل');
         let nu = users.find(x => x.email === inv.e);
+        if (nu && (nu.pw || nu.id === 1)) return err(409, 'هذا البريد مسجّل مسبقاً');
+        if (nu) { nu.name = String(body.name || nu.name).slice(0, 60); nu.pw = String(body.password); nu.invited = false; }
         if (!nu) { nu = U(++seq, String(body.name || inv.n || inv.e).slice(0, 60), inv.r, inv.t || null, inv.m || 1); nu.email = inv.e; nu.department = inv.d || null; nu.pw = String(body.password); users.push(nu); }
         const pi = invites.find(x => x.email === inv.e && x.status === 'PENDING'); if (pi) pi.status = 'ACCEPTED';
         savePV();
@@ -256,7 +258,12 @@
       if (body.notifyPrefs) u.notifyPrefs = { ...(u.notifyPrefs || {}), ...body.notifyPrefs };
       return ok(null);
     }
-    if (path === '/api/me/password') return ok(null);
+    if (path === '/api/me/password' && method === 'POST') {
+      if (body.current !== curPw(u)) return err(403, 'كلمة المرور الحالية غير صحيحة');
+      if (String(body.next || '').length < org.settings.passwordMin) return err(400, 'كلمة المرور لازم تكون ' + org.settings.passwordMin + ' أحرف على الأقل');
+      u.pw = String(body.next); u.mustChangePassword = false;
+      return ok(null);
+    }
     if (path === '/api/auth/logout') return ok(null);
     if (path === '/api/notifications' && method === 'GET') {
       const mine = notifs.filter(n => n.userId === u.id).sort((a, b) => b.id - a.id);
@@ -1063,6 +1070,8 @@
       const days = org.settings.inviteDays;
       const inv = { id: ++seq, email: body.email, name: body.name || null, role: body.role, managerId: body.managerId || u.id, title: body.title || null, department: body.department || null, status: 'PENDING', invitedBy: u.id, expiresAt: new Date(Date.now() + days * 864e5).toISOString(), createdAt: now() };
       invites.push(inv); logA(u, 'invite.create', 'invitation', inv.id, { email: inv.email, role: inv.role });
+      /* المدعو يظهر فوراً بالهيكل الوظيفي (بانتظار القبول)، ولا يستطيع الدخول قبل أن يقبل الدعوة */
+      { const pu = U(++seq, body.name || body.email, body.role, body.title || null, inv.managerId); pu.email = body.email; pu.department = body.department || null; pu.invited = true; users.push(pu); inv.userId = pu.id; }
       return ok({ id: inv.id, link: inviteLink(inv, u.name), expiresAt: inv.expiresAt }, 201);
     }
     if ((m = path.match(/^\/api\/invitations\/(\d+)\/renew$/)) && method === 'POST') {
@@ -1072,6 +1081,7 @@
     }
     if ((m = path.match(/^\/api\/invitations\/(\d+)$/)) && method === 'DELETE') {
       const inv = invites.find(i => i.id === +m[1]); if (!inv) return err(404, 'الدعوة غير موجودة');
+      { const pu = users.find(x => x.id === inv.userId && x.invited && !x.pw); if (pu) users.splice(users.indexOf(pu), 1); }
       if (q.permanent === '1') { invites.splice(invites.indexOf(inv), 1); logA(u, 'invite.delete', 'invitation', inv.id, { email: inv.email }); return ok(null); }
       inv.status = 'REVOKED'; logA(u, 'invite.revoke', 'invitation', inv.id, { email: inv.email });
       return ok(null);
