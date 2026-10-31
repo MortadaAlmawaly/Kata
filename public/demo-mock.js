@@ -2,6 +2,8 @@
    البيانات بالذاكرة وتتصفّر عند إعادة التحميل. */
 (function () {
   window.__PREVIEW__ = true;
+  /* المسار الفرعي (مثل /Kata على github.io) يؤخذ من مكان هذا السكربت */
+  const BASE = (function () { try { return new URL(document.currentScript.src).pathname.replace(/\/demo-mock\.js$/, ''); } catch (e) { return ''; } })();
   const LEVEL = { EMPLOYEE: 1, MANAGER: 2, DIRECTOR: 3, GM: 4, CEO: 5 };
   const CATALOG = {
     'tasks.create': { min: 1, group: 'المهام', label: 'إنشاء مهام', hint: '' },
@@ -1113,12 +1115,12 @@
       const days = org.settings.inviteDays;
       const inv = { id: ++seq, email: body.email, name: body.name || null, role: body.role, managerId: body.managerId || u.id, title: body.title || null, department: body.department || null, status: 'PENDING', invitedBy: u.id, expiresAt: new Date(Date.now() + days * 864e5).toISOString(), createdAt: now() };
       invites.push(inv); logA(u, 'invite.create', 'invitation', inv.id, { email: inv.email, role: inv.role });
-      return ok({ id: inv.id, link: location.origin + '/join?token=demo-' + inv.id + '-' + Math.random().toString(36).slice(2, 10), expiresAt: inv.expiresAt }, 201);
+      return ok({ id: inv.id, link: location.origin + BASE + '/join?token=demo-' + inv.id + '-' + Math.random().toString(36).slice(2, 10), expiresAt: inv.expiresAt }, 201);
     }
     if ((m = path.match(/^\/api\/invitations\/(\d+)\/renew$/)) && method === 'POST') {
       const inv = invites.find(i => i.id === +m[1]); if (!inv) return err(404, 'الدعوة غير موجودة');
       inv.status = 'PENDING'; inv.expiresAt = new Date(Date.now() + org.settings.inviteDays * 864e5).toISOString();
-      return ok({ link: location.origin + '/join?token=demo-' + inv.id + '-' + Math.random().toString(36).slice(2, 10), expiresAt: inv.expiresAt });
+      return ok({ link: location.origin + BASE + '/join?token=demo-' + inv.id + '-' + Math.random().toString(36).slice(2, 10), expiresAt: inv.expiresAt });
     }
     if ((m = path.match(/^\/api\/invitations\/(\d+)$/)) && method === 'DELETE') {
       const inv = invites.find(i => i.id === +m[1]); if (!inv) return err(404, 'الدعوة غير موجودة');
@@ -1271,8 +1273,8 @@
     }
 
     /* ═══ التكاملات ═══ */
-    if (path === '/api/integrations/ics') return ok({ url: location.origin + '/cal/' + (u.icsToken || (u.icsToken = 'demo' + u.id + 'a1b2c3d4e5f6')) + '.ics' });
-    if (path === '/api/integrations/ics/reset') { u.icsToken = 'demo' + u.id + Math.random().toString(36).slice(2, 12); return ok({ url: location.origin + '/cal/' + u.icsToken + '.ics' }); }
+    if (path === '/api/integrations/ics') return ok({ url: location.origin + BASE + '/cal/' + (u.icsToken || (u.icsToken = 'demo' + u.id + 'a1b2c3d4e5f6')) + '.ics' });
+    if (path === '/api/integrations/ics/reset') { u.icsToken = 'demo' + u.id + Math.random().toString(36).slice(2, 12); return ok({ url: location.origin + BASE + '/cal/' + u.icsToken + '.ics' }); }
     if (path === '/api/integrations/webhooks' && method === 'GET') {
       if (!can(u, 'admin')) return err(403, 'ليست لديك صلاحية لهذا الإجراء');
       return ok({ available: ['task.created', 'task.done', 'request.created', 'request.approved', 'request.rejected', 'announcement.created', 'user.joined'], hooks: webhooks });
