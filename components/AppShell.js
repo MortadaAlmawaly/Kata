@@ -10,6 +10,7 @@ import { Avatar, Icon, LangButton, LogoSet, ThemeInit, toggleTheme } from './ui'
 import { Bell, ForcePassword, Palette, useBadges } from './ShellExtras';
 import TourHost from './Tour';
 import { FIcon } from './Icon';
+import { withBase } from '@/lib/base';
 
 export function useMe() {
   const [me, setMe] = useState(null);
@@ -67,12 +68,12 @@ export default function AppShell({ active, title, sub, me, children }) {
 
   async function logout() {
     await logoutWithPush(api);   // P1: يلغي اشتراك Push بهذا الجهاز ويبلّغ السيرفر يحذفه
-    window.location.href = '/login';
+    window.location.href = withBase('/login');
   }
 
   useEffect(() => { if (me && me.user.mustChangePassword) setMustChange(true); }, [me]);
   useEffect(() => {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register(withBase('/sw.js')).catch(() => {});
   }, []);
   /* اختصارات: Ctrl/⌘+K أو / لفتح البحث، N مهمة جديدة */
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function AppShell({ active, title, sub, me, children }) {
       if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyK' || e.key.toLowerCase() === 'k')) { e.preventDefault(); setPalette(p => !p); }
       else if (!typing && !e.ctrlKey && !e.metaKey && !document.querySelector('.modal')) {
         if (e.key === '/' || e.code === 'Slash') { e.preventDefault(); setPalette(true); }
-        else if (e.code === 'KeyN' || e.key.toLowerCase() === 'n') { e.preventDefault(); window.location.href = '/tasks?new=1'; }
+        else if (e.code === 'KeyN' || e.key.toLowerCase() === 'n') { e.preventDefault(); window.location.href = withBase('/tasks?new=1'); }
       }
     };
     document.addEventListener('keydown', onKey);

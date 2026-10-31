@@ -18,6 +18,7 @@ import TaskDetail, { TypeIcon } from '../../components/TaskDetail';
 import TypeInput from '../../components/TypeInput';
 import { TaskCalendar, TaskGoals, TaskProjects, TaskReports } from '../../components/TaskViews';
 import TaskFilterBar, { compileJql, EMPTY_FILTER, useTaskFilter } from '../../components/TaskFilter';
+import { withBase } from '@/lib/base';
 
 export default function TasksPage() {
   return <Suspense fallback={null}><Tasks /></Suspense>;
@@ -494,7 +495,7 @@ function Tasks() {
             : <h2>{board ? board.name : 'المهام'}</h2>}
           <div className="jf-wrap">
             <BoardMenu canTeam={isCfg} canManage={isCfg && !!board}
-              onNew={() => { window.location.href = '/boards?new=1' + (spaceId ? '&space=' + spaceId : ''); }} onSettings={() => { window.location.href = '/boards?id=' + board.id; }} onDuplicate={duplicateBoard} />
+              onNew={() => { window.location.href = withBase('/boards?new=1' + (spaceId ? '&space=' + spaceId : '')); }} onSettings={() => { window.location.href = withBase('/boards?id=' + board.id); }} onDuplicate={duplicateBoard} />
           </div>
           
           {myRole === 'VIEW' && <span className="bt ro" title="صلاحيتك على هذه اللوحة: عرض فقط"><FIcon n="eye" size={13} /> عرض فقط</span>}
@@ -562,7 +563,7 @@ function Tasks() {
         }} />}
       {cm && <CardMenu cm={cm} ctx={ctx} spaces={spaces} onClose={() => setCm(null)} move={move} toast={toast} ask={ask} open={id => { setCm(null); setDetailId(id); }} reload={load} />}
       {detailId && <TaskDetail id={detailId} ctx={ctx} onClose={() => setDetailId(null)} onOpen={setDetailId} onToast={toast}
-        onEdit={t => { setDetailId(null); setForm({ task: t }); }} onConfigure={board ? () => { window.location.href = '/boards?id=' + board.id; } : undefined} onChanged={load} />}
+        onEdit={t => { setDetailId(null); setForm({ task: t }); }} onConfigure={board ? () => { window.location.href = withBase('/boards?id=' + board.id); } : undefined} onChanged={load} />}
 
       {sprintForm && <SprintForm sprint={sprintForm.sprint} onClose={() => setSprintForm(null)} onSaved={() => { setSprintForm(null); toast('تم الحفظ'); load(); }} />}
       {sprintAct && <SprintAction {...sprintAct} live={liveSprints} onClose={() => setSprintAct(null)}

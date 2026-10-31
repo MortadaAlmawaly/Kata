@@ -10,7 +10,12 @@ const nextConfig: NextConfig = {
   /* حزم Node الأصلية تبقى خارج الحزمة (Prisma/bcrypt/web-push) */
   serverExternalPackages: ["@prisma/client", "prisma", "bcryptjs", "web-push"],
   ...(isStatic
-    ? { output: "export" as const, trailingSlash: true, images: { unoptimized: true } }
+    ? {
+        output: "export" as const,
+        trailingSlash: true,
+        images: { unoptimized: true },
+        ...(process.env.NEXT_PUBLIC_BASE_PATH ? { basePath: process.env.NEXT_PUBLIC_BASE_PATH } : {}),
+      }
     : {
         async headers() {
           return [

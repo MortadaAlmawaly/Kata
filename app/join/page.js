@@ -6,6 +6,7 @@ import { authCall } from '../../lib/api';
 import { ROLE } from '../../lib/constants';
 import { LangButton, LogoSet, ThemeInit } from '../../components/ui';
 import '../login/login.css';
+import { withBase } from '@/lib/base';
 
 function JoinInner() {
   const token = useSearchParams().get('token') || '';
@@ -28,7 +29,7 @@ function JoinInner() {
     setErr(''); setBusy(true);
     try {
       await authCall('POST', '/api/auth/invite/' + encodeURIComponent(token) + '/accept', { name, password: pw });
-      window.location.href = '/dashboard';
+      window.location.href = withBase('/dashboard');
     } catch (ex) { setErr(ex.message); setBusy(false); }
   }
 

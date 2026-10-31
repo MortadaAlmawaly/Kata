@@ -3,6 +3,7 @@
    تُشغَّل من زر «؟» بالشريط العلوي أو بـ ?tour=ID. حالة الإنجاز محفوظة بالمتصفح. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TOURS, tourById } from '../lib/tours';
+import { withBase, stripBase } from '@/lib/base';
 
 const DONE_KEY = 'kata-tours', SEEN_KEY = 'kata-tour-seen';
 const readDone = () => { try { return JSON.parse(localStorage.getItem(DONE_KEY) || '{}'); } catch (_) { return {}; } };
@@ -24,7 +25,7 @@ const goTour = (id, step) => {
   const t = tourById(id); if (!t) return;
   const u = new URL(t.page, window.location.origin);
   u.searchParams.set('tour', id); if (step != null) u.searchParams.set('step', step);
-  window.location.href = u.pathname + u.search;
+  window.location.href = withBase(u.pathname + u.search);
 };
 
 export default function TourHost({ me }) {
@@ -70,7 +71,7 @@ export default function TourHost({ me }) {
     if (d > 0 && s.go) {
       const url = typeof s.go === 'function' ? s.go() : s.go;
       leave();
-      if (url) { const u = new URL(url, window.location.origin); u.searchParams.set('tour', run.id); u.searchParams.set('step', run.i + 1); window.location.href = u.pathname + u.search; return; }
+      if (url) { const u = new URL(url, window.location.origin); u.searchParams.set('tour', run.id); u.searchParams.set('step', run.i + 1); window.location.href = withBase(u.pathname + u.search); return; }
       close(true); return;
     }
     const n = run.i + d;
@@ -191,7 +192,7 @@ export default function TourHost({ me }) {
 
   const launch = id => {
     const t = tourById(id);
-    if (window.location.pathname === t.page) start(id); else goTour(id);
+    if (stripBase(window.location.pathname).replace(/\/$/, '') === t.page) start(id); else goTour(id);
   };
 
   const cur = run ? run.steps[run.i] : null;

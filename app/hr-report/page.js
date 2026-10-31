@@ -2,6 +2,7 @@
 /* صفحة تقرير الموارد البشرية القابلة للطباعة/الحفظ PDF (نص وشعار متجهان): شعار كاتا واسمها، اسم الشركة، الموظف، الراتب، الاستقطاعات، الحضور والإجازات والأوقات. */
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { withBase } from '@/lib/base';
 
 const MONTHS = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
 const WD = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -12,7 +13,7 @@ const hrs = m => (m == null ? '—' : (m / 60).toFixed(1));
 const dm = d => { const [y, m, dd] = d.split('-').map(Number); return { label: `${dd}/${m}`, wd: WD[new Date(y, m - 1, dd).getDay()] }; };
 
 function Brand() {
-  return <div className="hr-brand"><img src="/brand/logo-ar.svg" alt="Kata" /></div>;
+  return <div className="hr-brand"><img src={withBase('/brand/logo-ar.svg')} alt="Kata" /></div>;
 }
 
 export default function HrReportPage() {

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { FIcon } from './Icon';
 import { ICONS, hueOf, initialOf } from '../lib/constants';
+import { withBase } from '@/lib/base';
 
 export function Icon({ name, size }) {
   return (
@@ -18,17 +19,17 @@ export function LogoSet({ hero = false }) {
   if (hero) {
     return (
       <span className="lg-set">
-        <img className="lg-hero lg-ar" src="/brand/logo-ar-dark.svg" alt="كاتا" />
-        <img className="lg-hero lg-en" src="/brand/logo-en-dark.svg" alt="Kata" />
+        <img className="lg-hero lg-ar" src={withBase('/brand/logo-ar-dark.svg')} alt="كاتا" />
+        <img className="lg-hero lg-en" src={withBase('/brand/logo-en-dark.svg')} alt="Kata" />
       </span>
     );
   }
   return (
     <span className="lg-set">
-      <img className="lg lg-ar lg-light" src="/brand/logo-ar.svg" alt="كاتا" />
-      <img className="lg lg-ar lg-dark" src="/brand/logo-ar-dark.svg" alt="كاتا" />
-      <img className="lg lg-en lg-light" src="/brand/logo-en.svg" alt="Kata" />
-      <img className="lg lg-en lg-dark" src="/brand/logo-en-dark.svg" alt="Kata" />
+      <img className="lg lg-ar lg-light" src={withBase('/brand/logo-ar.svg')} alt="كاتا" />
+      <img className="lg lg-ar lg-dark" src={withBase('/brand/logo-ar-dark.svg')} alt="كاتا" />
+      <img className="lg lg-en lg-light" src={withBase('/brand/logo-en.svg')} alt="Kata" />
+      <img className="lg lg-en lg-dark" src={withBase('/brand/logo-en-dark.svg')} alt="Kata" />
     </span>
   );
 }

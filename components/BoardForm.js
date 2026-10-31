@@ -9,6 +9,7 @@ import TypeLayoutEditor from './TypeLayoutEditor';
 import WorkflowEditor from './WorkflowEditor';
 import { BOARD_ICONS, BOARD_ICON_COLORS, FIcon } from './Icon';
 import { BgPicker, PermsEditor } from './SpaceSettings';
+import { withBase } from '@/lib/base';
 
 const ROLE_AR = { VIEW: 'عارض', EDIT: 'محرّر', MANAGE: 'مدير اللوحة' };
 
@@ -80,7 +81,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
       const u = new URL(a.href, window.location.href);
       if (u.origin !== window.location.origin || (u.pathname === window.location.pathname && u.search === window.location.search)) return;
       e.preventDefault(); e.stopPropagation();
-      setLeaveAsk({ go: () => { bypass.current = true; window.location.href = a.href; } });
+      setLeaveAsk({ go: () => { bypass.current = true; window.location.href = withBase(a.href); } });
     };
     const pop = () => {
       if (dirtyRef.current) { window.history.pushState({ bf: 1 }, ''); setLeaveAsk({ go: () => { bypass.current = true; window.history.go(-2); } }); }

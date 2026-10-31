@@ -11,6 +11,7 @@ import TypeLayoutEditor from '../../components/TypeLayoutEditor';
 import BoardForm from '../../components/BoardForm';
 import { FIcon } from '../../components/Icon';
 import { useRunner } from './tabs-basic';
+import { withBase } from '@/lib/base';
 
 
 const CL_TEXT = {
@@ -681,7 +682,7 @@ export function TabBoards({ me, reload, toast, ask }) {
       load();
     } catch (e) { toast(e.message, 'err'); }
   };
-  const duplicate = b => { window.location.href = '/boards?dup=' + b.id; };
+  const duplicate = b => { window.location.href = withBase('/boards?dup=' + b.id); };
   const remove = b => ask({ title: 'حذف اللوحة', text: `ستُحذف لوحة «${b.name}» وإعداداتها فقط؛ المهام لا تتأثر.`, ok: 'حذف',
     onOk: async () => { await api('DELETE', '/api/boards/' + b.id); toast('تم حذف اللوحة'); load(); } });
   const vis = b => (b.visibility === 'MEMBERS' ? `أشخاص محدّدون (${(b.members || []).length})` : 'كل الشركة');
@@ -710,7 +711,7 @@ export function TabBoards({ me, reload, toast, ask }) {
                 <td>{vis(b)}</td>
                 <td>{(b.fields || []).length}</td>
                 <td className="nowrap">
-                  <button className="btn sm" onClick={() => { window.location.href = '/boards?id=' + b.id; }}>تخصيص اللوحة</button>{' '}
+                  <button className="btn sm" onClick={() => { window.location.href = withBase('/boards?id=' + b.id); }}>تخصيص اللوحة</button>{' '}
                   <button className="btn sm ghost" onClick={() => duplicate(b)}>تكرار</button>{' '}
                   {boards.length > 1 && <button className="btn sm danger" onClick={() => remove(b)}>حذف</button>}
                 </td>
@@ -731,7 +732,7 @@ export function TabBoards({ me, reload, toast, ask }) {
             </select></label>
           <div className="modal-actions">
             <button type="button" className="btn ghost" onClick={() => setPick(false)}>إلغاء</button>
-            <button type="button" className="btn" onClick={() => { const b = boards.find(x => String(x.id) === String(from)); setPick(false); window.location.href = b ? '/boards?dup=' + b.id + '&blank=1' : '/boards?new=1'; }}>متابعة</button>
+            <button type="button" className="btn" onClick={() => { const b = boards.find(x => String(x.id) === String(from)); setPick(false); window.location.href = withBase(b ? '/boards?dup=' + b.id + '&blank=1' : '/boards?new=1'); }}>متابعة</button>
           </div>
         </Modal>
       )}
