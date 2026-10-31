@@ -1,0 +1,17 @@
+# نشر نسخة ثابتة (وضع التجربة داخل المتصفح) على Netlify من مستودع خاص
+[build]
+  command = "rm -rf app/api app/cal instrumentation.js && npx next build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
+  STATIC_EXPORT = "1"
+  NEXT_PUBLIC_DEMO = "1"
+  NEXT_PUBLIC_BASE_PATH = ""
+  # نسخة ثابتة: لا نريد مُلحق Next.js الخاص بـ Netlify
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
