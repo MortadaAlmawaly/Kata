@@ -27,6 +27,16 @@ jobs:
       # النسخة الثابتة تعمل بوضع التجربة داخل المتصفح، فنحذف مسارات الخادم قبل البناء
       - name: Remove server-only routes
         run: rm -rf "app/api" "app/cal" instrumentation.js
+      # لو اسم المستودع ليس <user>.github.io فالموقع يُخدَّم من /<repo>
+      - name: Compute base path
+        run: |
+          REPO="${GITHUB_REPOSITORY#*/}"
+          case "$REPO" in
+            *.github.io) BASE="" ;;
+            *) BASE="/$REPO" ;;
+          esac
+          echo "NEXT_PUBLIC_BASE_PATH=$BASE" >> "$GITHUB_ENV"
+          if [ -n "$BASE" ]; then sed -i "s#url('/fonts/#url('$BASE/fonts/#g" public/app.css; fi
       - name: Build static site
         run: npx next build
         env:

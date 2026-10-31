@@ -8,6 +8,7 @@ import { CF_TYPE_AR } from '../lib/tasks';
 import { CAPS, PRESETS, RECOMMENDED, capsOf, presetKeyOf, valueFromCaps } from '../lib/spacePerms';
 import { Avatar, Modal } from './ui';
 import { FIcon } from './Icon';
+import { withBase } from '@/lib/base';
 
 export const BG_PRESETS = [
   { v: '#1D3557', n: 'كحلي' }, { v: '#0B5D5E', n: 'زمردي' }, { v: '#5B3A8C', n: 'بنفسجي' }, { v: '#8C2F39', n: 'عنابي' },
@@ -116,7 +117,7 @@ export function SpacesHome({ me, toast }) {
     if (!form.name.trim()) return;
     try {
       const r = await api('POST', '/api/spaces', { name: form.name.trim(), key: form.key ? form.key.trim().toUpperCase() : undefined, background: form.background || null });
-      window.location.href = '/spaces?id=' + r.id;
+      window.location.href = withBase('/spaces?id=' + r.id);
     } catch (ex) { toast(ex.message, 'err'); }
   }
 
@@ -216,7 +217,7 @@ function GeneralTab({ space, toast, ask, onSaved }) {
       <div className="toolbar" style={{ marginTop: 14 }}>
         <button className="btn">حفظ</button><span className="grow" />
         <button type="button" className="btn danger" onClick={() => ask({ title: 'حذف المساحة', text: `ستُحذف مساحة «${space.name}»؛ المهام تبقى بدون مساحة واللوحات تبقى كما هي.`, ok: 'حذف',
-          onOk: async () => { await api('DELETE', '/api/spaces/' + space.id); window.location.href = '/spaces'; } })}>حذف المساحة</button>
+          onOk: async () => { await api('DELETE', '/api/spaces/' + space.id); window.location.href = withBase('/spaces'); } })}>حذف المساحة</button>
       </div>
     </form>
   );

@@ -10,6 +10,7 @@ import AppShell, { useMe } from '../../components/AppShell';
 import { Avatar, Icon, Modal } from '../../components/ui';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import { useConfirm, useToast } from '../../components/hooks';
+import { withBase } from '@/lib/base';
 
 const RESP = { PENDING: 'لم يرد', ACCEPTED: 'قبل', DECLINED: 'اعتذر' };
 const EV_RECUR = { '': 'لا يتكرر', HOURLY: 'كل عدد ساعات أحدده', DAILY: 'يومياً', WEEKLY: 'أسبوعياً', MONTHLY: 'شهرياً' };
@@ -123,7 +124,7 @@ function Calendar() {
     load();
   }
 
-  const openItem = it => { if (it.kind === 'event') setDetail(it.e); else if (it.kind === 'task') window.location.href = `/tasks?open=${it.task.id}`; };
+  const openItem = it => { if (it.kind === 'event') setDetail(it.e); else if (it.kind === 'task') window.location.href = withBase(`/tasks?open=${it.task.id}`); };
   const Chip = ({ it }) => {
     if (it.kind === 'event') {
       const e = it.e;

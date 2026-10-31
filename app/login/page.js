@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { authCall } from '../../lib/api';
 import { LangButton, LogoSet, ThemeInit } from '../../components/ui';
 import './login.css';
+import { withBase } from '@/lib/base';
 
 const LEVELS = [
   ['5', 'المدير التنفيذي — الشركة كلها وإعداداتها'],
@@ -30,7 +31,7 @@ export default function LoginPage() {
         ? { company: form.company, name: form.name, email: form.email, password: form.password }
         : { email: form.email, password: form.password };
       await authCall('POST', '/api/auth/' + (reg ? 'register-company' : 'login'), body);
-      window.location.href = '/dashboard';
+      window.location.href = withBase('/dashboard');
     } catch (ex) {
       setErr(ex.message);
       setBusy(false);

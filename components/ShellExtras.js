@@ -6,6 +6,7 @@ import { createVisibilityPoller } from '../lib/poll';
 import { PAGES, ROLE } from '../lib/constants';
 import { ago, useToast } from './hooks';
 import { Icon, Modal } from './ui';
+import { withBase } from '@/lib/base';
 
 const NTYPE_ICON = { MENTION: '@', TASK: '✓', REQUEST: '⎘', EVENT: '◷', ANNOUNCEMENT: '✉', INFO: '•' };
 
@@ -154,7 +155,7 @@ export function Palette({ me, onClose, onLogout, onTheme }) {
   function run(it) {
     if (!it) return;
     onClose();
-    if (it.run) setTimeout(it.run, 30); else if (it.href) window.location.href = it.href;
+    if (it.run) setTimeout(it.run, 30); else if (it.href) window.location.href = withBase(it.href);
   }
   let lastG = null;
   return (

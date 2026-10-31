@@ -7,6 +7,7 @@ import { ROLE } from '../../lib/constants';
 import { WEEKDAYS } from '../../lib/util';
 import { Modal } from '../../components/ui';
 import { ago } from '../../components/hooks';
+import { withBase } from '@/lib/base';
 
 const b64ToUint8 = s => {
   const pad = '='.repeat((4 - (s.length % 4)) % 4);
@@ -137,7 +138,7 @@ export function TabNotifications({ me, reload, toast }) {
             <button className="btn ghost" style={{ marginTop: 12 }} onClick={act(pushDisable, 'تم الإيقاف')}>إيقاف على هذا الجهاز</button>{' '}
             <button className="btn ghost" style={{ marginTop: 12 }} onClick={async () => {
               const reg = await navigator.serviceWorker.ready;
-              await reg.showNotification('كاتا', { body: 'هكذا تصلك الإشعارات', icon: '/icon-192.png', dir: 'rtl', lang: 'ar' });
+              await reg.showNotification('كاتا', { body: 'هكذا تصلك الإشعارات', icon: withBase('/icon-192.png'), dir: 'rtl', lang: 'ar' });
             }}>إشعار تجريبي</button>
           </>
         )}

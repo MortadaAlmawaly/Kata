@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { pad } from '../lib/constants';
 import { ROLE } from '../lib/constants';
 import { Avatar } from './ui';
+import { withBase } from '@/lib/base';
 
 const nowMonth = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
 
@@ -26,7 +27,7 @@ export default function HrExport({ toast, currency }) {
   };
   const exportPdf = () => {
     if (!sel.size) { toast('اختر موظفاً واحداً على الأقل', 'err'); return; }
-    window.open(`/hr-report?month=${month}&ids=${[...sel].join(',')}`, '_blank');
+    window.open(withBase(`/hr-report?month=${month}&ids=${[...sel].join(',')}`), '_blank');
   };
   return (
     <section className="card hr-card">

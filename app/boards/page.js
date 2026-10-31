@@ -6,6 +6,7 @@ import AppShell, { useMe } from '../../components/AppShell';
 import BoardForm from '../../components/BoardForm';
 import { useToast } from '../../components/hooks';
 import { api } from '../../lib/api';
+import { withBase } from '@/lib/base';
 
 export default function BoardPage() {
   const { me, error, reload } = useMe();
@@ -34,9 +35,9 @@ export default function BoardPage() {
             <a className="btn ghost" style={{ marginInlineStart: 'auto', padding: '10px 28px', fontSize: '1rem', fontWeight: 700 }} href={back}>رجوع</a>
           </div>
           <BoardForm key={board ? board.id : 'new'} asPage me={me} board={board} preset={board ? null : preset} boards={boards} reloadMe={reload}
-            onClose={() => { window.location.href = back; }} onError={m => toast(m, 'err')}
-            onSaved={id => { if (board) { toast('تم الحفظ'); load(); } else { window.location.href = '/boards?id=' + id; } }}
-            onDeleted={() => { window.location.href = listBack; }} />
+            onClose={() => { window.location.href = withBase(back); }} onError={m => toast(m, 'err')}
+            onSaved={id => { if (board) { toast('تم الحفظ'); load(); } else { window.location.href = withBase('/boards?id=' + id); } }}
+            onDeleted={() => { window.location.href = withBase(listBack); }} />
         </>
       );
     }
