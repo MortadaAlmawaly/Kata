@@ -5,6 +5,7 @@
   /* المسار الفرعي (مثل /Kata على github.io) يؤخذ من مكان هذا السكربت */
   const BASE = (function () { try { return new URL(document.currentScript.src).pathname.replace(/\/demo-mock\.js$/, ''); } catch (e) { return ''; } })();
   const LEVEL = { EMPLOYEE: 1, MANAGER: 2, DIRECTOR: 3, GM: 4, CEO: 5 };
+  const ROLE_LABEL = { EMPLOYEE: 'موظف', MANAGER: 'مدير قسم', DIRECTOR: 'مدير إدارة', GM: 'المدير العام', CEO: 'المدير التنفيذي' };
   const CATALOG = {
     'tasks.create': { min: 1, group: 'المهام', label: 'إنشاء مهام', hint: '' },
     'tasks.assign': { min: 1, group: 'المهام', label: 'إسناد المهام لغيري (ضمن نطاقي)', hint: 'بدونها يُسند لنفسه فقط' },
@@ -141,6 +142,7 @@
   try { meId = +localStorage.getItem('pv-user') || 4; } catch (e) {}
   const me = () => byId(meId);
   const err = (status, error) => ({ status, body: { error } });
+  const inviteLink = (inv, inviter) => location.origin + BASE + '/join?token=demo-' + inv.id + '-' + btoa(unescape(encodeURIComponent(JSON.stringify({ e: inv.email, n: inv.name, r: inv.role, t: inv.title, d: inv.department, m: inv.managerId, i: inviter, x: new Date(inv.expiresAt).getTime() })))).replace(/\+/g, '-').replace(/\//g, '_');
   const ok = (body, status = 200) => ({ status: body === null ? 204 : status, body });
   const orgPerm = {};            // تعديلات المسؤول على الحد الأدنى للدور
   const denied = {};
@@ -286,7 +288,23 @@
       return ok({ id: 1, name: body.name || 'سارة الجبوري', email: body.email || DEMO_EMAIL, role: 'CEO' }, 201);
     }
     if (path === '/api/auth/logout') { try { localStorage.removeItem('pv-auth'); } catch (e) {} return ok(null); }
-    if (path.startsWith('/api/auth/invite/')) return err(404, 'رابط الدعوة غير صالح أو منتهي (وضع التجربة)');
+    if (path.startsWith('/api/auth/invite/')) {
+      /* رابط الدعوة يحمل بياناته داخل الرمز نفسه، فيعمل من أي متصفح أو جهاز (وضع التجربة بدون خادم) */
+      const tk = decodeURIComponent(path.split('/')[4] || '');
+      let inv; try { inv = JSON.parse(decodeURIComponent(escape(atob(tk.replace(/^demo-\d+-/, '').replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { inv = null; }
+      if (!inv || !inv.e) return err(404, 'رابط الدعوة غير صالح أو منتهي');
+      if (inv.x && inv.x < Date.now()) return err(410, 'انتهت صلاحية الدعوة');
+      if (method === 'GET') return ok({ company: org.name, email: inv.e, name: inv.n || null, role: inv.r, roleLabel: ROLE_LABEL[inv.r] || null, inviter: inv.i || 'المدير', passwordMin: org.settings.passwordMin });
+      if (method === 'POST' && path.endsWith('/accept')) {
+        if (String(body.password || '').length < org.settings.passwordMin) return err(400, 'كلمة المرور لازم تكون ' + org.settings.passwordMin + ' أحرف على الأقل');
+        let nu = users.find(x => x.email === inv.e);
+        if (!nu) { nu = U(++seq, String(body.name || inv.n || inv.e).slice(0, 60), inv.r, inv.t || null, inv.m || 1); nu.email = inv.e; nu.department = inv.d || null; users.push(nu); }
+        const pi = invites.find(x => x.email === inv.e && x.status === 'PENDING'); if (pi) pi.status = 'ACCEPTED';
+        savePV();
+        try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(nu.id)); } catch (e) {}
+        return ok({ id: nu.id, name: nu.name, email: nu.email, role: nu.role }, 201);
+      }
+    }
     return null;
   }
 
@@ -1115,12 +1133,12 @@
       const days = org.settings.inviteDays;
       const inv = { id: ++seq, email: body.email, name: body.name || null, role: body.role, managerId: body.managerId || u.id, title: body.title || null, department: body.department || null, status: 'PENDING', invitedBy: u.id, expiresAt: new Date(Date.now() + days * 864e5).toISOString(), createdAt: now() };
       invites.push(inv); logA(u, 'invite.create', 'invitation', inv.id, { email: inv.email, role: inv.role });
-      return ok({ id: inv.id, link: location.origin + BASE + '/join?token=demo-' + inv.id + '-' + Math.random().toString(36).slice(2, 10), expiresAt: inv.expiresAt }, 201);
+      return ok({ id: inv.id, link: inviteLink(inv, u.name), expiresAt: inv.expiresAt }, 201);
     }
     if ((m = path.match(/^\/api\/invitations\/(\d+)\/renew$/)) && method === 'POST') {
       const inv = invites.find(i => i.id === +m[1]); if (!inv) return err(404, 'الدعوة غير موجودة');
       inv.status = 'PENDING'; inv.expiresAt = new Date(Date.now() + org.settings.inviteDays * 864e5).toISOString();
-      return ok({ link: location.origin + BASE + '/join?token=demo-' + inv.id + '-' + Math.random().toString(36).slice(2, 10), expiresAt: inv.expiresAt });
+      return ok({ link: inviteLink(inv, u.name), expiresAt: inv.expiresAt });
     }
     if ((m = path.match(/^\/api\/invitations\/(\d+)$/)) && method === 'DELETE') {
       const inv = invites.find(i => i.id === +m[1]); if (!inv) return err(404, 'الدعوة غير موجودة');
