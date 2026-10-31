@@ -1,0 +1,706 @@
+// روتيني للأعمال — مخطط قاعدة البيانات (MySQL)
+// كل الجداول مربوطة بـ orgId: الشركة هي حدود العزل. الهرم يتحدد بـ User.managerId (شجرة).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE // موظف
+  MANAGER  // مدير قسم
+  DIRECTOR // مدير إدارة
+  GM       // مدير
+  CEO      // مدير تنفيذي
+}
+
+enum GoalStatus {
+  ACTIVE
+  ACHIEVED
+  CANCELLED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  currency  String   @default("IQD") @db.VarChar(8)
+  // حدود الموافقة المالية لكل دور: {"MANAGER":500000,"DIRECTOR":5000000,"GM":50000000}
+  // الطلب اللي مبلغه أكبر من حد الموافق يصعد تلقائياً للرئيس الأعلى. المدير التنفيذي بلا حد.
+  approvalLimits Json
+  // إعدادات الشركة: timezone, weekStart, workDays, workStart, workEnd, leaveDefault, passwordMin, sessionDays...
+  settings    Json?
+  // تعديلات مصفوفة الصلاحيات: {"users.manage": 4} = أقل مستوى لكل صلاحية
+  permissions Json?
+  suspended   Boolean  @default(false) // يوقفها مالك المنصة
+  maxUsers    Int?     // الحد الأقصى للمستخدمين الفعّالين (يضبطه مالك المنصة). null = بلا حد
+  createdAt DateTime @default(now())
+
+  invitations   Invitation[]
+  attachments   Attachment[]
+  reviews       Review[]
+  policies      Policy[]
+  webhooks      Webhook[]
+  users         User[]
+  tasks         Task[]
+  goals         Goal[]
+  requests      Request[]
+  auditLogs     AuditLog[]
+  events        Event[]
+  projects      Project[]
+  sprints       Sprint[]
+  boards        TaskBoard[]
+  announcements Announcement[]
+}
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  orgId              Int
+  name               String    @db.VarChar(60)
+  email              String    @unique @db.VarChar(191)
+  passwordHash       String    @db.VarChar(100)
+  role               Role      @default(EMPLOYEE)
+  title              String?   @db.VarChar(80) // المسمى الوظيفي
+  department         String?   @db.VarChar(60) // القسم
+  leaveEntitlement   Int       @default(30)      // رصيد الإجازات السنوي (أيام)
+  salary             Decimal?  @db.Decimal(14, 2) // الراتب الشهري (يراه ويعدّله من يملك صلاحية hr.export فقط)
+  phone              String?   @db.VarChar(30)
+  shiftStart         String?   @db.VarChar(5)   // دوام مخصّص (يتجاوز دوام الشركة)
+  shiftEnd           String?   @db.VarChar(5)
+  icsToken           String?   @unique @db.VarChar(64) // رابط اشتراك التقويم الخاص
+  isAdmin            Boolean   @default(false)   // مسؤول النظام: الصلاحيات والدعوات والإعدادات
+  extraPerms         Json?                       // صلاحيات إضافية فردية: ["reports.view"]
+  deniedPerms        Json?                       // صلاحيات يمنعها الأدمن عن هذا الشخص: ["tasks.delete"]
+  notifyPrefs        Json?                       // {mention:true, task:true, request:true, event:true, announcement:true}
+  managerId          Int?      // الرئيس المباشر — null للمدير التنفيذي فقط
+  active             Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  lastLoginAt        DateTime?
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  manager User?        @relation("Hierarchy", fields: [managerId], references: [id], onDelete: SetNull)
+  reports User[]       @relation("Hierarchy")
+
+  sessions       Session[]
+  assignedTasks  Task[]        @relation("TaskAssignee")
+  createdTasks   Task[]        @relation("TaskCreator")
+  worklogs       TaskWorklog[]
+  taskHistory    TaskHistory[]
+  watching       TaskWatcher[]
+  comments       TaskComment[]
+  goals          Goal[]
+  requests       Request[]     @relation("Requester")
+  pendingApprove Request[]     @relation("CurrentApprover")
+  steps          RequestStep[]
+  notifications  Notification[]
+  events         Event[]         @relation("EventCreator")
+  eventInvites   EventAttendee[]
+  projects       Project[]
+  announcements  Announcement[]
+  attendance     Attendance[]
+  pushSubs       PushSubscription[]
+  invitesSent    Invitation[]
+  attachments    Attachment[]
+  projectComments ProjectComment[]
+  announcementsIn AnnouncementRecipient[]
+  requestComments RequestComment[]
+  reviewsAsEmployee Review[] @relation("ReviewEmployee")
+  reviewsAsReviewer Review[] @relation("ReviewReviewer")
+  policyAcks      PolicyAck[]
+  policiesAuthored Policy[]
+
+  @@index([orgId, managerId])
+  @@index([orgId, role])
+}
+
+model Session {
+  id        String   @id @db.Char(64) // sha256 للتوكن؛ التوكن نفسه بكوكي httpOnly
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  orgId       Int
+  title       String     @db.VarChar(120)
+  description String?    @db.Text
+  status      String     @default("TODO") @db.VarChar(40) // TODO | IN_PROGRESS | REVIEW | DONE أو مفتاح حالة أضافتها الشركة (settings.taskStatuses)
+  priority    String     @default("MEDIUM") @db.VarChar(40) // LOW|MEDIUM|HIGH|URGENT أو مفتاح أولوية أضافتها الشركة
+  progress    Int        @default(0) // 0–100
+  dueDate     DateTime?  @db.Date
+  assigneeId  Int
+  creatorId   Int
+  goalId      Int?       // ربط المهمة بهدف
+  projectId   Int?       // ربط المهمة بمشروع
+  recurrence  String?    @db.VarChar(10) // DAILY | WEEKLY | MONTHLY — عند الإنجاز تُنشأ النسخة التالية
+  // ── على غرار Jira: رقم المهمة = <بادئة المشروع>-<الرقم> مثل NKH-12 ──
+  keyPrefix   String     @default("TSK") @db.VarChar(12)
+  number      Int?       // تسلسلي لكل (شركة، بادئة)؛ null للقديمة حتى يملؤها backfill
+  issueType   String     @default("TASK") @db.VarChar(40) // TASK|BUG|STORY|EPIC|SUBTASK أو نوع أضافته الشركة
+  labels      Json?      // ["واجهة","عاجل"]
+  storyPoints Float?
+  estimateMin Int?       // التقدير الأصلي بالدقائق
+  startDate   DateTime?  @db.Date
+  parentId    Int?       // الملحمة (Epic) أو المهمة الأم
+  sprintId    Int?
+  customFields Json?     // قيم الحقول المخصصة: { <مفتاح الحقل>: قيمة } — تعريفها في settings.customFields
+  coverFileId Int?       // مرفق صورة يُعرض غلافاً أعلى المهمة
+  timerUserId Int?       // مؤقّت العمل الجاري (بدء/إيقاف)
+  timerStartedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  completedAt DateTime?
+  statusChangedAt DateTime?   // آخر انتقال بين الأعمدة (لمؤشّر «أيام في العمود»)
+  archivedAt   DateTime?     // مؤرشفة بعد موافقة مسؤول اللوحة (بعد 90 يوماً من الإنجاز)
+  archivedById Int?
+
+  org      Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignee User          @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  creator  User          @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  goal     Goal?         @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  project  Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  comments TaskComment[]
+  items    TaskItem[]
+  parent   Task?         @relation("TaskParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children Task[]        @relation("TaskParent")
+  sprint   Sprint?       @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  worklogs TaskWorklog[]
+  history  TaskHistory[]
+  watchers TaskWatcher[]
+  linksFrom TaskLink[]   @relation("LinkFrom")
+  linksTo   TaskLink[]   @relation("LinkTo")
+
+  @@unique([orgId, keyPrefix, number])
+  @@index([parentId])
+  @@index([sprintId])
+  @@index([orgId, assigneeId, status])
+  @@index([orgId, creatorId])
+  @@index([goalId])
+  @@index([projectId])
+  @@index([orgId, dueDate])
+}
+
+model TaskComment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+  editedAt  DateTime?
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// ساعات عمل مسجّلة على مهمة (Work log)
+model TaskWorklog {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  minutes   Int
+  note      String?  @db.VarChar(255)
+  workedOn  DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// ربط بين مهمتين: BLOCKS (تحجب) · RELATES (مرتبطة) · DUPLICATES (مكرّرة)
+model TaskLink {
+  id        Int      @id @default(autoincrement())
+  fromId    Int
+  toId      Int
+  type      String   @db.VarChar(12)
+  createdAt DateTime @default(now())
+
+  from Task @relation("LinkFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to   Task @relation("LinkTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId, type])
+  @@index([toId])
+}
+
+model TaskWatcher {
+  taskId Int
+  userId Int
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+}
+
+// سجل التغييرات (Activity / History)
+model TaskHistory {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  field     String   @db.VarChar(30)
+  fromValue String?  @db.VarChar(255)
+  toValue   String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+}
+
+// لوحة مهام: عرض مستقل بأعمدة وبطاقات ومسميات خاصة بها
+// columns: [{ status, name, color }] — status مفتاح حالة من حالات الشركة، والاسم/اللون خاصان باللوحة
+// filters: { projectId, issueTypes[] } · card: { fields{}, custom[], density, color } · labels: { assignee: 'المسؤول' … }
+model TaskBoard {
+  id         Int      @id @default(autoincrement())
+  orgId      Int
+  name       String   @db.VarChar(60)
+  position   Int      @default(0)
+  autoColumns Boolean @default(false) // تتبع حالات الشركة تلقائياً (اللوحة الرئيسية)
+  visibility  String   @default("ALL") @db.VarChar(10) // ALL = كل الشركة · MEMBERS = المذكورون فقط (+ المنشئ والأدمن)
+  members     Json?    // [{ userId, role: VIEW|EDIT|MANAGE }]
+  columns    Json
+  filters    Json?
+  card       Json?
+  labels     Json?
+  fields     Json?    // حقول مخصصة خاصة بهذه اللوحة: [{ key, name, type, options, section, card }]
+  detail     Json?    // تخطيط نافذة المهمة: { hide: [مفاتيح], order: [مفاتيح الحقول الأساسية] }
+  createdBy  Int?
+  createdAt  DateTime @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, position])
+}
+
+// سباق (Sprint): دورة عمل قصيرة تُسحب إليها المهام من الـ Backlog
+model Sprint {
+  id        Int       @id @default(autoincrement())
+  orgId     Int
+  projectId Int?
+  name      String    @db.VarChar(80)
+  goal      String?   @db.VarChar(255)
+  state     String    @default("PLANNED") @db.VarChar(10) // PLANNED | ACTIVE | CLOSED
+  startDate DateTime? @db.Date
+  endDate   DateTime? @db.Date
+  closedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([orgId, state])
+}
+
+// هدف (OKR). parentId = الهدف الأعلى اللي يخدمه (مواءمة هرمية)
+model Goal {
+  id          Int        @id @default(autoincrement())
+  orgId       Int
+  ownerId     Int
+  parentId    Int?
+  title       String     @db.VarChar(140)
+  description String?    @db.Text
+  period      String     @db.VarChar(16) // مثل 2026-Q4
+  status      GoalStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  parent     Goal?        @relation("GoalTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Goal[]       @relation("GoalTree")
+  keyResults KeyResult[]
+  tasks      Task[]
+
+  @@index([orgId, ownerId])
+}
+
+model KeyResult {
+  id      Int     @id @default(autoincrement())
+  goalId  Int
+  title   String  @db.VarChar(140)
+  target  Decimal @db.Decimal(14, 2)
+  current Decimal @default(0) @db.Decimal(14, 2)
+  unit    String? @db.VarChar(16)
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+// طلب موافقة (مصروف / شراء / ميزانية / إجازة) يمر على سلسلة الرؤساء حسب حدود الشركة
+model Request {
+  id                Int           @id @default(autoincrement())
+  orgId             Int
+  requesterId       Int
+  type              String        @db.VarChar(40) // EXPENSE|PURCHASE|BUDGET|LEAVE أو مفتاح نوع أضافته الشركة
+  title             String        @db.VarChar(140)
+  details           String?       @db.Text
+  amount            Decimal?      @db.Decimal(14, 2)
+  startDate         DateTime?     @db.Date
+  endDate           DateTime?     @db.Date
+  status            RequestStatus @default(PENDING)
+  leaveType         String?       @db.VarChar(20) // مفتاح نوع الإجازة من إعدادات الشركة
+  currentApproverId Int?
+  createdAt         DateTime      @default(now())
+  decidedAt         DateTime?
+
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  requester       User         @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  currentApprover User?        @relation("CurrentApprover", fields: [currentApproverId], references: [id], onDelete: SetNull)
+  steps           RequestStep[]
+  comments       RequestComment[]
+
+  @@index([orgId, requesterId])
+  @@index([currentApproverId, status])
+}
+
+model RequestStep {
+  id         Int      @id @default(autoincrement())
+  requestId  Int
+  approverId Int
+  decision   String   @db.VarChar(10) // APPROVED | REJECTED | ESCALATED
+  note       String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  request  Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver User    @relation(fields: [approverId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   @default("INFO") @db.VarChar(16) // MENTION | TASK | REQUEST | EVENT | ANNOUNCEMENT | INFO
+  actorName String?  @db.VarChar(60)
+  text      String   @db.VarChar(255)
+  link      String?  @db.VarChar(120)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+// سجل تدقيق لكل عملية حساسة — يشوفه المدير والمدير التنفيذي
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  orgId     Int
+  actorId   Int?
+  actorName String   @db.VarChar(60)
+  action    String   @db.VarChar(40)
+  entity    String   @db.VarChar(30)
+  entityId  Int?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+}
+
+enum Response {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// موعد / اجتماع. companyWide = يظهر لكل الشركة (فعاليات وعطل — من مستوى المدير فما فوق)
+model Event {
+  id          Int       @id @default(autoincrement())
+  orgId       Int
+  creatorId   Int
+  type        String    @default("MEETING") @db.VarChar(40) // MEETING|APPOINTMENT|EVENT|HOLIDAY|OTHER أو مفتاح نوع أضافته الشركة
+  title       String    @db.VarChar(140)
+  description String?   @db.Text
+  location    String?   @db.VarChar(140) // مكان أو رابط اجتماع
+  startAt     DateTime
+  endAt       DateTime
+  allDay      Boolean   @default(false)
+  companyWide Boolean   @default(false)
+  customType  String?   @db.VarChar(40) // اسم النوع عند type = OTHER
+  recurrence  String?   @db.VarChar(10) // HOURLY | DAILY | WEEKLY | MONTHLY | null
+  recurEvery  Int?      // عند HOURLY: التكرار كل كم ساعة (تحدده الشركة يدوياً)
+  recurUntil  DateTime? @db.Date
+  createdAt   DateTime  @default(now())
+
+  org       Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator   User            @relation("EventCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  attendees EventAttendee[]
+
+  @@index([orgId, startAt])
+}
+
+model EventAttendee {
+  id       Int      @id @default(autoincrement())
+  eventId  Int
+  userId   Int
+  response Response @default(PENDING)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  orgId       Int
+  ownerId     Int
+  name        String        @db.VarChar(120)
+  description String?       @db.Text
+  status      String    @default("ACTIVE") @db.VarChar(40) // PLANNING|ACTIVE|ON_HOLD|DONE أو مفتاح حالة أضافتها الشركة
+  startDate   DateTime?     @db.Date
+  endDate     DateTime?     @db.Date
+  createdAt   DateTime      @default(now())
+
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  owner User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  key         String?       @db.VarChar(10) // بادئة أرقام المهام مثل NKH
+  background  String?       @db.MediumText // خلفية المساحة: لون #RRGGBB أو تدرّج CSS أو رابط صورة
+  settings    Json?         // إعدادات المساحة: { fields:[حقول المهام], perms:{ users:{id:'NONE|VIEW|MOVE|EDIT'}, roles:{ROLE:..} } }
+  sprints  Sprint[]
+  tasks    Task[]
+  comments ProjectComment[]
+
+  @@unique([orgId, key])
+  @@index([orgId, status])
+}
+
+// تعميم: COMPANY لكل الشركة (مدير فما فوق)، TEAM لفريق الكاتب (من تحته)
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  orgId     Int
+  authorId  Int
+  title     String   @db.VarChar(140)
+  body      String   @db.Text
+  audience  String   @default("TEAM") @db.VarChar(8) // COMPANY | TEAM | CUSTOM (أشخاص يختارهم الكاتب)
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  org        Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  author     User                    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  recipients AnnouncementRecipient[]
+
+  @@index([orgId, createdAt])
+}
+
+// حضور يومي: صف لكل مستخدم باليوم
+model Attendance {
+  id       Int       @id @default(autoincrement())
+  userId   Int
+  date     DateTime  @db.Date
+  checkIn  DateTime
+  checkOut DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+// دعوة انضمام لشركة — الرابط يحوي توكن عشوائي، ونخزّن hash فقط
+model Invitation {
+  id         Int       @id @default(autoincrement())
+  orgId      Int
+  invitedBy  Int
+  email      String    @db.VarChar(191)
+  name       String?   @db.VarChar(60)
+  role       Role      @default(EMPLOYEE)
+  managerId  Int?
+  title      String?   @db.VarChar(80)
+  department String?   @db.VarChar(60)
+  tokenHash  String    @unique @db.Char(64)
+  status     String    @default("PENDING") @db.VarChar(10) // PENDING | ACCEPTED | REVOKED
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  acceptedAt DateTime?
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  inviter User         @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@index([email])
+}
+
+// اشتراك إشعارات Web Push لجهاز/متصفح (هاتف مثبّت على الشاشة الرئيسية مثلاً)
+model PushSubscription {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  endpointHash String   @unique @db.Char(64)
+  endpoint     String   @db.Text
+  p256dh       String   @db.VarChar(255)
+  auth         String   @db.VarChar(255)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+// ملف مرفق (PDF أو صورة) بأي عنصر: مهمة، مشروع، موعد، تعميم، طلب، هدف
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  orgId      Int
+  uploaderId Int
+  entity     String   @db.VarChar(16) // task | project | event | announcement | request | goal
+  entityId   Int
+  name       String   @db.VarChar(180)
+  mime       String   @db.VarChar(60)
+  size       Int
+  storedName String   @db.VarChar(80) // اسم الملف على القرص (عشوائي)
+  createdAt  DateTime @default(now())
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  uploader User         @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, entity, entityId])
+}
+
+model ProjectComment {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  userId    Int
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// مستلمو تعميم موجّه لأشخاص مختارين
+model AnnouncementRecipient {
+  id             Int @id @default(autoincrement())
+  announcementId Int
+  userId         Int
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+}
+// بنود قائمة المهام (Checklist) داخل المهمة — التقدّم يُحسب منها
+model TaskItem {
+  id       Int     @id @default(autoincrement())
+  taskId   Int
+  text     String  @db.VarChar(140)
+  done     Boolean @default(false)
+  position Int     @default(0)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// نقاش على طلب موافقة
+model RequestComment {
+  id        Int      @id @default(autoincrement())
+  requestId Int
+  userId    Int
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+// تقييم أداء دوري: مدير الموظف يقيّمه عن دورة (مثل 2026-Q4)، والموظف يطّلع ويقرّ ويعلّق
+model Review {
+  id             Int       @id @default(autoincrement())
+  orgId          Int
+  cycle          String    @db.VarChar(16)
+  employeeId     Int
+  reviewerId     Int
+  status         String    @default("DRAFT") @db.VarChar(12) // DRAFT | SUBMITTED | ACKNOWLEDGED
+  ratings        Json?     // {quality:4, delivery:5, teamwork:3, initiative:4}
+  overall        Int?      // 1–5
+  strengths      String?   @db.Text
+  improvements   String?   @db.Text
+  nextGoals      String?   @db.Text
+  employeeComment String?  @db.VarChar(1000)
+  createdAt      DateTime  @default(now())
+  submittedAt    DateTime?
+  acknowledgedAt DateTime?
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  employee User         @relation("ReviewEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewer User         @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, cycle, employeeId])
+  @@index([reviewerId])
+}
+
+// سياسة / مستند للشركة. تغيير النص يرفع version ويطلب إقراراً جديداً
+model Policy {
+  id         Int      @id @default(autoincrement())
+  orgId      Int
+  authorId   Int
+  title      String   @db.VarChar(140)
+  category   String?  @db.VarChar(40)
+  body       String   @db.Text
+  requireAck Boolean  @default(true)
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  acks   PolicyAck[]
+
+  @@index([orgId])
+}
+
+model PolicyAck {
+  id       Int      @id @default(autoincrement())
+  policyId Int
+  userId   Int
+  version  Int
+  at       DateTime @default(now())
+
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, userId, version])
+  @@index([userId])
+}
+
+// ربط خارجي: يستقبل الأحداث (مهمة منجزة، طلب معتمد، تعميم…) بتوقيع HMAC
+model Webhook {
+  id         Int       @id @default(autoincrement())
+  orgId      Int
+  url        String    @db.VarChar(300)
+  secret     String    @db.VarChar(64)
+  events     Json      // ["task.done","request.approved",...] أو ["*"]
+  active     Boolean   @default(true)
+  lastStatus Int?
+  lastAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, active])
+}

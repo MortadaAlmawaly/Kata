@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>رياضيات السادس العلمي</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1c2233;--mut:#5d667a;--pri:#2457d6;--pri-ink:#fff;--ok:#12805c;--bad:#c0392b;--line:#dfe3ee;--soft:#eef2fd}
+@media (prefers-color-scheme:dark){:root{--bg:#10131c;--card:#181c28;--ink:#e8ebf4;--mut:#9aa3b8;--pri:#6c93ff;--pri-ink:#0b1020;--ok:#3ccf9a;--bad:#ff7b6b;--line:#2a3042;--soft:#20263a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.7}
+.wrap{max-width:820px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:8px 0 2px}
+.sub{color:var(--mut);font-size:.9rem;margin:0 0 14px}
+nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+nav button{flex:1;min-width:110px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px}
+button.pri,nav button.on{background:var(--pri);color:var(--pri-ink);border-color:var(--pri)}
+button:disabled{opacity:.5;cursor:default}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+select,input,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+label{display:block;font-size:.9rem;color:var(--mut);margin:8px 0 4px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:0 0 auto}
+.row input{flex:1;min-width:160px}
+.q{font-size:1.15rem;margin:10px 0;padding:12px;background:var(--soft);border-radius:10px}
+.m{font-family:"Cambria Math","Times New Roman",serif;font-size:1.1em;unicode-bidi:isolate;white-space:nowrap}
+.fb{margin-top:10px;font-weight:600;min-height:1.6em}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.steps p{margin:6px 0;padding:6px 10px;border-inline-start:3px solid var(--pri);background:var(--soft);border-radius:6px}
+.stat{color:var(--mut);font-size:.9rem}
+.hint{color:var(--mut);font-size:.85rem;margin-top:4px}
+.item{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+.item small{color:var(--mut)}
+.item pre{white-space:pre-wrap;font:inherit;margin:4px 0}
+section{display:none}section.on{display:block}
+footer{color:var(--mut);font-size:.8rem;text-align:center;margin:20px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>رياضيات السادس العلمي</h1>
+  <p class="sub">أسئلة متجددة بأرقام عشوائية، وكل جواب يُحسب بالقانون نفسه ويُعرض بخطوات الحل. يعمل بدون إنترنت.</p>
+
+  <nav id="tabs">
+    <button data-t="practice" class="on">تدريب</button>
+    <button data-t="calc">الحاسبات</button>
+    <button data-t="bank">بنك أسئلتي</button>
+  </nav>
+
+  <section id="practice" class="on">
+    <div class="card">
+      <label for="topic">الموضوع</label>
+      <select id="topic"></select>
+      <div class="q" id="qtext"></div>
+      <div class="row">
+        <input id="ans" autocomplete="off" placeholder="اكتب جوابك هنا">
+        <button class="pri" id="btnCheck">تحقق</button>
+      </div>
+      <div class="hint" id="ansHint"></div>
+      <div class="fb" id="fb"></div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnSol">أظهر الحل</button>
+        <button id="btnNext">سؤال جديد</button>
+        <span class="stat" id="stat"></span>
+      </div>
+      <div class="steps" id="sol" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <section id="calc">
+    <div class="card">
+      <label for="calcSel">اختر الحاسبة</label>
+      <select id="calcSel"></select>
+      <div id="calcForm"></div>
+      <div style="margin-top:12px"><button class="pri" id="btnCalc">احسب</button></div>
+      <div class="steps" id="calcOut" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <section id="bank">
+    <div class="card">
+      <label for="bTopic">الفصل / الموضوع</label>
+      <select id="bTopic"></select>
+      <label for="bQ">السؤال</label>
+      <textarea id="bQ" rows="3"></textarea>
+      <label for="bA">الجواب / الحل</label>
+      <textarea id="bA" rows="3"></textarea>
+      <div style="margin-top:10px"><button class="pri" id="btnAdd">حفظ في البنك</button></div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <input id="bSearch" placeholder="ابحث في الأسئلة المحفوظة">
+        <select id="bFilter" style="width:auto"></select>
+      </div>
+      <div id="bList"></div>
+      <div class="hint">الأسئلة تُحفظ في متصفحك فقط على هذا الجهاز.</div>
+    </div>
+  </section>
+
+  <footer>الفصول الستة مطابقة لفهرس كتاب الرياضيات للسادس العلمي. أسئلة الفصل السادس (الهندسة الفضائية) محدودة لأن معظمه برهان نظري، أضف مسائله إلى «بنك أسئلتي».</footer>
+</div>
+
+<script>
+/* ---------- أدوات عامة ---------- */
+const $=s=>document.querySelector(s);
+const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[ri(0,a.length-1)];
+const sg=()=>pick([-1,1]);
+const M=h=>`<span class="m" dir="ltr">${h}</span>`;
+const S=n=>`<sup>${n}</sup>`;
+const sn=v=>v<0?`(${v})`:`${v}`;
+const piS=v=>{const s=nice(v);if(s==='0')return '0';const [n,d]=s.split('/');return d?`${n==='1'?'':n}π/${d}`:`${n==='1'?'':n}π`;};
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+
+function nice(x){
+  if(Math.abs(x-Math.round(x))<1e-9) return String(Math.round(x)+0);
+  for(let d=2;d<=360;d++){const n=x*d;if(Math.abs(n-Math.round(n))<1e-9)return Math.round(n)+'/'+d;}
+  return String(+x.toFixed(4));
+}
+function cfmt(re,im){
+  const z=v=>Math.abs(v)<1e-9;
+  if(z(re)&&z(im)) return '0';
+  if(z(im)) return nice(re);
+  const a=nice(Math.abs(im));
+  const c=a==='1'?'':(a.includes('/')?'('+a+')':a);
+  const ip=c+'i';
+  if(z(re)) return (im<0?'-':'')+ip;
+  return nice(re)+(im<0?'-':'+')+ip;
+}
+function sqrtS(n){
+  if(!Number.isInteger(n)||n<0) return nice(Math.sqrt(n));
+  let k=1;for(let i=1;i*i<=n;i++) if(n%(i*i)===0) k=i;
+  const m=n/(k*k);
+  if(m===1) return String(k);
+  return (k===1?'':k)+'√'+m;
+}
+
+/* ---------- قراءة مدخلات الطالب ---------- */
+function norm(s){
+  return String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[−–—]/g,'-')
+    .replace(/٫/g,'.').replace(/\s+/g,'').replace(/I/g,'i');
+}
+function parseFrac(s){
+  const m=s.match(/^([+-]?)(\d+(?:\.\d+)?)(?:\/(\d+(?:\.\d+)?))?$/);
+  if(!m) return null;
+  const den=m[3]===undefined?1:parseFloat(m[3]);
+  if(den===0) return null;
+  return (m[1]==='-'?-1:1)*parseFloat(m[2])/den;
+}
+const parseNum=s=>parseFrac(norm(s));
+function splitTerms(s){
+  if(!s) return null;
+  if(s[0]!=='+'&&s[0]!=='-') s='+'+s;
+  const t=s.match(/[+-][^+-]*/g);
+  return (t&&t.join('')===s)?t:null;
+}
+function parseCx(str){
+  const t=splitTerms(norm(str)); if(!t) return null;
+  let re=0,im=0;
+  for(const x of t){
+    if(x.endsWith('i')){
+      let c=x.slice(0,-1); if(c==='+'||c==='-') c+='1';
+      const v=parseFrac(c); if(v===null) return null; im+=v;
+    }else{const v=parseFrac(x); if(v===null) return null; re+=v;}
+  }
+  return {re,im};
+}
+function parseVec(str){
+  const m=norm(str).match(/-?\d+(?:\.\d+)?/g);
+  return (m&&m.length===3)?m.map(Number):null;
+}
+function parsePoly(str){
+  const s=norm(str).replace(/X/g,'x').replace(/\*/g,'').replace(/²/g,'^2').replace(/³/g,'^3');
+  const t=splitTerms(s); if(!t) return null;
+  const p={};
+  for(const x of t){
+    const m=x.match(/^([+-])(\d+(?:\.\d+)?)?(x(?:\^(\d+))?)?$/);
+    if(!m||(m[2]===undefined&&m[3]===undefined)) return null;
+    const c=(m[2]===undefined?1:parseFloat(m[2]))*(m[1]==='-'?-1:1);
+    const e=m[3]?(m[4]?parseInt(m[4],10):1):0;
+    p[e]=(p[e]||0)+c;
+  }
+  return p;
+}
+function fmtPoly(p){
+  const es=Object.keys(p).map(Number).filter(e=>Math.abs(p[e])>1e-12).sort((a,b)=>b-a);
+  if(!es.length) return '0';
+  return es.map((e,i)=>{
+    const c=p[e],a=nice(Math.abs(c));
+    const ca=(a==='1'&&e>0)?'':(a.includes('/')&&e>0?'('+a+')':a);
+    const body=e===0?a:ca+'x'+(e>1?S(e):'');
+    return i===0?(c<0?'-':'')+body:' '+(c<0?'-':'+')+' '+body;
+  }).join('');
+}
+const deriv=p=>{const q={};for(const e in p){if(+e>0)q[e-1]=(q[e-1]||0)+p[e]*e;}return q;};
+const integ=p=>{const q={};for(const e in p)q[+e+1]=p[e]/(+e+1);return q;};
+const evalP=(p,x)=>Object.keys(p).reduce((s,e)=>s+p[e]*Math.pow(x,+e),0);
+const degree=p=>Math.max(-1,...Object.keys(p).filter(e=>Math.abs(p[e])>1e-12).map(Number));
+
+/* ---------- مولّدات الأسئلة ---------- */
+const TRI=[[3,4,5],[5,12,13],[6,8,10],[8,15,17],[7,24,25]];
+const CV=[[1,0],[0,1],[-1,0],[0,-1]],CN=['1','i','−1','−i'];
+const pw=(b,p)=>p===1?b:`(${b})${S(p)}`;
+const shifted=(v,h)=>h===0?`${v}${S(2)}`:`(${v} ${h>0?'−':'+'} ${Math.abs(h)})${S(2)}`;
+const shiftedLin=(v,h)=>h===0?v:`(${v} ${h>0?'−':'+'} ${Math.abs(h)})`;
+const zsqrt3=(sx,sy,k)=>`${sx*k}${sy>0?'+':'−'}${k===1?'':k}√3 i`;
+const QUAD=(sx,sy)=>sx>0?(sy>0?1:4):(sy>0?2:3);
+const quadAng=(q,al)=>[0,al,1-al,1+al,2-al][q]; // معامل π للسعة الأساسية
+
+const TOPICS={
+  c1:{name:'الفصل الأول: الأعداد المركبة',gens:[
+    ()=>{const a=ri(-5,5),b=sg()*ri(1,5),c=ri(-5,5),d=sg()*ri(1,5);
+      const re=a*c-b*d,im=a*d+b*c;
+      return {q:`جد ناتج ${M(`(${cfmt(a,b)})(${cfmt(c,d)})`)} واكتبه بالصورة ${M('x+yi')}`,
+        ans:{t:'cx',re,im},
+        steps:[
+          `نوزّع: ${M(`${sn(a)}·${sn(c)} + ${sn(a)}·${sn(d)}i + ${sn(b)}·${sn(c)}i + ${sn(b)}·${sn(d)}i${S(2)}`)}`,
+          `بما أن ${M(`i${S(2)} = −1`)}: الجزء الحقيقي = ${M(`${sn(a)}·${sn(c)} − ${sn(b)}·${sn(d)} = ${re}`)}`,
+          `الجزء التخيلي = ${M(`${sn(a)}·${sn(d)} + ${sn(b)}·${sn(c)} = ${im}`)}`,
+          `الناتج = ${M(cfmt(re,im))}`]};},
+    ()=>{let p=ri(-4,4),q=ri(-4,4);if(!p&&!q)q=1;
+      const c=sg()*ri(1,4),d=sg()*ri(1,4);
+      const nr=p*c-q*d,ni=p*d+q*c,den=c*c+d*d;
+      const r=nr*c+ni*d,i=ni*c-nr*d;
+      return {q:`جد ناتج ${M(`(${cfmt(nr,ni)}) / (${cfmt(c,d)})`)} بالصورة ${M('x+yi')}`,
+        ans:{t:'cx',re:p,im:q},
+        steps:[
+          `نضرب البسط والمقام في مرافق المقام ${M(cfmt(c,-d))}`,
+          `البسط: ${M(`(${cfmt(nr,ni)})(${cfmt(c,-d)}) = ${cfmt(r,i)}`)}`,
+          `المقام: ${M(`${c}${S(2)} + ${d}${S(2)} = ${den}`)}`,
+          `الناتج = ${M(`(${cfmt(r,i)}) / ${den} = ${cfmt(p,q)}`)}`]};},
+    ()=>{const [x,y,c]=pick(TRI),a=sg()*x,b=sg()*y;
+      return {q:`جد مقياس العدد المركب ${M(`z = ${cfmt(a,b)}`)}`,
+        ans:{t:'num',v:c},
+        steps:[`${M(`|z| = √(a${S(2)} + b${S(2)})`)}`,
+          `${M(`= √(${a*a} + ${b*b}) = √${a*a+b*b} = ${c}`)}`]};},
+    ()=>{const n=ri(5,99),r=n%4;
+      return {q:`احسب ${M(`i${S(n)}`)} واكتب الناتج بالصورة ${M('x+yi')}`,
+        ans:{t:'cx',re:CV[r][0],im:CV[r][1]},
+        steps:[`قوى i تتكرر كل 4: ${M(`i${S(1)}=i , i${S(2)}=−1 , i${S(3)}=−i , i${S(4)}=1`)}`,
+          `نقسم ${n} على 4: الباقي = ${r}`,
+          `${M(`i${S(n)} = i${S(r)} = ${CN[r]}`)}`]};},
+    ()=>{const p=ri(1,4),q=sg()*ri(1,4),re=p*p-q*q,im=2*p*q;
+      return {q:`جد الجذرين التربيعيين للعدد ${M(cfmt(re,im))} (اكتب أحدهما)`,
+        ans:{t:'cx',re:p,im:q,pm:true},
+        steps:[`نفرض ${M('√z = x + yi')} فيكون ${M(`x${S(2)} − y${S(2)} = ${re}`)} و ${M(`2xy = ${im}`)}`,
+          `${M(`|z| = √(${re}${S(2)} + ${im}${S(2)}) = ${p*p+q*q}`)} ⇒ ${M(`x${S(2)} + y${S(2)} = ${p*p+q*q}`)}`,
+          `بالجمع والطرح: ${M(`x${S(2)} = ${p*p}`)} و ${M(`y${S(2)} = ${q*q}`)}`,
+          `بما أن ${M(`2xy = ${im}`)} فإشارتا x و y ${im>0?'متشابهتان':'مختلفتان'}`,
+          `الجذران: ${M(`±(${cfmt(p,q)})`)}`]};},
+    ()=>{const p=ri(-4,4),q=ri(1,4),f={2:1,1:-2*p,0:p*p+q*q};
+      return {q:`حل المعادلة ${M(`${fmtPoly(f)} = 0`)} في مجموعة الأعداد المركبة، واكتب الجذر الذي جزؤه التخيلي موجب`,
+        ans:{t:'cx',re:p,im:q},
+        steps:[`${M(`D = b${S(2)} − 4ac = ${4*p*p} − ${4*(p*p+q*q)} = ${-4*q*q}`)} (سالب)`,
+          `${M(`x = (${2*p} ± √(${-4*q*q})) / 2 = (${2*p} ± ${2*q}i) / 2`)}`,
+          `الجذر المطلوب ${M(cfmt(p,q))}`]};},
+    ()=>{const n=ri(4,40),k=n%3;
+      return {q:`إذا كان ω أحد الجذور التكعيبية المركبة للواحد الصحيح، فاكتب ${M(`ω${S(n)}`)} بالصورة ${M(`ω${S('k')}`)} حيث k ∈ {0,1,2} وجد k`,
+        ans:{t:'num',v:k},
+        steps:[`${M(`ω${S(3)} = 1`)}`,
+          `${n} = 3 × ${(n-k)/3} + ${k}`,
+          `${M(`ω${S(n)} = (ω${S(3)})${S((n-k)/3)} · ω${S(k)} = ω${S(k)}`)}`]};},
+    ()=>{const n=ri(2,30),v=n%3===0?3:0;
+      return {q:`جد قيمة ${M(`1 + ω${S(n)} + ω${S(2*n)}`)} حيث ω أحد الجذور التكعيبية المركبة للواحد`,
+        ans:{t:'num',v},
+        steps:v===3
+          ?[`${n} من مضاعفات 3 إذن ${M(`ω${S(n)} = 1`)} و ${M(`ω${S(2*n)} = 1`)}`,`${M('1 + 1 + 1 = 3')}`]
+          :[`${n} ليس من مضاعفات 3، فالحدّان ${M(`ω${S(n)}`)} و ${M(`ω${S(2*n)}`)} هما ω و ${M(`ω${S(2)}`)} بترتيب ما`,
+            `${M(`1 + ω + ω${S(2)} = 0`)}`]};},
+    ()=>{const k=ri(1,5),sx=sg(),sy=sg(),q=QUAD(sx,sy),v=quadAng(q,1/4);
+      return {q:`جد القيمة الأساسية لسعة العدد ${M(`z = ${cfmt(sx*k,sy*k)}`)} بدلالة π (أدخل المعامل فقط، مثلاً 5/4 تعني 5π/4)`,
+        ans:{t:'num',v},hint:'أدخل معامل π فقط (مثال: 3/4)',
+        steps:[`${M(`tan α = |y/x| = 1`)} ⇒ الزاوية المرجعية ${M('α = π/4')}`,
+          `العدد في الربع ${['','الأول','الثاني','الثالث','الرابع'][q]}`,
+          `السعة ${M(`θ ∈ [0, 2π)`)} تساوي ${M(`${piS(v)}`)}`]};},
+    ()=>{const k=ri(1,4),sx=sg(),sy=sg(),q=QUAD(sx,sy),v=quadAng(q,1/3);
+      return {q:`جد القيمة الأساسية لسعة العدد ${M(`z = ${zsqrt3(sx,sy,k)}`)} بدلالة π (أدخل المعامل فقط)`,
+        ans:{t:'num',v},hint:'أدخل معامل π فقط (مثال: 2/3)',
+        steps:[`${M(`|z| = √(${k*k} + ${3*k*k}) = ${2*k}`)}`,
+          `${M(`tan α = √3`)} ⇒ ${M('α = π/3')}`,
+          `العدد في الربع ${['','الأول','الثاني','الثالث','الرابع'][q]}`,
+          `السعة = ${M(`${piS(v)}`)}`]};},
+    ()=>{const d=pick([2,3,4,6]);const ns=[];for(let n=1;n<=30;n++)if((2*n)%d===0)ns.push(n);
+      const n=pick(ns),k=((2*n/d)%4);
+      return {q:`باستخدام مبرهنة ديموافر جد ${M(`(cos(π/${d}) + i sin(π/${d}))${S(n)}`)} واكتب الناتج بالصورة ${M('x+yi')}`,
+        ans:{t:'cx',re:CV[k][0],im:CV[k][1]},
+        steps:[`${M(`= cos(${n}π/${d}) + i sin(${n}π/${d})`)}`,
+          `${n}π/${d} = ${2*n/d} × (π/2) ⇒ بعد حذف الدورات الكاملة تبقى ${k} × (π/2)`,
+          `الناتج = ${M(CN[k])}`]};}
+  ]},
+  c2:{name:'الفصل الثاني: القطوع المخروطية',gens:[
+    ()=>{const p=ri(1,6);
+      return {q:`قطع مكافئ معادلته ${M(`y${S(2)} = ${4*p}x`)}. جد الإحداثي السيني للبؤرة`,
+        ans:{t:'num',v:p},
+        steps:[`الصيغة القياسية ${M(`y${S(2)} = 4px`)}`,
+          `${M(`4p = ${4*p}`)} ⇒ ${M(`p = ${p}`)}`,
+          `البؤرة ${M(`(p , 0) = (${p} , 0)`)}`]};},
+    ()=>{const p=ri(1,6);
+      return {q:`قطع مكافئ معادلته ${M(`y${S(2)} = ${4*p}x`)}. الدليل هو المستقيم ${M('x = k')}، جد k`,
+        ans:{t:'num',v:-p},
+        steps:[`${M(`4p = ${4*p}`)} ⇒ ${M(`p = ${p}`)}`,
+          `معادلة الدليل ${M(`x = −p = ${-p}`)}`]};},
+    ()=>{const p=sg()*ri(1,5);
+      return {q:`جد معادلة القطع المكافئ الذي رأسه نقطة الأصل وبؤرته ${M(`(${p} , 0)`)} واكتبها بالصورة ${M('y² = Nx')}، أدخل N`,
+        ans:{t:'num',v:4*p},hint:'أدخل قيمة N',
+        steps:[`البؤرة على محور السينات ${M(`(p , 0)`)} ⇒ ${M(`p = ${p}`)}`,
+          `${M(`y${S(2)} = 4px = ${4*p}x`)}`]};},
+    ()=>{const p=ri(1,4),h=ri(-4,4),k=ri(-4,4);
+      const rhs=h===0?`${4*p}x`:`${4*p}(x ${h>0?'−':'+'} ${Math.abs(h)})`;
+      return {q:`قطع مكافئ معادلته ${M(`${shifted('y',k)} = ${rhs}`)}. جد الإحداثي السيني للبؤرة`,
+        ans:{t:'num',v:h+p},
+        steps:[`الرأس ${M(`(h , k) = (${h} , ${k})`)}`,
+          `${M(`4p = ${4*p}`)} ⇒ ${M(`p = ${p}`)}`,
+          `البؤرة ${M(`(h + p , k) = (${h+p} , ${k})`)}`]};},
+    ()=>{const p=ri(1,4),h=ri(-4,4),k=ri(-4,4);
+      const rhs=k===0?`${4*p}y`:`${4*p}(y ${k>0?'−':'+'} ${Math.abs(k)})`;
+      return {q:`قطع مكافئ معادلته ${M(`${shifted('x',h)} = ${rhs}`)}. جد الإحداثي الصادي للبؤرة`,
+        ans:{t:'num',v:k+p},
+        steps:[`الرأس ${M(`(${h} , ${k})`)} والقطع مفتوح للأعلى`,
+          `${M(`4p = ${4*p}`)} ⇒ ${M(`p = ${p}`)}`,
+          `البؤرة ${M(`(h , k + p) = (${h} , ${k+p})`)}`]};},
+    ()=>{const [a,b,c]=pick([[5,3,4],[13,5,12],[10,6,8],[5,4,3],[17,8,15],[10,8,6]]);
+      return {q:`قطع ناقص معادلته ${M(`x${S(2)}/${a*a} + y${S(2)}/${b*b} = 1`)}. جد البعد البؤري c`,
+        ans:{t:'num',v:c},
+        steps:[`${M(`a${S(2)} = ${a*a}`)} و ${M(`b${S(2)} = ${b*b}`)}`,
+          `${M(`c${S(2)} = a${S(2)} − b${S(2)} = ${a*a-b*b}`)}`,
+          `${M(`c = ${c}`)}`]};},
+    ()=>{const [a,b,c]=pick([[5,3,4],[13,5,12],[10,6,8],[5,4,3],[17,8,15],[10,8,6]]);
+      return {q:`قطع ناقص معادلته ${M(`x${S(2)}/${a*a} + y${S(2)}/${b*b} = 1`)}. جد الاختلاف المركزي e (يمكنك كتابته ككسر)`,
+        ans:{t:'num',v:c/a},
+        steps:[`${M(`c${S(2)} = ${a*a} − ${b*b} = ${c*c}`)} ⇒ ${M(`c = ${c}`)}`,
+          `${M(`e = c / a = ${c}/${a}`)}`]};},
+    ()=>{const a=ri(3,9),b=ri(2,a-1);
+      return {q:`قطع ناقص معادلته ${M(`x${S(2)}/${a*a} + y${S(2)}/${b*b} = 1`)}. جد طول المحور الأكبر`,
+        ans:{t:'num',v:2*a},
+        steps:[`${M(`a${S(2)} = ${a*a}`)} (الأكبر) ⇒ ${M(`a = ${a}`)}`,
+          `طول المحور الأكبر = ${M(`2a = ${2*a}`)}`]};},
+    ()=>{const [a,b,c]=pick([[5,3,4],[13,5,12],[10,6,8],[5,4,3],[17,8,15],[10,8,6]]),h=ri(-4,4),k=ri(-4,4);
+      return {q:`قطع ناقص معادلته ${M(`${shifted('x',h)}/${a*a} + ${shifted('y',k)}/${b*b} = 1`)}. جد الإحداثي السيني للبؤرة اليمنى`,
+        ans:{t:'num',v:h+c},
+        steps:[`المركز ${M(`(${h} , ${k})`)}`,
+          `${M(`c${S(2)} = ${a*a} − ${b*b} = ${c*c}`)} ⇒ ${M(`c = ${c}`)}`,
+          `البؤرة اليمنى ${M(`(h + c , k) = (${h+c} , ${k})`)}`]};},
+    ()=>{const [a,b,c]=pick([[3,4,5],[5,12,13],[6,8,10],[8,15,17],[4,3,5]]);
+      return {q:`قطع زائد معادلته ${M(`x${S(2)}/${a*a} − y${S(2)}/${b*b} = 1`)}. جد البعد البؤري c`,
+        ans:{t:'num',v:c},
+        steps:[`${M(`a${S(2)} = ${a*a}`)} و ${M(`b${S(2)} = ${b*b}`)}`,
+          `في القطع الزائد ${M(`c${S(2)} = a${S(2)} + b${S(2)} = ${a*a+b*b}`)}`,
+          `${M(`c = ${c}`)}`]};},
+    ()=>{const [a,b,c]=pick([[3,4,5],[5,12,13],[6,8,10],[8,15,17],[4,3,5]]);
+      return {q:`قطع زائد معادلته ${M(`x${S(2)}/${a*a} − y${S(2)}/${b*b} = 1`)}. جد الاختلاف المركزي e (يمكنك كتابته ككسر)`,
+        ans:{t:'num',v:c/a},
+        steps:[`${M(`c${S(2)} = ${a*a} + ${b*b} = ${c*c}`)} ⇒ ${M(`c = ${c}`)}`,
+          `${M(`e = c / a = ${c}/${a}`)}`]};},
+    ()=>{const [a,b,c]=pick([[3,4,5],[5,12,13],[6,8,10],[8,15,17],[4,3,5]]),h=ri(-4,4),k=ri(-4,4);
+      return {q:`قطع زائد معادلته ${M(`${shifted('x',h)}/${a*a} − ${shifted('y',k)}/${b*b} = 1`)}. جد الإحداثي السيني للبؤرة اليمنى`,
+        ans:{t:'num',v:h+c},
+        steps:[`المركز ${M(`(${h} , ${k})`)}`,
+          `${M(`c${S(2)} = ${a*a} + ${b*b} = ${c*c}`)} ⇒ ${M(`c = ${c}`)}`,
+          `البؤرة اليمنى ${M(`(h + c , k) = (${h+c} , ${k})`)}`]};}
+  ]},
+  c3:{name:'الفصل الثالث: تطبيقات التفاضل',gens:[
+    ()=>{const a=ri(1,3),b=ri(-4,4),c=ri(-6,6),d=ri(-9,9),k=ri(-3,3);
+      const f={3:a,2:b,1:c,0:d},f1=deriv(f),v=evalP(f1,k);
+      return {q:`إذا كانت ${M(`f(x) = ${fmtPoly(f)}`)} فجد ${M(`f′(${k})`)}`,
+        ans:{t:'num',v},
+        steps:[`${M(`f′(x) = ${fmtPoly(f1)}`)}`,
+          `${M(`f′(${k}) = ${nice(v)}`)}`]};},
+    ()=>{const a=ri(1,3),p=ri(-4,5),c0=ri(-6,6),f={2:a,1:-2*a*p,0:c0};
+      return {q:`جد قيمة x التي تجعل الدالة ${M(`f(x) = ${fmtPoly(f)}`)} أصغر ما يمكن`,
+        ans:{t:'num',v:p},
+        steps:[`${M(`f′(x) = ${fmtPoly(deriv(f))}`)} ثم نساويها بالصفر`,
+          `${M(`x = ${p}`)}`,
+          `${M(`f″(x) = ${2*a} > 0`)} إذن قيمة صغرى عند ${M(`x = ${p}`)}`]};},
+    ()=>{const p=ri(-4,5),q=ri(-8,8),f={2:-1,1:2*p,0:q},v=p*p+q;
+      return {q:`جد القيمة العظمى للدالة ${M(`f(x) = ${fmtPoly(f)}`)}`,
+        ans:{t:'num',v},
+        steps:[`${M(`f′(x) = ${fmtPoly(deriv(f))} = 0`)} ⇒ ${M(`x = ${p}`)}`,
+          `${M('f″(x) = −2 < 0')} إذن قيمة عظمى`,
+          `${M(`f(${p}) = ${v}`)}`]};},
+    ()=>{const a=ri(1,3),b=ri(-5,5),k=ri(-3,3),f={3:a,1:b},m=3*a*k*k+b,y=a*k*k*k+b*k;
+      return {q:`جد ميل المماس لمنحنى ${M(`f(x) = ${fmtPoly(f)}`)} عند النقطة التي إحداثيها السيني ${M(`x = ${k}`)}`,
+        ans:{t:'num',v:m},
+        steps:[`ميل المماس = المشتقة: ${M(`f′(x) = ${fmtPoly(deriv(f))}`)}`,
+          `${M(`f′(${k}) = ${m}`)} (والنقطة ${M(`(${k}, ${y})`)})`]};},
+    ()=>{const k=ri(1,5),r=ri(2,9);
+      return {q:`دائرة يزداد نصف قطرها بمعدل ${k} سم/ثا. جد معدل تزايد مساحتها بالسم²/ثا عندما ${M(`r = ${r}`)} سم (أدخل المعامل المضروب في π)`,
+        ans:{t:'num',v:2*r*k},hint:'أدخل العدد الذي يضرب π فقط',
+        steps:[`${M(`A = πr${S(2)}`)}`,
+          `${M(`dA/dt = 2πr · dr/dt = 2π(${r})(${k})`)}`,
+          `${M(`= ${2*r*k}π`)}`]};},
+    ()=>{const k=ri(1,4),r=ri(1,5);
+      return {q:`كرة يزداد نصف قطرها بمعدل ${k} سم/ثا. جد معدل تزايد حجمها بالسم³/ثا عندما ${M(`r = ${r}`)} سم (أدخل المعامل المضروب في π)`,
+        ans:{t:'num',v:4*r*r*k},hint:'أدخل العدد الذي يضرب π فقط',
+        steps:[`${M(`V = (4/3)πr${S(3)}`)}`,
+          `${M(`dV/dt = 4πr${S(2)} · dr/dt = 4π(${r*r})(${k})`)}`,
+          `${M(`= ${4*r*r*k}π`)}`]};},
+    ()=>{const k=ri(1,5),s=ri(2,9);
+      return {q:`مربع يزداد طول ضلعه بمعدل ${k} سم/ثا. جد معدل تزايد مساحته بالسم²/ثا عندما طول ضلعه ${s} سم`,
+        ans:{t:'num',v:2*s*k},
+        steps:[`${M(`A = s${S(2)}`)}`,
+          `${M(`dA/dt = 2s · ds/dt = 2(${s})(${k}) = ${2*s*k}`)}`]};},
+    ()=>{const k=ri(1,4),s=ri(2,6);
+      return {q:`مكعب يزداد طول حرفه بمعدل ${k} سم/ثا. جد معدل تزايد حجمه بالسم³/ثا عندما طول حرفه ${s} سم`,
+        ans:{t:'num',v:3*s*s*k},
+        steps:[`${M(`V = s${S(3)}`)}`,
+          `${M(`dV/dt = 3s${S(2)} · ds/dt = 3(${s*s})(${k}) = ${3*s*s*k}`)}`]};},
+    ()=>{const a=ri(-4,2),b=a+ri(1,4)*2,f={2:1,1:-(a+b),0:a*b};
+      return {q:`الدالة ${M(`f(x) = ${fmtPoly(f)}`)} تحقق شروط مبرهنة رول على الفترة ${M(`[${a} , ${b}]`)}. جد قيمة c التي تحقق المبرهنة`,
+        ans:{t:'num',v:(a+b)/2},
+        steps:[`${M(`f(${a}) = f(${b}) = 0`)}`,
+          `${M(`f′(x) = ${fmtPoly(deriv(f))}`)} ثم ${M('f′(c) = 0')}`,
+          `${M(`c = ${nice((a+b)/2)}`)} وهي تنتمي إلى الفترة المفتوحة`]};},
+    ()=>{const A=ri(1,3),B=ri(-4,4),C=ri(-5,5),a=ri(-3,1),b=a+ri(1,4),f={2:A,1:B,0:C};
+      const sl=A*(a+b)+B;
+      return {q:`جد قيمة c التي تحقق مبرهنة القيمة المتوسطة للدالة ${M(`f(x) = ${fmtPoly(f)}`)} على الفترة ${M(`[${a} , ${b}]`)}`,
+        ans:{t:'num',v:(a+b)/2},
+        steps:[`${M(`(f(b) − f(a)) / (b − a) = ${A}(${sn(a)} + ${b}) + ${sn(B)} = ${sl}`)}`,
+          `${M(`f′(c) = ${2*A}c ${B<0?'−':'+'} ${Math.abs(B)} = ${sl}`)}`,
+          `${M(`c = ${nice((a+b)/2)}`)}`]};},
+    ()=>{const a=ri(1,3),m=ri(-4,4),c=ri(-6,6),d=ri(-5,5),f={3:a,2:3*a*m,1:c,0:d};
+      return {q:`جد الإحداثي السيني لنقطة الانقلاب للدالة ${M(`f(x) = ${fmtPoly(f)}`)}`,
+        ans:{t:'num',v:-m},
+        steps:[`${M(`f′(x) = ${fmtPoly(deriv(f))}`)}`,
+          `${M(`f″(x) = ${fmtPoly(deriv(deriv(f)))} = 0`)}`,
+          `${M(`x = ${-m}`)} (وتتغير إشارة ″f حولها)`]};}
+  ]},
+  c4:{name:'الفصل الرابع: التكامل',gens:[
+    ()=>{const m=ri(1,3),a=ri(1,3),lo=pick([0,1]),k=lo?ri(2,3):ri(1,3);
+      const f={[m]:(m+1)*a},v=a*(Math.pow(k,m+1)-Math.pow(lo,m+1));
+      return {q:`جد قيمة التكامل ${M(`∫<sub>${lo}</sub>${S(k)} (${fmtPoly(f)}) dx`)}`,
+        ans:{t:'num',v},
+        steps:[`التكامل غير المحدد: ${M(`${a}x${S(m+1)}`)}`,
+          `نعوّض الحدود: ${M(`${a}(${k})${S(m+1)} − ${a}(${lo})${S(m+1)}`)}`,
+          `${M(`= ${v}`)}`]};},
+    ()=>{const a=ri(1,4),b=ri(-5,5),k=ri(1,3),f={1:2*a,0:b},v=a*k*k+b*k;
+      return {q:`جد قيمة ${M(`∫<sub>0</sub>${S(k)} (${fmtPoly(f)}) dx`)}`,
+        ans:{t:'num',v},
+        steps:[`الدالة الأصلية: ${M(`${a}x${S(2)} ${b<0?'−':'+'} ${Math.abs(b)}x`)}`,
+          `نعوّض ${M(`x = ${k}`)} ثم نطرح قيمتها عند الصفر (= 0)`,
+          `${M(`= ${v}`)}`]};},
+    ()=>{const k=ri(1,6);
+      return {q:`جد قيمة ${M(`∫<sub>1</sub><sup>e<sup>${k}</sup></sup> (1/x) dx`)}`,
+        ans:{t:'num',v:k},
+        steps:[`${M('∫ (1/x) dx = ln|x|')}`,
+          `${M(`ln(e${S(k)}) − ln(1) = ${k} − 0 = ${k}`)}`]};},
+    ()=>{const a=ri(2,9);
+      return {q:`جد قيمة ${M(`∫<sub>0</sub><sup>ln ${a}</sup> e<sup>x</sup> dx`)}`,
+        ans:{t:'num',v:a-1},
+        steps:[`${M('∫ eˣ dx = eˣ')}`,
+          `${M(`e${S('ln '+a)} − e${S(0)} = ${a} − 1 = ${a-1}`)}`]};},
+    ()=>{const a=ri(1,6),b=ri(1,6);
+      return {q:`جد قيمة ${M(`∫<sub>0</sub><sup>π/2</sup> (${a===1?'':a}cos x + ${b===1?'':b}sin x) dx`)}`,
+        ans:{t:'num',v:a+b},
+        steps:[`الدالة الأصلية: ${M(`${a}sin x − ${b}cos x`)}`,
+          `عند π/2: ${M(`${a}(1) − ${b}(0) = ${a}`)}، وعند 0: ${M(`${a}(0) − ${b}(1) = ${-b}`)}`,
+          `${M(`${a} − (${-b}) = ${a+b}`)}`]};},
+    ()=>{const a=ri(1,6);
+      return {q:`جد قيمة ${M(`∫<sub>0</sub><sup>π</sup> ${a===1?'':a}sin x dx`)}`,
+        ans:{t:'num',v:2*a},
+        steps:[`الدالة الأصلية: ${M(`−${a===1?'':a}cos x`)}`,
+          `${M(`−${a}cos π − (−${a}cos 0) = ${a} + ${a} = ${2*a}`)}`]};},
+    ()=>{const c=ri(1,5),a=ri(1,4);
+      return {q:`إذا كانت ${M(`f(x) = ln(x${S(2)} + ${c})`)} فجد ${M(`f′(${a})`)} (يمكنك كتابة الجواب ككسر)`,
+        ans:{t:'num',v:2*a/(a*a+c)},
+        steps:[`${M(`f′(x) = 2x / (x${S(2)} + ${c})`)}`,
+          `${M(`f′(${a}) = ${2*a} / ${a*a+c}`)}`]};},
+    ()=>{const m=ri(1,4),k=sg()*ri(1,3);
+      return {q:`إذا كانت ${M(`f(x) = ${m===1?'':m}e${S(`${k===1?'':k}x`)}`)} فجد ${M('f′(0)')}`,
+        ans:{t:'num',v:m*k},
+        steps:[`${M(`f′(x) = ${m*k}e${S(`${k===1?'':k}x`)}`)}`,
+          `${M(`f′(0) = ${m*k}·e${S(0)} = ${m*k}`)}`]};},
+    ()=>{const k=ri(1,5);
+      return {q:`جد المساحة المحصورة بين المنحنيين ${M(`y = x${S(2)}`)} و ${M(`y = ${k===1?'':k}x`)} (يمكنك كتابة الجواب ككسر)`,
+        ans:{t:'num',v:k*k*k/6},
+        steps:[`نقاط التقاطع: ${M(`x${S(2)} = ${k}x`)} ⇒ ${M(`x = 0 , x = ${k}`)}`,
+          `${M(`A = ∫<sub>0</sub>${S(k)} (${k}x − x${S(2)}) dx = [${nice(k/2)}x${S(2)} − x${S(3)}/3]<sub>0</sub>${S(k)}`)}`,
+          `${M(`= ${nice(k*k*k/2)} − ${nice(k*k*k/3)} = ${nice(k*k*k/6)}`)}`]};},
+    ()=>{const a=ri(1,4),k=ri(1,4);
+      return {q:`جد المساحة المحصورة بين المنحنى ${M(`y = ${a===1?'':a}x${S(2)}`)} ومحور السينات والمستقيمين ${M('x = 0')} و ${M(`x = ${k}`)}`,
+        ans:{t:'num',v:a*k*k*k/3},
+        steps:[`${M(`A = ∫<sub>0</sub>${S(k)} ${a}x${S(2)} dx = [${a}x${S(3)}/3]<sub>0</sub>${S(k)}`)}`,
+          `${M(`= ${a}(${k*k*k})/3 = ${nice(a*k*k*k/3)}`)}`]};},
+    ()=>{const b=ri(1,6);
+      return {q:`جد حجم المجسم الدوراني الناتج من دوران المساحة المحصورة بين ${M('y = √x')} ومحور السينات من ${M('x = 0')} إلى ${M(`x = ${b}`)} حول محور السينات (أدخل المعامل المضروب في π)`,
+        ans:{t:'num',v:b*b/2},hint:'أدخل العدد الذي يضرب π فقط',
+        steps:[`${M(`V = π∫<sub>0</sub>${S(b)} y${S(2)} dx = π∫<sub>0</sub>${S(b)} x dx`)}`,
+          `${M(`= π[x${S(2)}/2]<sub>0</sub>${S(b)} = ${nice(b*b/2)}π`)}`]};},
+    ()=>{const k=ri(1,3),h=ri(1,3);
+      return {q:`جد حجم المخروط الناتج من دوران المستقيم ${M(`y = ${k===1?'':k}x`)} من ${M('x = 0')} إلى ${M(`x = ${h}`)} حول محور السينات (أدخل المعامل المضروب في π)`,
+        ans:{t:'num',v:k*k*h*h*h/3},hint:'أدخل العدد الذي يضرب π فقط',
+        steps:[`${M(`V = π∫<sub>0</sub>${S(h)} (${k}x)${S(2)} dx = π·${k*k}[x${S(3)}/3]<sub>0</sub>${S(h)}`)}`,
+          `${M(`= ${nice(k*k*h*h*h/3)}π`)}`]};}
+  ]},
+  c5:{name:'الفصل الخامس: المعادلات التفاضلية',gens:[
+    ()=>{const o=ri(1,3),d=ri(1,3),e=ri(1,4);
+      const top=pw(['y′','y″','y‴'][o-1],d),low=pw(o===1?'y':['y′','y″'][o-2],e);
+      return {q:`جد رتبة المعادلة التفاضلية ${M(`${top} + ${low} = x`)}`,
+        ans:{t:'num',v:o},
+        steps:[`الرتبة = رتبة أعلى مشتقة تظهر في المعادلة`,
+          `أعلى مشتقة هي ${M(['y′','y″','y‴'][o-1])} إذن الرتبة = ${o}`]};},
+    ()=>{const o=ri(1,3),d=ri(1,3),e=ri(1,4);
+      const top=pw(['y′','y″','y‴'][o-1],d),low=pw(o===1?'y':['y′','y″'][o-2],e);
+      return {q:`جد درجة المعادلة التفاضلية ${M(`${top} + ${low} = x`)}`,
+        ans:{t:'num',v:d},
+        steps:[`الدرجة = أس أعلى مشتقة (بعد أن تكون المعادلة كثيرة حدود في المشتقات)`,
+          `أعلى مشتقة ${M(['y′','y″','y‴'][o-1])} وأسها ${d} إذن الدرجة = ${d}`]};},
+    ()=>{const a=ri(1,4),c=ri(-5,5),n=ri(1,3);
+      return {q:`حل المعادلة التفاضلية ${M(`dy/dx = ${a===1?'':a}x`)} بشرط ${M(`y(0) = ${c}`)} ثم جد ${M(`y(${n})`)} (يمكنك كتابة الجواب ككسر)`,
+        ans:{t:'num',v:a*n*n/2+c},
+        steps:[`فصل المتغيرات: ${M(`dy = ${a}x dx`)}`,
+          `${M(`y = ${nice(a/2)}x${S(2)} + C`)} ومن ${M(`y(0) = ${c}`)} نجد ${M(`C = ${c}`)}`,
+          `${M(`y(${n}) = ${nice(a/2)}(${n*n}) + ${sn(c)} = ${nice(a*n*n/2+c)}`)}`]};},
+    ()=>{const a=ri(1,6),n=ri(2,5);
+      return {q:`حل المعادلة التفاضلية ${M('dy/dx = y/x')} بشرط ${M(`y(1) = ${a}`)} ثم جد ${M(`y(${n})`)}`,
+        ans:{t:'num',v:a*n},
+        steps:[`فصل المتغيرات: ${M('dy/y = dx/x')}`,
+          `${M('ln|y| = ln|x| + C')} ⇒ ${M('y = Kx')}`,
+          `من ${M(`y(1) = ${a}`)}: ${M(`K = ${a}`)} إذن ${M(`y(${n}) = ${a*n}`)}`]};}
+  ]},
+  c6:{name:'الفصل السادس: الهندسة الفضائية',gens:[
+    ()=>{const [h,d,c]=pick(TRI);
+      return {q:`النقطة B تبعد ${h} سم عن المستوي X، والنقطة B′ هي المسقط العمودي لـ B على X. إذا كانت A نقطة في X تبعد ${d} سم عن B′ فجد طول AB`,
+        ans:{t:'num',v:c},
+        steps:[`${M('BB′ ⟂ X')} إذن ${M('BB′ ⟂ B′A')} والمثلث ${M('BB′A')} قائم الزاوية في B′`,
+          `${M(`AB${S(2)} = BB′${S(2)} + B′A${S(2)} = ${h*h} + ${d*d} = ${c*c}`)}`,
+          `${M(`AB = ${c}`)}`]};},
+    ()=>{const t=pick([[2,3,6,7],[1,2,2,3],[2,6,9,11],[4,4,7,9],[3,4,12,13]]);
+      return {q:`متوازي مستطيلات أبعاده ${t[0]} ، ${t[1]} ، ${t[2]} سم. جد طول قطره`,
+        ans:{t:'num',v:t[3]},
+        steps:[`${M(`d${S(2)} = a${S(2)} + b${S(2)} + c${S(2)}`)}`,
+          `${M(`= ${t[0]**2} + ${t[1]**2} + ${t[2]**2} = ${t[3]**2}`)}`,
+          `${M(`d = ${t[3]}`)} سم`]};}
+  ]}
+};
+
+function ansStr(a){
+  if(a.t==='num') return nice(a.v);
+  return cfmt(a.re,a.im);
+}
+function check(a,inp){
+  if(a.t==='num'){const v=parseNum(inp);return v!==null&&Math.abs(v-a.v)<1e-6;}
+  const z=parseCx(inp);if(!z) return false;
+  const eq=(s)=>Math.abs(z.re-s*a.re)<1e-6&&Math.abs(z.im-s*a.im)<1e-6;
+  return eq(1)||(!!a.pm&&eq(-1));
+}
+const HINTS={num:'اكتب عدداً (مثال: 5 أو -3 أو 3/4)',cx:'اكتب بالصورة x+yi (مثال: 3-2i)'};
+
+/* ---------- واجهة التدريب ---------- */
+let cur=null,stats={ok:0,all:0};
+try{stats=JSON.parse(localStorage.getItem('m6stats'))||stats;}catch(e){}
+const saveStats=()=>{try{localStorage.setItem('m6stats',JSON.stringify(stats));}catch(e){}};
+const showStat=()=>{$('#stat').textContent=`النتيجة: ${stats.ok} / ${stats.all}`;};
+
+function newQ(){
+  const sel=$('#topic').value;
+  const key=sel==='all'?pick(Object.keys(TOPICS)):sel;
+  cur=pick(TOPICS[key].gens)();
+  cur.done=false;
+  $('#qtext').innerHTML=cur.q;
+  $('#ans').value='';$('#fb').textContent='';$('#fb').className='fb';$('#sol').innerHTML='';
+  $('#ansHint').textContent=cur.hint||(cur.ans.pm?'اكتب أحد الجذرين بالصورة x+yi':HINTS[cur.ans.t]);
+  $('#ans').focus();
+}
+function doCheck(){
+  if(!cur||!$('#ans').value.trim()) return;
+  const ok=check(cur.ans,$('#ans').value);
+  const fb=$('#fb');
+  if(ok){
+    fb.textContent='إجابة صحيحة، أحسنت!';fb.className='fb ok';
+    if(!cur.done){stats.ok++;stats.all++;cur.done=true;saveStats();showStat();}
+    showSol();
+  }else{
+    fb.textContent='الجواب غير صحيح، جرّب مرة ثانية أو اضغط «أظهر الحل».';fb.className='fb bad';
+    if(!cur.done){stats.all++;cur.done=true;saveStats();showStat();}
+  }
+}
+function showSol(){
+  if(!cur) return;
+  if(!cur.done){stats.all++;cur.done=true;saveStats();showStat();}
+  $('#sol').innerHTML=cur.steps.map(s=>`<p>${s}</p>`).join('')+`<p><b>الجواب: ${M(cur.ans.pm?'±('+ansStr(cur.ans)+')':ansStr(cur.ans))}</b></p>`;
+}
+
+/* ---------- الحاسبات ---------- */
+const bad=m=>`<p class="bad">${m}</p>`;
+const lines=L=>L.map(x=>`<p>${x}</p>`).join('');
+const CALCS=[
+  {name:'معادلة من الدرجة الثانية',fields:[['a','العدد a','1'],['b','العدد b','-3'],['c','العدد c','2']],
+    run(v){
+      const a=parseNum(v.a),b=parseNum(v.b),c=parseNum(v.c);
+      if([a,b,c].includes(null)) return bad('أدخل أعداداً صحيحة');
+      if(a===0){if(b===0) return bad('ليست معادلة');return lines([`معادلة خطية: ${M(`x = ${nice(-c/b)}`)}`]);}
+      const D=b*b-4*a*c,L=[`المميّز ${M(`D = b${S(2)} − 4ac = ${nice(D)}`)}`];
+      if(D>0){
+        const q=Math.sqrt(D);
+        if(Number.isInteger(q)||Math.abs(q*q-D)<1e-9&&nice(q).indexOf('/')===-1){
+          L.push(`D موجب: جذران حقيقيان مختلفان`);
+          L.push(`${M(`x = (${nice(-b)} ± ${nice(q)}) / ${nice(2*a)}`)}`);
+        }else L.push(`D موجب: جذران حقيقيان ${M(`x = (${nice(-b)} ± √${nice(D)}) / ${nice(2*a)}`)}`);
+        L.push(`<b>x₁ = ${nice((-b+q)/(2*a))}</b> ، <b>x₂ = ${nice((-b-q)/(2*a))}</b>`);
+      }else if(D===0) L.push(`D = 0: جذر مكرر <b>x = ${nice(-b/(2*a))}</b>`);
+      else{
+        const q=Math.sqrt(-D);
+        L.push(`D سالب: جذران مركبان`);
+        L.push(`${M(`x = (${nice(-b)} ± √${nice(-D)} i) / ${nice(2*a)}`)}`);
+        L.push(`<b>x = ${M(cfmt(-b/(2*a),q/(2*a)))}</b> ، <b>${M(cfmt(-b/(2*a),-q/(2*a)))}</b> (تقريباً)`);
+      }
+      return lines(L);
+    }},
+  {name:'مشتقة وتكامل كثيرة حدود',fields:[['f','الدالة f(x)','x^3-6x^2+9x+1'],['x0','قيمة x لإيجاد f و f′ (اختياري)',''],['lo','حد التكامل الأسفل (اختياري)',''],['hi','حد التكامل الأعلى (اختياري)','']],
+    run(v){
+      const f=parsePoly(v.f);
+      if(!f) return bad('تعذّر قراءة الدالة. مثال: 2x^3-5x^2+x-7');
+      const f1=deriv(f),f2=deriv(f1),F=integ(f),L=[];
+      L.push(`${M(`f(x) = ${fmtPoly(f)}`)}`);
+      L.push(`المشتقة الأولى: ${M(`f′(x) = ${fmtPoly(f1)}`)}`);
+      L.push(`المشتقة الثانية: ${M(`f″(x) = ${fmtPoly(f2)}`)}`);
+      L.push(`التكامل غير المحدد: ${M(`∫f(x)dx = ${fmtPoly(F)} + C`)}`);
+      const x0=v.x0.trim()?parseNum(v.x0):null;
+      if(x0!==null){
+        const m=evalP(f1,x0),y=evalP(f,x0);
+        L.push(`${M(`f(${nice(x0)}) = ${nice(y)}`)} ، ${M(`f′(${nice(x0)}) = ${nice(m)}`)} (ميل المماس)`);
+        L.push(`معادلة المماس: ${M(`y = ${fmtPoly({1:m,0:y-m*x0})}`)}`);
+      }
+      const d1=degree(f1);let cps=[];
+      if(d1===1) cps=[-(f1[0]||0)/f1[1]];
+      else if(d1===2){
+        const a=f1[2],b=f1[1]||0,c=f1[0]||0,D=b*b-4*a*c;
+        if(D===0) cps=[-b/(2*a)];
+        else if(D>0) cps=[(-b-Math.sqrt(D))/(2*a),(-b+Math.sqrt(D))/(2*a)].sort((p,q)=>p-q);
+      }
+      cps.forEach(x=>{
+        const s=evalP(f2,x),nat=s>1e-9?'قيمة صغرى محلية':s<-1e-9?'قيمة عظمى محلية':'نقطة انقلاب محتملة (f″ = 0)';
+        L.push(`نقطة حرجة ${M(`x = ${nice(x)}`)}: ${M(`f = ${nice(evalP(f,x))}`)} ← ${nat}`);
+      });
+      if(v.lo.trim()&&v.hi.trim()){
+        const lo=parseNum(v.lo),hi=parseNum(v.hi);
+        if(lo!==null&&hi!==null) L.push(`التكامل المحدد من ${nice(lo)} إلى ${nice(hi)} = <b>${nice(evalP(F,hi)-evalP(F,lo))}</b>`);
+      }
+      return lines(L);
+    }},
+  {name:'الأعداد المركبة',fields:[['z1','z₁','3+4i'],['z2','z₂','1-2i']],
+    run(v){
+      const z=parseCx(v.z1),w=parseCx(v.z2);
+      if(!z||!w) return bad('اكتب العدد بالصورة a+bi مثل 3-2i');
+      const {re:a,im:b}=z,{re:c,im:d}=w,L=[];
+      L.push(`${M(`z₁ + z₂ = ${cfmt(a+c,b+d)}`)}`);
+      L.push(`${M(`z₁ − z₂ = ${cfmt(a-c,b-d)}`)}`);
+      L.push(`${M(`z₁ × z₂ = ${cfmt(a*c-b*d,a*d+b*c)}`)}`);
+      const den=c*c+d*d;
+      if(den===0) L.push('القسمة غير معرّفة لأن z₂ = 0');
+      else{
+        L.push(`القسمة: نضرب بمرافق المقام ${M(cfmt(c,-d))} والمقام يصبح ${M(nice(den))}`);
+        L.push(`${M(`z₁ ÷ z₂ = ${cfmt((a*c+b*d)/den,(b*c-a*d)/den)}`)}`);
+      }
+      L.push(`${M(`|z₁| = ${sqrtS(a*a+b*b)}`)} ، ${M(`|z₂| = ${sqrtS(c*c+d*d)}`)}`);
+      L.push(`مرافق z₁ = ${M(cfmt(a,-b))} ، مرافق z₂ = ${M(cfmt(c,-d))}`);
+      return lines(L);
+    }},
+﻿  {name:'الصيغة القطبية وديموافر والجذر التربيعي',fields:[['z','العدد المركب z','-1+1i'],['n','الأس n (عدد صحيح موجب)','8']],
+    run(v){
+      const z=parseCx(v.z),n=parseNum(v.n);
+      if(!z||(z.re===0&&z.im===0)) return bad('اكتب عدداً مركباً غير صفري مثل 1+1i');
+      const {re:a,im:b}=z,L=[],r2=a*a+b*b,r=Math.sqrt(r2);
+      let th=Math.atan2(b,a);if(th<0) th+=2*Math.PI;
+      const ratio=th/Math.PI;let thS=null;
+      for(let d=1;d<=12;d++) if(Math.abs(ratio*d-Math.round(ratio*d))<1e-9){thS=piS(ratio);break;}
+      L.push(`المقياس: ${M(`|z| = ${Number.isInteger(r2)?sqrtS(r2):nice(r)}`)}`);
+      L.push(`القيمة الأساسية للسعة ${M('θ ∈ [0 , 2π)')}: ${M(thS||nice(th))}${thS?'':' راديان'} ≈ ${(th*180/Math.PI).toFixed(2)}°`);
+      L.push(`الصيغة القطبية: ${M(`z = r (cos θ + i sin θ)`)} مع ${M(`r = ${nice(r)}`)}`);
+      if(n!==null&&Number.isInteger(n)&&n>=1&&n<=40){
+        let pr=1,pi=0;for(let i=0;i<n;i++){const t=pr*a-pi*b;pi=pr*b+pi*a;pr=t;}
+        L.push(`ديموافر: ${M(`z${S(n)} = r${S(n)}(cos ${n}θ + i sin ${n}θ)`)}`);
+        L.push(`${M(`z${S(n)} = ${cfmt(pr,pi)}`)}`);
+      }
+      const x=Math.sqrt((r+a)/2),y=(b<0?-1:1)*Math.sqrt((r-a)/2);
+      L.push(`الجذران التربيعيان: ${M(`±(${cfmt(x,y)})`)}`);
+      return lines(L);
+    }}
+];
+function renderCalc(){
+  const c=CALCS[+$('#calcSel').value];
+  $('#calcForm').innerHTML=c.fields.map(f=>`<label for="cf_${f[0]}">${f[1]}</label><input id="cf_${f[0]}" value="${f[2]}" dir="ltr" style="text-align:left">`).join('');
+  $('#calcOut').innerHTML='';
+}
+function runCalc(){
+  const c=CALCS[+$('#calcSel').value],v={};
+  c.fields.forEach(f=>{v[f[0]]=$('#cf_'+f[0]).value;});
+  $('#calcOut').innerHTML=c.run(v);
+}
+
+/* ---------- بنك أسئلتي ---------- */
+function loadBank(){try{return JSON.parse(localStorage.getItem('m6bank')||'[]');}catch(e){return [];}}
+function saveBank(a){try{localStorage.setItem('m6bank',JSON.stringify(a));}catch(e){}}
+function renderBank(){
+  const list=$('#bList'),q=$('#bSearch').value.trim(),f=$('#bFilter').value,bank=loadBank();
+  list.innerHTML='';
+  let n=0;
+  bank.forEach((it,idx)=>{
+    if(f!=='all'&&it.t!==f) return;
+    if(q&&!(it.q+' '+it.a).includes(q)) return;
+    n++;
+    const d=document.createElement('div');d.className='item';
+    const sm=document.createElement('small');sm.textContent=TOPICS[it.t]?TOPICS[it.t].name:'عام';
+    const pq=document.createElement('pre');pq.textContent='س: '+it.q;
+    const det=document.createElement('details');
+    const su=document.createElement('summary');su.textContent='الجواب';
+    const pa=document.createElement('pre');pa.textContent=it.a;
+    det.append(su,pa);
+    const del=document.createElement('button');del.textContent='حذف';
+    del.onclick=()=>{const b=loadBank();b.splice(idx,1);saveBank(b);renderBank();};
+    d.append(sm,pq,det,del);list.append(d);
+  });
+  if(!n) list.textContent='لا توجد أسئلة.';
+}
+
+/* ---------- تشغيل ---------- */
+function init(){
+  const opts=Object.keys(TOPICS).map(k=>`<option value="${k}">${TOPICS[k].name}</option>`).join('');
+  $('#topic').innerHTML='<option value="all">كل المواضيع</option>'+opts;
+  $('#bTopic').innerHTML=opts;
+  $('#bFilter').innerHTML='<option value="all">الكل</option>'+opts;
+  $('#calcSel').innerHTML=CALCS.map((c,i)=>`<option value="${i}">${c.name}</option>`).join('');
+  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+    document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
+  });
+  $('#btnCheck').onclick=doCheck;
+  $('#btnSol').onclick=showSol;
+  $('#btnNext').onclick=newQ;
+  $('#topic').onchange=newQ;
+  $('#ans').addEventListener('keydown',e=>{if(e.key==='Enter')doCheck();});
+  $('#calcSel').onchange=renderCalc;
+  $('#btnCalc').onclick=runCalc;
+  $('#btnAdd').onclick=()=>{
+    const q=$('#bQ').value.trim(),a=$('#bA').value.trim();
+    if(!q) return;
+    const b=loadBank();b.unshift({t:$('#bTopic').value,q,a});saveBank(b);
+    $('#bQ').value='';$('#bA').value='';renderBank();
+  };
+  $('#bSearch').oninput=renderBank;
+  $('#bFilter').onchange=renderBank;
+  showStat();renderCalc();renderBank();newQ();
+}
+init();
+</script>
+</body>
+</html>
