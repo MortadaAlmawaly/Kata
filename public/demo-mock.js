@@ -35,7 +35,7 @@
   const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const now = () => new Date().toISOString();
 
-  const org = { id: 1, name: 'شركة النخبة (معاينة)', currency: 'IQD', approvalLimits: { MANAGER: 500000, DIRECTOR: 5000000, GM: 50000000 } };
+  const org = { id: 1, name: 'شركة النخبة', currency: 'IQD', approvalLimits: { MANAGER: 500000, DIRECTOR: 5000000, GM: 50000000 } };
   const U = (id, name, role, title, managerId) => ({ id, name, role, title, managerId, active: true, email: `user${id}@demo.test`, mustChangePassword: false, lastLoginAt: now(), leaveEntitlement: 30 });
   const users = [
     U(1, 'سارة الجبوري', 'CEO', 'المدير التنفيذي', null),
@@ -137,7 +137,7 @@
   const SALARY = { 1: 6000000, 2: 4500000, 3: 3500000, 4: 2500000, 5: 1500000, 6: 1500000, 7: 3500000, 8: 2200000, 9: 1400000 };
   const logA = (who, action, entity, entityId, meta) => audit.unshift({ id: ++seq, actor: who.name, action, entity, entityId, meta, createdAt: now() });
 
-  /* المستخدم الحالي للمعاينة */
+  /* المستخدم الحالي */
   let meId = 4;
   try { meId = +localStorage.getItem('pv-user') || 4; } catch (e) {}
   const me = () => byId(meId);
@@ -165,7 +165,7 @@
     { id: 2, email: 'omar@example.com', name: null, role: 'MANAGER', managerId: 3, title: null, department: 'المبيعات', status: 'ACCEPTED', expiresAt: new Date(Date.now() + 2 * 864e5).toISOString(), createdAt: now() },
   ];
   const platformOrgs = [
-    { id: 1, name: 'شركة النخبة (معاينة)', users: 9, tasks: 8, suspended: false, createdAt: now() },
+    { id: 1, name: 'شركة النخبة', users: 9, tasks: 8, suspended: false, createdAt: now() },
     { id: 2, name: 'مؤسسة الرافدين للتجارة', users: 24, tasks: 131, suspended: false, createdAt: now() },
     { id: 3, name: 'مكتب الأمل الهندسي', users: 11, tasks: 47, suspended: true, createdAt: now() },
   ];
@@ -193,6 +193,7 @@
     if (p) {
       for (const [k, arr] of Object.entries(arrays)) if (Array.isArray(p[k])) { arr.length = 0; p[k].forEach(x => arr.push(x)); }
       Object.assign(org, p.org || {});
+      org.name = String(org.name || '').replace(/\s*\(معاينة\)\s*$/, '');
       Object.keys(orgPerm).forEach(k => delete orgPerm[k]); Object.assign(orgPerm, p.orgPerm || {});
       Object.assign(extra, p.extra || {});
       admins.clear(); (p.admins || [1]).forEach(a => admins.add(a));
@@ -925,7 +926,7 @@
         : bin.charCodeAt(0) === 0xff && bin.charCodeAt(1) === 0xd8 ? 'image/jpeg' : bin.startsWith('RIFF') ? 'image/webp' : null;
       if (!mime) return err(400, 'مسموح فقط PDF وصور (PNG, JPG, WEBP)');
       const size = Math.floor(body.data.length * 3 / 4);
-      if (size > 1.5 * 1024 * 1024) return err(413, 'في المعاينة الحد 1.5MB للملف (على الخادم الحقيقي 8MB)');
+      if (size > 1.5 * 1024 * 1024) return err(413, 'الحد 1.5MB للملف (على الخادم الحقيقي 8MB)');
       const f = { id: ++seq, entity: body.entity, entityId: body.id, name: body.name, mime, size, uploaderId: u.id, createdAt: now(), url: `data:${mime};base64,${body.data}` };
       files.push(f); logA(u, 'file.upload', body.entity, body.id, { name: f.name });
       return ok({ id: f.id }, 201);
@@ -1334,32 +1335,8 @@
     return new Promise(resolve => setTimeout(() => resolve(res), 60));
   };
 
-  /* شريط تبديل المستخدم */
-  /* مخفي افتراضياً؛ للمطوّر فقط: localStorage.setItem('pv-bar','1') ثم تحديث الصفحة */
-  const barOn = () => { try { return localStorage.getItem('pv-bar') === '1'; } catch (e) { return false; } };
-  const mountBar = () => { if (!barOn() || !authed() || document.getElementById('pvBar')) return;
-    const ROLE = { EMPLOYEE: 'موظف', MANAGER: 'مدير قسم', DIRECTOR: 'مدير إدارة', GM: 'المدير العام', CEO: 'المدير التنفيذي' };
-    const bar = document.createElement('div'); bar.id = 'pvBar';
-    bar.style.cssText = 'position:relative;z-index:300;background:#031A4D;color:#fff;display:flex;gap:10px;align-items:center;justify-content:center;padding:8px 12px;font:600 13px Alexandria,system-ui,sans-serif;flex-wrap:wrap';
-    bar.innerHTML = '<span>معاينة — شاهد المنصة كـ:</span><select id="pvUser" style="padding:5px 10px;border-radius:8px;border:0;font:inherit"></select><span style="opacity:.7;font-weight:500">بيانات وهمية داخل المتصفح</span>';
-    bar.style.position='fixed'; bar.style.bottom='0'; bar.style.left='0'; bar.style.right='0'; bar.style.zIndex='9999'; bar.style.padding='5px 10px'; document.documentElement.appendChild(bar);
-    /* الجوال: لوحة التبديل تصير زراً عائماً صغيراً يفتح اللوحة عند الضغط (حتى لا تغطي الشاشة) */
-    if (window.matchMedia('(max-width:860px)').matches) {
-      const full = bar; full.style.cssText += ';display:none;bottom:calc(200px + env(safe-area-inset-bottom));left:8px;right:8px;border-radius:14px;flex-direction:column;padding:10px';
-      const fab = document.createElement('button'); fab.id = 'pvFab'; fab.type = 'button'; fab.setAttribute('aria-label', 'تبديل المستخدم (معاينة)');
-      fab.style.cssText = 'position:fixed;z-index:9999;left:10px;bottom:calc(150px + env(safe-area-inset-bottom));width:40px;height:40px;border-radius:50%;border:0;background:#031A4D;color:#fff;font:700 15px system-ui;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer;opacity:.85';
-      fab.textContent = '👤';
-      fab.addEventListener('click', () => { const on = full.style.display === 'none'; full.style.display = on ? 'flex' : 'none'; });
-      document.documentElement.appendChild(fab);
-    }
-    const sel = bar.querySelector('select');
-    sel.innerHTML = users.slice().sort((a, b) => LEVEL[b.role] - LEVEL[a.role]).map(x => `<option value="${x.id}" ${x.id === meId ? 'selected' : ''}>${ROLE[x.role]} — ${x.name}</option>`).join('');
-    sel.addEventListener('change', () => { try { localStorage.setItem('pv-user', sel.value); } catch (e) {} location.reload(); });
-    const rs = document.createElement('button');
-    rs.textContent = 'إعادة ضبط البيانات';
-    rs.style.cssText = 'background:#ffffff22;color:#fff;border:0;border-radius:8px;padding:5px 10px;font:inherit;cursor:pointer';
-    rs.addEventListener('click', () => { try { localStorage.removeItem('pv-state-v5'); } catch (e) {} location.reload(); });
-    bar.appendChild(rs);
-  };
-  setInterval(() => { try { mountBar(); } catch (e) {} }, 800);
+  /* لا توجد أي أدوات معاينة: تُزال أي بقايا قديمة (شريط التبديل أو مفتاحه المخزّن) */
+  try { localStorage.removeItem('pv-bar'); } catch (e) {}
+  const dropBar = () => { ['pvBar', 'pvFab'].forEach(id => { const el = document.getElementById(id); if (el) el.remove(); }); };
+  dropBar(); setTimeout(dropBar, 800);
 })();
