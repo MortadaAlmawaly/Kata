@@ -36,20 +36,13 @@
   const now = () => new Date().toISOString();
 
   const org = { id: 1, name: 'شركة النخبة', currency: 'IQD', approvalLimits: { MANAGER: 500000, DIRECTOR: 5000000, GM: 50000000 } };
-  const U = (id, name, role, title, managerId) => ({ id, name, role, title, managerId, active: true, email: `user${id}@demo.test`, mustChangePassword: false, lastLoginAt: now(), leaveEntitlement: 30 });
+  const U = (id, name, role, title, managerId) => ({ id, name, role, title, managerId, active: true, email: `user${id}@example.com`, mustChangePassword: false, lastLoginAt: now(), leaveEntitlement: 30 });
   const users = [
-    U(1, 'سارة الجبوري', 'CEO', 'المدير التنفيذي', null),
-    U(2, 'علي الحسيني', 'GM', 'مدير العمليات', 1),
-    U(3, 'نور الساعدي', 'DIRECTOR', 'مدير إدارة المبيعات', 2),
-    U(4, 'حسن الكعبي', 'MANAGER', 'مدير قسم الجنوب', 3),
-    U(5, 'زينب التميمي', 'EMPLOYEE', 'مسؤولة مبيعات', 4),
-    U(6, 'مصطفى العبيدي', 'EMPLOYEE', 'مسؤول حسابات', 4),
-    U(7, 'رنا الشمري', 'DIRECTOR', 'مدير إدارة التسويق', 2),
-    U(8, 'كرار الموسوي', 'MANAGER', 'مدير قسم المحتوى', 7),
-    U(9, 'دعاء الفتلاوي', 'EMPLOYEE', 'مصممة', 8),
+    U(1, 'مرتضى مقدام', 'CEO', 'المدير التنفيذي', null),
   ];
-  const DEPT = { 1: 'الإدارة العليا', 2: 'العمليات', 3: 'المبيعات', 4: 'المبيعات', 5: 'المبيعات', 6: 'المالية', 7: 'التسويق', 8: 'التسويق', 9: 'التسويق' };
+  const DEPT = { 1: 'الإدارة العليا' };
   users.forEach(u => { u.department = DEPT[u.id]; });
+  users[0].email = 'mrtdyalmawly3@gmail.com';
   const byId = id => users.find(u => u.id === id);
   const kids = id => users.filter(u => u.managerId === id);
   function desc(id) { const out = new Set(); const st = [id]; while (st.length) for (const k of kids(st.pop())) { out.add(k.id); st.push(k.id); } return out; }
@@ -58,62 +51,21 @@
   const person = id => { const u = byId(id); return u ? { id: u.id, name: u.name, role: u.role } : null; };
 
   let seq = 100;
-  const tasks = [
-    { id: 1, title: 'متابعة عملاء الربع الرابع', description: 'الاتصال بالعملاء الحاليين وتحديد فرص التجديد.', status: 'IN_PROGRESS', priority: 'HIGH', progress: 40, dueDate: day(3), assigneeId: 5, creatorId: 4, goalId: null, comments: [{ id: 1, userId: 4, body: 'ابدأ بالعملاء الكبار أولاً.', createdAt: now() }] },
-    { id: 2, title: 'تحديث قائمة الأسعار', description: null, status: 'TODO', priority: 'MEDIUM', progress: 0, dueDate: day(-2), assigneeId: 5, creatorId: 4, goalId: null, comments: [] },
-    { id: 3, title: 'مطابقة كشوفات الشهر', description: null, status: 'REVIEW', priority: 'URGENT', progress: 90, dueDate: day(1), assigneeId: 6, creatorId: 4, goalId: null, comments: [] },
-    { id: 4, title: 'أرشفة فواتير الربع الثالث', description: null, status: 'DONE', priority: 'LOW', progress: 100, dueDate: null, assigneeId: 6, creatorId: 4, goalId: null, comments: [], completedAt: now() },
-    { id: 5, title: 'خطة مبيعات فريق الجنوب', description: 'خطة الربع القادم بأهداف شهرية.', status: 'IN_PROGRESS', priority: 'HIGH', progress: 25, dueDate: day(7), assigneeId: 4, creatorId: 3, goalId: 2, comments: [] },
-    { id: 6, title: 'مراجعة هدف المبيعات السنوي', description: null, status: 'TODO', priority: 'MEDIUM', progress: 0, dueDate: day(10), assigneeId: 3, creatorId: 2, goalId: null, comments: [] },
-    { id: 7, title: 'تصميم حملة نهاية السنة', description: null, status: 'IN_PROGRESS', priority: 'HIGH', progress: 60, dueDate: day(5), assigneeId: 9, creatorId: 8, goalId: null, comments: [] },
-    { id: 8, title: 'جدول المحتوى الشهري', description: null, status: 'TODO', priority: 'MEDIUM', progress: 0, dueDate: day(-1), assigneeId: 8, creatorId: 7, goalId: null, comments: [] },
-  ];
+  const tasks = [];
   /* ── المهام على طريقة Jira: أنواع/أرقام/سباقات (بيانات تجريبية) ── */
-  const sprints = [
-    { id: 1, name: 'Sprint 12', goal: 'إغلاق عقود الربع الرابع', state: 'ACTIVE', projectId: null, startDate: day(-4), endDate: day(10), closedAt: null },
-    { id: 2, name: 'Sprint 13', goal: null, state: 'PLANNED', projectId: null, startDate: null, endDate: null, closedAt: null },
-  ];
+  const sprints = [];
   const worklogs = [], links = [], watchers = [], history = [];
-  Object.assign(tasks[0], { issueType: 'STORY', labels: ['عملاء', 'مبيعات'], storyPoints: 5, sprintId: 1, estimateMin: 960 });
-  Object.assign(tasks[1], { issueType: 'BUG', labels: ['أسعار'], storyPoints: 2, sprintId: 1, parentId: 5 });
-  Object.assign(tasks[2], { issueType: 'TASK', labels: ['مالية'], storyPoints: 3, sprintId: 1 });
-  Object.assign(tasks[4], { issueType: 'EPIC', labels: ['خطة'], storyPoints: null, sprintId: null });
-  Object.assign(tasks[5], { issueType: 'TASK', storyPoints: 1, sprintId: 2 });
-  tasks[0].coverUrl = tasks[6].coverUrl = 'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22200%22%3E%3Crect width=%22400%22 height=%22200%22 fill=%22%234f46e5%22/%3E%3Ccircle cx=%22200%22 cy=%22100%22 r=%2256%22 fill=%22%23fff%22 opacity=%22.85%22/%3E%3C/svg%3E';
-  Object.assign(tasks[6], { issueType: 'STORY', labels: ['تسويق'], storyPoints: 8, sprintId: 1, parentId: 5 });
-  const wlSeed = () => { if (!worklogs.length) worklogs.push({ id: 9001, taskId: 1, userId: 5, minutes: 150, note: 'اتصالات العملاء', workedOn: day(-1), createdAt: now() }); };
-  wlSeed();
-  const goals = [
-    { id: 1, ownerId: 1, parentId: null, title: 'نمو الإيرادات 20% هذه السنة', description: null, period: '2026-FY', status: 'ACTIVE', keyResults: [{ id: 1, title: 'إجمالي الإيرادات', target: 120000, current: 78000, unit: 'مليون' }] },
-    { id: 2, ownerId: 3, parentId: 1, title: 'رفع مبيعات المنطقة الجنوبية', description: null, period: '2026-Q4', status: 'ACTIVE', keyResults: [{ id: 2, title: 'عقود جديدة', target: 30, current: 12, unit: null }, { id: 3, title: 'معدل الاحتفاظ بالعملاء', target: 90, current: 82, unit: '%' }] },
-    { id: 3, ownerId: 5, parentId: 2, title: 'إغلاق 8 عقود جديدة', description: null, period: '2026-Q4', status: 'ACTIVE', keyResults: [{ id: 4, title: 'عقود مغلقة', target: 8, current: 3, unit: null }] },
-    { id: 4, ownerId: 7, parentId: 1, title: 'مضاعفة التفاعل على القنوات', description: null, period: '2026-Q4', status: 'ACTIVE', keyResults: [{ id: 5, title: 'متابعون جدد', target: 5000, current: 1800, unit: null }] },
-  ];
-  const requests = [
-    { id: 1, requesterId: 5, type: 'EXPENSE', title: 'ضيافة اجتماع عميل', details: 'غداء عمل مع وفد شركة الرافدين.', amount: 150000, startDate: null, endDate: null, status: 'PENDING', currentApproverId: 4, createdAt: now(), steps: [] },
-    { id: 2, requesterId: 4, type: 'PURCHASE', title: 'شراء 4 أجهزة لابتوب للفريق', details: null, amount: 6000000, startDate: null, endDate: null, status: 'PENDING', currentApproverId: 3, createdAt: now(), steps: [] },
-    { id: 3, requesterId: 6, type: 'LEAVE', title: 'إجازة اعتيادية', details: null, amount: null, startDate: day(10), endDate: day(14), status: 'APPROVED', currentApproverId: null, createdAt: now(), decidedAt: now(), steps: [{ approverId: 4, decision: 'APPROVED', note: null, createdAt: now() }] },
-  ];
-  const audit = [
-    { id: 3, actor: 'نور الساعدي', action: 'goal.create', entity: 'goal', entityId: 2, meta: { ownerId: 3 }, createdAt: now() },
-    { id: 2, actor: 'حسن الكعبي', action: 'task.create', entity: 'task', entityId: 1, meta: { assigneeId: 5 }, createdAt: now() },
-    { id: 1, actor: 'علي الحسيني', action: 'user.create', entity: 'user', entityId: 3, meta: { role: 'DIRECTOR' }, createdAt: now() },
-  ];
+  const goals = [];
+  const requests = [];
+  const audit = [];
   function cycleNow() { const d = new Date(); return d.getFullYear() + '-Q' + (Math.floor(d.getMonth() / 3) + 1); }
   const at = (off, hm) => { const d = new Date(); d.setDate(d.getDate() + off); const [h, m] = hm.split(':').map(Number); d.setHours(h, m, 0, 0); return d.toISOString(); };
   const att = (ids, resp) => ids.map((id, i) => ({ userId: id, response: resp ? resp[i] : 'PENDING' }));
-  const events = [
-    { id: 1, type: 'MEETING', title: 'اجتماع مراجعة المبيعات', description: '1) أرقام الأسبوع\n2) العقود المتعثرة\n3) خطة الأسبوع القادم', location: 'قاعة الاجتماعات 2', startAt: at(1, '10:00'), endAt: at(1, '11:00'), allDay: false, companyWide: false, creatorId: 3, attendees: att([3, 4, 5, 6], ['ACCEPTED', 'PENDING', 'PENDING', 'ACCEPTED']) },
-    { id: 2, type: 'MEETING', title: 'اجتماع الفريق الأسبوعي', description: null, location: 'Google Meet', startAt: at(0, '13:00'), endAt: at(0, '14:00'), allDay: false, companyWide: false, recurrence: 'WEEKLY', recurUntil: null, creatorId: 4, attendees: att([4, 5, 6], ['ACCEPTED', 'ACCEPTED', 'PENDING']) },
-    { id: 3, type: 'APPOINTMENT', title: 'موعد مع عميل — شركة الرافدين', description: 'عرض العقد الجديد.', location: 'مقر العميل', startAt: at(3, '11:30'), endAt: at(3, '12:30'), allDay: false, companyWide: false, creatorId: 5, attendees: att([5, 4], ['ACCEPTED', 'PENDING']) },
-    { id: 4, type: 'EVENT', title: 'يوم الشركة السنوي', description: 'فعالية للموظفين وعائلاتهم.', location: 'نادي الصيد', startAt: at(9, '00:00'), endAt: at(9, '23:59'), allDay: true, companyWide: true, creatorId: 1, attendees: att([1], ['ACCEPTED']) },
-    { id: 5, type: 'HOLIDAY', title: 'عطلة رسمية', description: null, location: null, startAt: at(14, '00:00'), endAt: at(14, '23:59'), allDay: true, companyWide: true, creatorId: 1, attendees: att([1], ['ACCEPTED']) },
-    { id: 6, type: 'MEETING', title: 'مراجعة الميزانية الفصلية', description: null, location: 'قاعة الإدارة', startAt: at(2, '09:00'), endAt: at(2, '10:30'), allDay: false, companyWide: false, creatorId: 2, attendees: att([2, 3, 7, 1], ['ACCEPTED', 'ACCEPTED', 'PENDING', 'ACCEPTED']) },
-  ];
+  const events = [];
   const projects = [
-    { id: 1, name: 'إطلاق خدمة الاشتراكات', description: 'نقل العقود الشهرية إلى اشتراكات سنوية.', status: 'ACTIVE', ownerId: 3, startDate: day(-30), endDate: day(45) },
-    { id: 2, name: 'حملة نهاية السنة', description: null, status: 'ACTIVE', ownerId: 7, startDate: day(-10), endDate: day(30) },
-    { id: 3, name: 'أتمتة المطابقة المالية', description: null, status: 'PLANNING', ownerId: 2, startDate: null, endDate: null },
+    { id: 1, name: 'إطلاق خدمة الاشتراكات', description: 'نقل العقود الشهرية إلى اشتراكات سنوية.', status: 'ACTIVE', ownerId: 1, startDate: day(-30), endDate: day(45) },
+    { id: 2, name: 'حملة نهاية السنة', description: null, status: 'ACTIVE', ownerId: 1, startDate: day(-10), endDate: day(30) },
+    { id: 3, name: 'أتمتة المطابقة المالية', description: null, status: 'PLANNING', ownerId: 1, startDate: null, endDate: null },
     { id: 4, name: 'المهام العامة', description: null, status: 'ACTIVE', ownerId: 1, startDate: null, endDate: null, key: 'TSK' },
   ];
   /* لكل مساحة بادئة وخلفية خاصة بها */
@@ -124,23 +76,16 @@
   tasks.forEach(t => { t.projectId = ({ 1: 1, 2: 1, 5: 1, 7: 2 })[t.id] || 4; });
   const announcements = [
     { id: 1, title: 'مواعيد الدوام خلال الشهر القادم', body: 'سيكون الدوام من 8:30 إلى 3:30 ابتداءً من الأسبوع القادم.\nيرجى الالتزام بتسجيل الحضور يومياً.', audience: 'COMPANY', pinned: true, authorId: 1, createdAt: now() },
-    { id: 2, title: 'نتائج مبيعات الربع الثالث', body: 'تجاوز فريق الجنوب المستهدف بنسبة 8%، شكراً لجهود الجميع.', audience: 'TEAM', pinned: false, authorId: 3, createdAt: now() },
+    { id: 2, title: 'نتائج مبيعات الربع الثالث', body: 'تجاوز فريق الجنوب المستهدف بنسبة 8%، شكراً لجهود الجميع.', audience: 'TEAM', pinned: false, authorId: 1, createdAt: now() },
   ];
   const attendance = [];
-  [-4, -3, -2, -1].forEach(o => [4, 5, 6].forEach(uid => attendance.push({ userId: uid, date: day(o), checkIn: at(o, '08:' + (30 + uid)), checkOut: at(o, '15:3' + (uid % 5)) })));
-  attendance.push({ userId: 5, date: day(0), checkIn: at(0, '08:41'), checkOut: null });
-  attendance.push({ userId: 5, date: day(-5), checkIn: at(-5, '09:12'), checkOut: at(-5, '15:30') });
-  attendance.push({ userId: 6, date: day(-6), checkIn: at(-6, '08:25'), checkOut: at(-6, '17:05') });
-  /* بيانات تجريبية لتقرير الموارد البشرية: حضور متنوّع بالأيام الماضية + إجازة بدون راتب + رواتب */
-  [4, 5, 6, 8, 9].forEach(uid => { for (let o = -20; o <= -7; o++) { const dt = new Date(); dt.setDate(dt.getDate() + o); const wd = dt.getDay(); if (wd === 5 || wd === 6) continue; if (uid === 5 && (o === -11 || o === -12 || o === -14)) continue; if (uid === 6 && o === -9) continue; if (attendance.some(a => a.userId === uid && a.date === day(o))) continue; attendance.push({ userId: uid, date: day(o), checkIn: at(o, '08:' + String(30 + ((uid * 7 + o * 3 + 90) % 25)).padStart(2, '0')), checkOut: at(o, '15:' + String(30 + ((uid + o + 90) % 40)).padStart(2, '0')) }); } });
-  requests.push({ id: 901, requesterId: 5, type: 'LEAVE', leaveType: 'unpaid', title: 'إجازة بدون راتب', details: null, amount: null, startDate: day(-12), endDate: day(-11), status: 'APPROVED', currentApproverId: null, createdAt: now(), decidedAt: now(), steps: [] });
-  const SALARY = { 1: 6000000, 2: 4500000, 3: 3500000, 4: 2500000, 5: 1500000, 6: 1500000, 7: 3500000, 8: 2200000, 9: 1400000 };
+  const SALARY = { 1: 6000000 };
   const logA = (who, action, entity, entityId, meta) => audit.unshift({ id: ++seq, actor: who.name, action, entity, entityId, meta, createdAt: now() });
 
   /* المستخدم الحالي */
-  let meId = 4;
-  try { meId = +localStorage.getItem('pv-user') || 4; } catch (e) {}
-  const me = () => byId(meId);
+  let meId = 1;
+  try { meId = +localStorage.getItem('pv-user') || 1; } catch (e) {}
+  const me = () => byId(meId) || users[0];
   const err = (status, error) => ({ status, body: { error } });
   const inviteLink = (inv, inviter) => location.origin + BASE + '/join?token=demo-' + inv.id + '-' + btoa(unescape(encodeURIComponent(JSON.stringify({ e: inv.email, n: inv.name, r: inv.role, t: inv.title, d: inv.department, m: inv.managerId, i: inviter, x: new Date(inv.expiresAt).getTime() })))).replace(/\+/g, '-').replace(/\//g, '_');
   const ok = (body, status = 200) => ({ status: body === null ? 204 : status, body });
@@ -153,37 +98,24 @@
   org.permissions = orgPerm;
   org.settings = { timezone: 'Asia/Baghdad', weekStart: 0, workDays: [0, 1, 2, 3, 4], workStart: '08:30', workEnd: '15:30', leaveDefault: 30, passwordMin: 8, sessionDays: 14, inviteDays: 7, requireApprovalNote: false, graceMinutes: 10, labels: {},
     leaveTypes: [{ key: 'annual', name: 'سنوية', days: null, paid: true }, { key: 'sick', name: 'مرضية', days: 15, paid: true }, { key: 'unpaid', name: 'بدون راتب', days: null, paid: false }] };
-  const notifs = [
-    { id: 1, userId: 5, type: 'TASK', actor: 'حسن الكعبي', text: 'حسن الكعبي كلّفك بمهمة: متابعة عملاء الربع الرابع', link: '#/tasks', read: false, createdAt: now() },
-    { id: 2, userId: 4, type: 'REQUEST', actor: 'زينب التميمي', text: 'زينب التميمي قدّم طلباً بانتظار موافقتك: ضيافة اجتماع عميل', link: '#/requests', read: false, createdAt: now() },
-    { id: 3, userId: 4, type: 'MENTION', actor: 'نور الساعدي', text: 'نور الساعدي أشار إليك في «خطة مبيعات فريق الجنوب»', link: '#/tasks?open=5', read: false, createdAt: now() },
-    { id: 4, userId: 4, type: 'EVENT', actor: 'نور الساعدي', text: 'نور الساعدي دعاك إلى: اجتماع مراجعة المبيعات', link: '#/calendar', read: true, createdAt: now() },
-    { id: 5, userId: 5, type: 'MENTION', actor: 'حسن الكعبي', text: 'حسن الكعبي أشار إليك في «تحديث قائمة الأسعار»', link: '#/tasks?open=2', read: false, createdAt: now() },
-  ];
-  const invites = [
-    { id: 1, email: 'sara.k@example.com', name: 'سارة كامل', role: 'EMPLOYEE', managerId: 4, title: 'مسؤولة مبيعات', department: 'المبيعات', status: 'PENDING', expiresAt: new Date(Date.now() + 5 * 864e5).toISOString(), createdAt: now() },
-    { id: 2, email: 'omar@example.com', name: null, role: 'MANAGER', managerId: 3, title: null, department: 'المبيعات', status: 'ACCEPTED', expiresAt: new Date(Date.now() + 2 * 864e5).toISOString(), createdAt: now() },
-  ];
+  const notifs = [];
+  const invites = [];
   const platformOrgs = [
-    { id: 1, name: 'شركة النخبة', users: 9, tasks: 8, suspended: false, createdAt: now() },
-    { id: 2, name: 'مؤسسة الرافدين للتجارة', users: 24, tasks: 131, suspended: false, createdAt: now() },
-    { id: 3, name: 'مكتب الأمل الهندسي', users: 11, tasks: 47, suspended: true, createdAt: now() },
+    { id: 1, name: 'شركة النخبة', users: 1, tasks: 0, suspended: false, createdAt: now() },
   ];
 
   /* حفظ الحالة بالمتصفح حتى تبقى التعديلات عند تبديل المستخدم (لتجربة الإشارات بين موظفين) */
-  const PKEY = 'pv-state-v5';
+  const PKEY = 'pv-state-v6';
+  try { localStorage.removeItem('pv-state-v5'); } catch (e) {}
   const requestComments = [];
-  const reviews = [
-    { id: 1, cycle: cycleNow(), employeeId: 5, reviewerId: 4, status: 'SUBMITTED', ratings: { quality: 4, delivery: 3, teamwork: 5, initiative: 4, communication: 4 }, overall: 4, strengths: 'تعاون ممتاز مع الفريق وسرعة بتعلّم أدوات العمل.', improvements: 'الالتزام بمواعيد التسليم في الأسبوع الأخير من الشهر.', nextGoals: 'إغلاق 10 عقود ورفع الاحتفاظ بالعملاء إلى 90%.', employeeComment: null, submittedAt: now(), acknowledgedAt: null },
-    { id: 2, cycle: cycleNow(), employeeId: 6, reviewerId: 4, status: 'DRAFT', ratings: { quality: 4 }, overall: null, strengths: null, improvements: null, nextGoals: null, employeeComment: null, submittedAt: null, acknowledgedAt: null },
-  ];
+  const reviews = [];
   const policies = [
     { id: 1, title: 'سياسة الدوام والإجازات', category: 'الموارد البشرية', body: 'ساعات الدوام الرسمية من 8:30 إلى 15:30 من الأحد إلى الخميس.\nتُقدَّم طلبات الإجازة قبل 3 أيام عمل على الأقل عبر النظام.\nالإجازة المرضية تحتاج تقريراً طبياً عند تجاوز يومين.', requireAck: true, version: 1, authorId: 1, updatedAt: now(), createdAt: now() },
     { id: 2, title: 'دليل السلوك المهني', category: 'الموارد البشرية', body: 'نلتزم بالاحترام والسرّية والنزاهة بالتعامل مع الزملاء والعملاء.\nلا يُستخدم اسم الشركة بأي نشاط شخصي دون إذن.', requireAck: true, version: 2, authorId: 1, updatedAt: now(), createdAt: now() },
-    { id: 3, title: 'إجراءات الشراء والمصروفات', category: 'المالية', body: 'كل مصروف يُقدَّم كطلب بالنظام مع المرفقات الداعمة.\nالموافقة حسب حدود الاعتماد المعلنة بإعدادات الشركة.', requireAck: false, version: 1, authorId: 2, updatedAt: now(), createdAt: now() },
+    { id: 3, title: 'إجراءات الشراء والمصروفات', category: 'المالية', body: 'كل مصروف يُقدَّم كطلب بالنظام مع المرفقات الداعمة.\nالموافقة حسب حدود الاعتماد المعلنة بإعدادات الشركة.', requireAck: false, version: 1, authorId: 1, updatedAt: now(), createdAt: now() },
   ];
-  const policyAcks = [{ policyId: 1, userId: 5, version: 1, at: now() }, { policyId: 1, userId: 4, version: 1, at: now() }, { policyId: 2, userId: 4, version: 1, at: now() }];
-  const webhooks = [{ id: 1, url: 'https://hooks.example.com/routini', events: ['task.done', 'request.approved'], active: true, lastStatus: 200, lastAt: now() }];
+  const policyAcks = [];
+  const webhooks = [];
   const files = [];            // مرفقات: {id, entity, entityId, name, mime, size, uploaderId, createdAt, url (data URL)}
   const projectComments = [];
   const boardsArr = [];
@@ -235,14 +167,9 @@
     return t;
   };
   const keyOfT = t => { ensureKey(t); return t.keyPrefix + '-' + t.number; };
-  /* عيّنات للأرشيف: مهمتان منجزتان منذ أكثر من 90 يوماً بلوحة «المهام العامة» (تُضاف مرة واحدة) */
-  if (!tasks.some(t => t.demoOld)) {
-    const ago = d => new Date(Date.now() - d * 864e5).toISOString();
-    [['تجهيز عرض الربع الأول', 130], ['جرد المستودع السنوي', 104]].forEach(([title, d]) => {
-      const t = { id: ++seq, title, description: null, status: 'DONE', priority: 'MEDIUM', progress: 100, dueDate: null, assigneeId: 1, creatorId: 1, goalId: null, comments: [], projectId: 4, completedAt: ago(d), createdAt: ago(d + 20), demoOld: true };
-      tasks.push(t);
-    });
-  }  tasks.forEach(ensureKey);
+  /* حساب نظيف: لا عيّنات مهام. أي عيّنة قديمة محفوظة بالمتصفح تُزال */
+  for (let i = tasks.length - 1; i >= 0; i--) if (tasks[i].demoOld) tasks.splice(i, 1);
+  tasks.forEach(ensureKey);
   const taskBrief = t => t ? { id: t.id, key: keyOfT(t), title: t.title, issueType: t.issueType || 'TASK', status: t.status } : null;
   const sprintOf = id => { const s = sprints.find(x => x.id === id); return s ? { id: s.id, name: s.name, state: s.state } : null; };
   const taskJSON = t => ({
@@ -272,22 +199,24 @@
     return { open: open.length, overdue, urgent: open.filter(t => t.priority === 'URGENT').length, inReview: open.filter(t => t.status === 'REVIEW').length, done30: list.length - open.length, completion: list.length ? Math.round((list.length - open.length) / list.length * 100) : null };
   }
 
-  const DEMO_EMAIL = 'demo@routini.test', DEMO_PASS = 'Demo@2026';
-  const ACCOUNTS = { 'demo@routini.test': ['Demo@2026', 1], 'reviewer@routini.test': ['Review@2026', 1] };   // حسابات التجربة (المدقّق يدخل بصلاحية المدير التنفيذي لرؤية كل شيء)
+  const DEMO_EMAIL = 'mrtdyalmawly3@gmail.com', DEMO_PASS = '12345678';
+  const ACCOUNTS = { 'mrtdyalmawly3@gmail.com': ['12345678', 1] };
   const authed = () => { try { return localStorage.getItem('pv-auth') === '1'; } catch (e) { return false; } };
   function authRoute(method, path, body) {
     if (path === '/api/auth/login' && method === 'POST') {
-      const acc = ACCOUNTS[String(body.email || '').trim().toLowerCase()];
-      if (acc && body.password === acc[0]) {
-        try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(acc[1])); } catch (e) {}
-        return ok({ id: acc[1], name: 'سارة الجبوري', email: String(body.email).trim().toLowerCase(), role: 'CEO' });
+      const em = String(body.email || '').trim().toLowerCase();
+      const acc = ACCOUNTS[em];
+      /* الحساب الرئيسي، أو حساب أُنشئ بدعوة داخل هذا المتصفح */
+      const inv = !acc && users.find(x => x.active && x.pw && String(x.email).toLowerCase() === em && x.pw === body.password);
+      if ((acc && body.password === acc[0]) || inv) {
+        const uid = acc ? acc[1] : inv.id; meId = uid;
+        try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(uid)); } catch (e) {}
+        const lu = byId(uid);
+        return ok({ id: uid, name: lu.name, email: em, role: lu.role });
       }
       return err(401, 'البريد أو كلمة المرور غير صحيحة');
     }
-    if (path === '/api/auth/register-company' && method === 'POST') {
-      try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', '1'); } catch (e) {}
-      return ok({ id: 1, name: body.name || 'سارة الجبوري', email: body.email || DEMO_EMAIL, role: 'CEO' }, 201);
-    }
+    if (path === '/api/auth/register-company' && method === 'POST') return err(403, 'تسجيل الشركات الجديدة مغلق. الحسابات تُنشأ بدعوة من المدير.');
     if (path === '/api/auth/logout') { try { localStorage.removeItem('pv-auth'); } catch (e) {} return ok(null); }
     if (path.startsWith('/api/auth/invite/')) {
       /* رابط الدعوة يحمل بياناته داخل الرمز نفسه، فيعمل من أي متصفح أو جهاز (وضع التجربة بدون خادم) */
@@ -299,7 +228,7 @@
       if (method === 'POST' && path.endsWith('/accept')) {
         if (String(body.password || '').length < org.settings.passwordMin) return err(400, 'كلمة المرور لازم تكون ' + org.settings.passwordMin + ' أحرف على الأقل');
         let nu = users.find(x => x.email === inv.e);
-        if (!nu) { nu = U(++seq, String(body.name || inv.n || inv.e).slice(0, 60), inv.r, inv.t || null, inv.m || 1); nu.email = inv.e; nu.department = inv.d || null; users.push(nu); }
+        if (!nu) { nu = U(++seq, String(body.name || inv.n || inv.e).slice(0, 60), inv.r, inv.t || null, inv.m || 1); nu.email = inv.e; nu.department = inv.d || null; nu.pw = String(body.password); users.push(nu); }
         const pi = invites.find(x => x.email === inv.e && x.status === 'PENDING'); if (pi) pi.status = 'ACCEPTED';
         savePV();
         try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(nu.id)); } catch (e) {}
