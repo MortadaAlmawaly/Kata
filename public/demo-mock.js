@@ -1335,7 +1335,9 @@
   };
 
   /* شريط تبديل المستخدم */
-  const mountBar = () => { if (!authed() || document.getElementById('pvBar')) return;
+  /* مخفي افتراضياً؛ للمطوّر فقط: localStorage.setItem('pv-bar','1') ثم تحديث الصفحة */
+  const barOn = () => { try { return localStorage.getItem('pv-bar') === '1'; } catch (e) { return false; } };
+  const mountBar = () => { if (!barOn() || !authed() || document.getElementById('pvBar')) return;
     const ROLE = { EMPLOYEE: 'موظف', MANAGER: 'مدير قسم', DIRECTOR: 'مدير إدارة', GM: 'المدير العام', CEO: 'المدير التنفيذي' };
     const bar = document.createElement('div'); bar.id = 'pvBar';
     bar.style.cssText = 'position:relative;z-index:300;background:#031A4D;color:#fff;display:flex;gap:10px;align-items:center;justify-content:center;padding:8px 12px;font:600 13px Alexandria,system-ui,sans-serif;flex-wrap:wrap';
