@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TOURS, tourById } from '../lib/tours';
 import { withBase, stripBase } from '@/lib/base';
+import { FIcon } from './Icon';
 
 const DONE_KEY = 'kata-tours', SEEN_KEY = 'kata-tour-seen';
 const readDone = () => { try { return JSON.parse(localStorage.getItem(DONE_KEY) || '{}'); } catch (_) { return {}; } };
@@ -204,7 +205,7 @@ export default function TourHost({ me }) {
     <>
       {welcome && !run && (
         <div className="tour-welcome" role="dialog" aria-label="جولة تعريفية">
-          <b>👋 أهلاً بك في كاتا</b>
+          <b>أهلاً بك في كاتا</b>
           <p>هل تريد جولة سريعة (دقيقتان) تعرّفك على الموقع؟ تجدها لاحقاً من زر «؟» أعلى الصفحة.</p>
           <div className="tour-btns">
             <button type="button" className="btn sm" onClick={() => { markSeen(); launch('start'); }}>ابدأ الجولة</button>
@@ -218,13 +219,13 @@ export default function TourHost({ me }) {
           <div className="tour-hub" role="dialog" aria-label="الجولات التعريفية">
             <div className="tour-hh">
               <div><h3>الجولات التعريفية</h3><small className="muted">أنجزت {doneCount} من {TOURS.length} · اختر جولة وسنشرح لك على الشاشة نفسها</small></div>
-              <button type="button" className="tb-btn" aria-label="إغلاق" onClick={() => setHub(false)}>✕</button>
+              <button type="button" className="tb-btn" aria-label="إغلاق" onClick={() => setHub(false)}><FIcon n="x" size={14} /></button>
             </div>
             <div className="tour-list">
               {TOURS.map(t => (
                 <button type="button" key={t.id} className="tour-item" onClick={() => launch(t.id)}>
-                  <span className="tour-ic">{t.icon}</span>
-                  <span className="tour-tx"><b>{t.title}{done[t.id] && <i className="tour-ok" title="أنجزتها">✓</i>}</b><small>{t.desc}</small></span>
+                  <span className="tour-ic"><FIcon n={t.icon} size={22} /></span>
+                  <span className="tour-tx"><b>{t.title}{done[t.id] && <i className="tour-ok" title="أنجزتها"><FIcon n="check" size={12} /></i>}</b><small>{t.desc}</small></span>
                   <span className="tour-meta">{t.steps.length} خطوات · ~{t.mins} د</span>
                 </button>
               ))}
@@ -241,7 +242,7 @@ export default function TourHost({ me }) {
             <div className="tour-top">
               <span className="tour-count" dir="ltr">{run.i + 1} / {total}</span>
               <span className="tour-prog"><i style={{ width: ((run.i + 1) / total * 100) + '%' }} /></span>
-              <button type="button" className="tour-x" aria-label="إنهاء الجولة" onClick={() => close(false)}>✕</button>
+              <button type="button" className="tour-x" aria-label="إنهاء الجولة" onClick={() => close(false)}><FIcon n="x" size={14} /></button>
             </div>
             {cur.title && <h4>{cur.title}</h4>}
             {body}

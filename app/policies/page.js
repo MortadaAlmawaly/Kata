@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import AppShell, { useMe } from '../../components/AppShell';
+import PageTabs, { COMPANY_TABS } from '../../components/PageTabs';
 import { Avatar, Icon, Modal } from '../../components/ui';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import { ago, useConfirm, useToast } from '../../components/hooks';
+import { FIcon } from '../../components/Icon';
 
 export default function PoliciesPage() {
   const { me, error } = useMe();
@@ -37,6 +39,7 @@ export default function PoliciesPage() {
 
   return (
     <AppShell active="policies" title="السياسات" sub="سياسات الشركة والإقرار بها" me={me}>
+      <PageTabs items={COMPANY_TABS} active="policies" />
       {error && <div className="notice">{error}</div>}
       {pending > 0 && <div className="notice" style={{ margin: '0 0 16px' }}>لديك <b>{pending}</b> {pending === 1 ? 'سياسة تحتاج' : 'سياسات تحتاج'} إقرارك.</div>}
       <div className="toolbar">
@@ -66,7 +69,7 @@ export default function PoliciesPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   {p.requireAck
-                    ? (p.acknowledged ? <span className="health good">✓ أقررتَ بها</span> : <span className="health warn">بانتظار إقرارك</span>)
+                    ? (p.acknowledged ? <span className="health good"><FIcon n="check" size={13} /> أقررتَ بها</span> : <span className="health warn">بانتظار إقرارك</span>)
                     : <span className="health">للاطّلاع</span>}
                   {p.ackCount != null && <span className="muted small">{p.ackCount}/{p.totalUsers} أقرّوا</span>}
                 </div>
@@ -156,7 +159,7 @@ function PolicyDetail({ id, onClose, onEdit, onDelete, onAcked, onError }) {
       <div className="chips" style={{ margin: '4px 0 12px' }}>
         <span className="badge role">{p.category || 'عام'}</span>
         <span className="badge role">النسخة {p.version}</span>
-        {p.requireAck && <span className="badge role">{p.acknowledged ? '✓ أقررتَ بها' : 'بانتظار إقرارك'}</span>}
+        {p.requireAck && <span className="badge role">{p.acknowledged ? <><FIcon n="check" size={13} /> أقررتَ بها</> : 'بانتظار إقرارك'}</span>}
       </div>
       <p className="muted small">{p.author.name} · آخر تحديث {ago(p.updatedAt)}</p>
       <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.9, marginTop: 10 }}>{p.body}</p>
@@ -168,7 +171,7 @@ function PolicyDetail({ id, onClose, onEdit, onDelete, onAcked, onError }) {
           <div className="att-grid">
             {p.people.map(x => (
               <div className="att" key={x.id}><Avatar name={x.name} size={26} />
-                <div>{x.name}<small className={x.at ? 'ok' : 'wait'}> {x.at ? '✓ ' + ago(x.at) : 'لم يُقرّ'}</small></div></div>
+                <div>{x.name}<small className={x.at ? 'ok' : 'wait'}> {x.at ? <><FIcon n="check" size={12} /> {ago(x.at)}</> : 'لم يُقرّ'}</small></div></div>
             ))}
           </div>
         </>

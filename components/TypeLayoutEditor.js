@@ -3,8 +3,9 @@
    يُستعمل في إعدادات الشركة (التخطيط الافتراضي) وفي إعدادات كل لوحة (تخطيط خاص بها يتفوّق عليه). */
 import { useState } from 'react';
 import { CF_TYPE_AR, CORE_KEYS, FL_KEYS, MAIN_SECTIONS, SPECIAL_CONTEXT } from '../lib/tasks';
+import { FIcon } from './Icon';
 
-const ICO_OF = { text: 'Aa', longtext: '¶', date: '📅', number: '#', select: '▾', multiselect: '☰', user: '👤', checkbox: '☑', url: '🔗', money: '💲', percent: '%', rating: '★', datetime: '🕒', time: '⏱', radio: '◉', tags: '🏷', users: '👥', email: '✉', phone: '☎', color: '🎨' };
+const ICO_OF = { text: 'type', longtext: 'alignleft', date: 'calendar', number: 'hash', select: 'selectbox', multiselect: 'listchecks', user: 'user', checkbox: 'checksq', url: 'link', money: 'money', percent: 'percent', rating: 'star', datetime: 'calclock', time: 'clock', radio: 'radio', tags: 'tag', users: 'users', email: 'mail', phone: 'phone', color: 'palette' };
 const isSec = k => k.startsWith('sec:');
 
 /* props:
@@ -117,11 +118,11 @@ export default function TypeLayoutEditor({ types, fields, fieldLabels = {}, layo
         : <span className="ltx-name">{labelOf(k)}</span>}
       {hintOf(k) && <span className="ltx-hint">{hintOf(k)}</span>}
       <span className="ltx-acts">
-        {canEdit && !isSec(k) && <button type="button" title="تعديل الاسم والخيارات" aria-label="تعديل" className={editing === k ? 'on' : ''} onClick={() => setEditing(e => (e === k ? null : k))}>✎</button>}
-        {!isSec(k) && !isMain(k) && !SPECIAL_CONTEXT.includes(k) && <button type="button" title={section === 'description' ? 'نقل إلى الجانب' : 'نقل إلى العمود الرئيسي'} aria-label="نقل" onClick={() => flip(k, section)}>⇄</button>}
-        <button type="button" aria-label="أعلى" onClick={() => move(section, i, -1)}>↑</button>
-        <button type="button" aria-label="أسفل" onClick={() => move(section, i, 1)}>↓</button>
-        <button type="button" aria-label="إزالة" className="x" onClick={() => remove(k)}>✕</button>
+        {canEdit && !isSec(k) && <button type="button" title="تعديل الاسم والخيارات" aria-label="تعديل" className={editing === k ? 'on' : ''} onClick={() => setEditing(e => (e === k ? null : k))}><FIcon n="pencil" size={14} /></button>}
+        {!isSec(k) && !isMain(k) && !SPECIAL_CONTEXT.includes(k) && <button type="button" title={section === 'description' ? 'نقل إلى الجانب' : 'نقل إلى العمود الرئيسي'} aria-label="نقل" onClick={() => flip(k, section)}><FIcon n="arrows" size={14} /></button>}
+        <button type="button" aria-label="أعلى" onClick={() => move(section, i, -1)}><FIcon n="up" size={14} /></button>
+        <button type="button" aria-label="أسفل" onClick={() => move(section, i, 1)}><FIcon n="down" size={14} /></button>
+        <button type="button" aria-label="إزالة" className="x" onClick={() => remove(k)}><FIcon n="x" size={14} /></button>
       </span>
     </div>
     {editing === k && canEdit && editPanel(k)}
@@ -204,7 +205,7 @@ export default function TypeLayoutEditor({ types, fields, fieldLabels = {}, layo
               </div>
               <div className="ltx-kinds">
                 {Object.entries(CF_TYPE_AR).map(([k, l]) => (
-                  <button type="button" key={k} onClick={() => { create(k); setShowNew(false); }}><span>{ICO_OF[k] || '◆'}</span>{l}</button>
+                  <button type="button" key={k} onClick={() => { create(k); setShowNew(false); }}><span className="ltx-kic"><FIcon n={ICO_OF[k] || 'filetext'} size={16} /></span>{l}</button>
                 ))}
               </div>
             </div>

@@ -12,7 +12,7 @@ export const AUDIT = {
   'goal.create': 'إنشاء هدف', 'goal.update': 'تعديل هدف', 'goal.delete': 'حذف هدف',
   'request.create': 'تقديم طلب', 'request.approve': 'موافقة على طلب', 'request.reject': 'رفض طلب', 'request.cancel': 'إلغاء طلب',
   'org.update': 'تعديل إعدادات الشركة', 'event.create': 'إنشاء موعد', 'event.delete': 'حذف موعد',
-  'project.create': 'إنشاء مشروع', 'project.update': 'تعديل مشروع', 'project.delete': 'حذف مشروع',
+  'project.create': 'إنشاء مساحة', 'project.update': 'تعديل مساحة', 'project.delete': 'حذف مساحة',
   'announcement.create': 'نشر تعميم', 'task.comment': 'تعليق على مهمة', 'permissions.update': 'تعديل مصفوفة الصلاحيات',
   'access.update': 'تعديل صلاحيات شخص', 'invite.create': 'إرسال دعوة', 'invite.revoke': 'إلغاء دعوة', 'org.export': 'تصدير بيانات الشركة',
   'review.create': 'بدء تقييم أداء', 'review.submit': 'إرسال تقييم أداء', 'policy.create': 'نشر سياسة', 'policy.update': 'تعديل سياسة',

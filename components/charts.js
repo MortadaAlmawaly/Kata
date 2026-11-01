@@ -9,7 +9,7 @@ export function Ring({ pct, size = 64, stroke = 7, color }) {
         <circle className="trk" cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} />
         <circle className="val" cx={size / 2} cy={size / 2} r={r} fill="none" stroke={col} strokeWidth={stroke} strokeDasharray={c} strokeDashoffset={c * (1 - p / 100)} />
       </svg>
-      <b style={{ fontSize: Math.max(10, Math.round(size * 0.26)) }}>{Math.round(p)}%</b>
+      <b style={{ fontSize: Math.max(12, Math.round(size * 0.26)) }}>{Math.round(p)}%</b>
     </span>
   );
 }

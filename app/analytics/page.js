@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { fmt, todayStr } from '../../lib/util';
 import AppShell, { useMe } from '../../components/AppShell';
+import PageTabs, { REPORT_TABS } from '../../components/PageTabs';
 import { Icon } from '../../components/ui';
 import { ChartBars, ChartLine } from '../../components/charts';
 import { useToast } from '../../components/hooks';
@@ -108,6 +109,7 @@ export default function AnalyticsPage() {
 
   return (
     <AppShell active="analytics" title="التحليلات" sub="اتجاهات الإنجاز والحضور والمصروفات" me={me}>
+      <PageTabs items={REPORT_TABS} active="analytics" />
       {error && <div className="notice">{error}</div>}
       <div className="toolbar">
         <span className="grow muted">{d ? `اتجاهات أداء نطاقك (${d.people} شخصاً).` : ''}</span>

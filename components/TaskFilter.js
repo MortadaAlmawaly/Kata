@@ -25,7 +25,7 @@ export function buildFields(ctx, tasks, sprints) {
     { key: 'type', label: ctx.fl('type'), none: 'بدون نوع', opts: [...Object.entries(ctx.itype).map(([k, l]) => ({ v: k, label: l })), ...[...new Set(tasks.map(t => t.issueType).filter(x => x && !ctx.itype[x]))].map(x => ({ v: x, label: x }))], get: t => (t.issueType ? [t.issueType] : []) },
     { key: 'labels', label: ctx.fl('labels'), none: 'بدون وسم', opts: labels.map(l => ({ v: l, label: l })), get: t => t.labels || [] },
     { key: 'priority', label: ctx.fl('priority'), opts: Object.entries(ctx.priority).map(([k, l]) => ({ v: k, label: l })), get: t => [t.priority] },
-    { key: 'project', label: ctx.fl('project'), none: 'بدون مشروع',
+    { key: 'project', label: ctx.fl('project'), none: 'بدون مساحة',
       opts: uniq(tasks.map(t => t.project), p => p.id).map(p => ({ v: String(p.id), label: p.name, sub: p.key })), get: t => (t.projectId ? [String(t.projectId)] : []) },
     { key: 'sprint', label: ctx.fl('sprint'), none: 'Backlog (بلا سباق)',
       opts: sprints.filter(s => s.state !== 'CLOSED').map(s => ({ v: String(s.id), label: s.name + (s.state === 'ACTIVE' ? ' (جارٍ)' : '') })), get: t => (t.sprintId ? [String(t.sprintId)] : []) },
@@ -277,7 +277,7 @@ export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter
                     {saved.map((s, i) => (
                       <div className="jf-menu-row" key={i}>
                         <button type="button" onClick={() => { setFilter({ ...EMPTY_FILTER, ...s.filter }); setSavedOpen(false); }}>{s.name}</button>
-                        <button type="button" aria-label="حذف" onClick={() => persist(saved.filter((_, j) => j !== i))}>✕</button>
+                        <button type="button" aria-label="حذف" onClick={() => persist(saved.filter((_, j) => j !== i))}><FIcon n="x" size={14} /></button>
                       </div>
                     ))}
                     {!saved.length && <p className="muted small" style={{ padding: '8px 10px' }}>لا توجد فلاتر محفوظة.</p>}
@@ -360,7 +360,7 @@ export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter
                         ? <input className="input" placeholder="النص…" value={r.val} onChange={e => upd({ val: e.target.value })} />
                         : <select className="input" value={r.val} onChange={e => upd({ val: e.target.value })}>
                           <option value="">— اختر —</option>{opts.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}</select>}
-                      <button type="button" className="tb-btn" aria-label="حذف" onClick={() => setFilter(x => ({ ...x, adv: x.adv.filter(y => y.id !== r.id) }))}>✕</button>
+                      <button type="button" className="tb-btn" aria-label="حذف" onClick={() => setFilter(x => ({ ...x, adv: x.adv.filter(y => y.id !== r.id) }))}><FIcon n="x" size={14} /></button>
                     </div>
                   );
                 })}
@@ -394,7 +394,7 @@ export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter
           {gOpen && (
             <div className="jf-menu jf-gmenu">
               {GROUPS.map(([k, l]) => (
-                <button type="button" key={k} className={group === k ? 'on' : ''} onClick={() => { setGroup(k); setGOpen(false); }}>{group === k ? '✓ ' : ''}{l}</button>
+                <button type="button" key={k} className={group === k ? 'on' : ''} onClick={() => { setGroup(k); setGOpen(false); }}>{group === k ? <FIcon n="check" size={13} /> : null} {l}</button>
               ))}
             </div>
           )}

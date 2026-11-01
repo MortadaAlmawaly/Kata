@@ -1,6 +1,7 @@
 'use client';
 /* الهيكل والفريق — ترحيل React لـ viewTeam/personProfile/userForm/accessModal. */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import OrgFlow from '../../components/OrgFlow';
 import PermPicker from '../../components/PermPicker';
 import { api } from '../../lib/api';
 import { LEVEL_ORDER, ROLE } from '../../lib/constants';
@@ -24,6 +25,17 @@ export default function TeamPage() {
   const [form, setForm] = useState(null);       // { user|null, managerId? }
   const [secret, setSecret] = useState(null);
   const [toast, toastNode] = useToast();
+  /* تخطيط الهيكل المرئي (مواضع البطاقات وجهة ربط كل شخص) — يُحفظ بالشركة */
+  const [layout, setLayout] = useState({ pos: {}, side: {}, colors: {}, wire: '' });
+  const [pending, setPending] = useState(null);     // موظف أُضيف للتو من زر «+» بجهة معيّنة وينتظر وضعه
+  const saveTimer = useRef(null);
+  const onLayout = next => {
+    setLayout(next);
+    if (!manage) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => api('PUT', '/api/org/layout', next).catch(e => toast(e.message, 'err')), 600);
+  };
+  useEffect(() => { if (me) api('GET', '/api/org/layout').then(l => setLayout({ pos: l.pos || {}, side: l.side || {}, colors: l.colors || {}, wire: l.wire || '' })).catch(() => {}); }, [me]);
 
   useEffect(() => { try { const v = localStorage.getItem('rb-teamview'); if (['chart', 'cards', 'list'].includes(v)) setView(v); } catch (_) { /* لا تخزين */ } }, []);
   const pickView = v => { setView(v); try { localStorage.setItem('rb-teamview', v); } catch (_) { /* تجاهل */ } };
@@ -48,6 +60,7 @@ export default function TeamPage() {
     m.forEach(a => a.sort((x, y) => LV[y.role] - LV[x.role] || x.name.localeCompare(y.name, 'ar')));
     return m;
   }, [U]);
+  const kidsOf = useCallback(id => byMgr.get(id) || [], [byMgr]);
   const descCount = id => (byMgr.get(id) || []).reduce((s, k) => s + 1 + descCount(k.id), 0);
   const depts = [...new Set(U.map(u => u.department).filter(Boolean))].sort();
   const roles = Object.keys(LV).sort((a, b) => LV[b] - LV[a]).filter(r => U.some(u => u.role === r));
@@ -59,36 +72,15 @@ export default function TeamPage() {
   const canAddUnder = p => manage && p.active && LV[p.role] >= 2 && (isAdmin || p.inScope);
   const toggle = id => setCollapsed(c => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  function Node({ u }) {
-    const kids = byMgr.get(u.id) || [];
-    const col = collapsed.has(u.id);
-    const cls = [u.id === me.user.id ? 'me' : '', u.active ? '' : 'off', filtering ? (matches(u) ? 'hit' : 'dim') : ''].join(' ');
-    return (
-      <li>
-        <div className={`oc-card lv-${LV[u.role]} ${cls}`} onClick={() => setProfileId(u.id)}>
-          <Avatar name={u.name} />
-          <b>{u.name}</b><span className="t">{u.title || ''}</span>
-          <span className="rl"><span className="badge role">{ROLE[u.role]}</span></span>
-          {canAddUnder(u) && <button type="button" className="oc-add" title={`إضافة موظف تحت ${u.name}`} aria-label={`إضافة موظف تحت ${u.name}`}
-            onClick={e => { e.stopPropagation(); setForm({ user: null, managerId: u.id }); }}>+</button>}
-          {kids.length > 0 && <button type="button" className="oc-toggle" title={col ? 'توسيع' : 'طي'}
-            onClick={e => { e.stopPropagation(); toggle(u.id); }}>{col ? '+' + descCount(u.id) : '−'}</button>}
-        </div>
-        {kids.length > 0 && !col && <ul>{kids.map(k => <Node key={k.id} u={k} />)}</ul>}
-      </li>
-    );
-  }
-
   const list = U.filter(matches);
   let body = null;
   if (users) {
     if (view === 'chart') {
       const roots = byMgr.get(0) || [];
       body = roots.length ? (
-        <>
-          <div className="orgchart-wrap"><ul className="orgchart">{roots.map(u => <Node key={u.id} u={u} />)}</ul></div>
-          <p className="muted small" style={{ marginTop: 10 }}>اضغط على أي شخص لفتح ملفه · زر − / + لطيّ الفرع وتوسيعه.</p>
-        </>
+        <OrgFlow roots={roots} kidsOf={kidsOf} collapsed={collapsed} onToggle={toggle} descCount={descCount} matches={matches} filtering={filtering}
+          canAddUnder={canAddUnder} canEdit={manage} layout={layout} onLayout={onLayout} onOpen={u => setProfileId(u.id)} meId={me.user.id}
+          onAdd={(u, side) => setForm({ user: null, managerId: u.id, side })} pending={pending} onPendingDone={() => setPending(null)} />
       ) : <div className="empty-box"><span className="ico"><Icon name="team" /></span><p>لا يوجد أشخاص لعرضهم.</p></div>;
     } else if (!list.length) {
       body = <div className="empty-box"><span className="ico"><Icon name="team" /></span><p>لا يوجد من يطابق البحث.</p></div>;
@@ -159,7 +151,7 @@ export default function TeamPage() {
           <button className={view === 'cards' ? 'active' : ''} title="بطاقات" onClick={() => pickView('cards')}><Icon name="projects" size={17} /></button>
           <button className={view === 'list' ? 'active' : ''} title="قائمة" onClick={() => pickView('list')}><Icon name="menu" size={17} /></button>
         </div>
-        {invite && <a className="btn ghost" href="/#/settings">دعوة بالرابط</a>}
+        {invite && <a className="btn ghost" href="/settings?tab=invites">دعوة بالرابط</a>}
         {manage && <button className="btn" onClick={() => setForm({ user: null })}><Icon name="plus" /> إضافة مستخدم</button>}
       </div>
       {body}
@@ -174,7 +166,7 @@ export default function TeamPage() {
       )}
       {form && <UserForm me={me} users={U} user={form.user} presetMgr={form.managerId ? byId.get(form.managerId) : null} myLevel={myLevel} isAdmin={isAdmin}
         onClose={() => setForm(null)}
-        onSaved={r => { setForm(null); load(); if (r && r.tempPassword) setSecret({ title: 'تم إنشاء الحساب — كلمة المرور المؤقتة', value: r.tempPassword }); else toast('تم التحديث'); }} />}
+        onSaved={r => { const f = form; setForm(null); load(); if (f && f.side && f.managerId && r && r.id) setPending({ id: r.id, managerId: f.managerId, side: f.side }); if (r && r.tempPassword) setSecret({ title: 'تم إنشاء الحساب — كلمة المرور المؤقتة', value: r.tempPassword }); else toast('تم التحديث'); }} />}
       {secret && (
         <Modal title={secret.title} onClose={() => setSecret(null)} actions={<button className="btn" onClick={() => setSecret(null)}>تم</button>}>
           <p className="notice">انسخها الآن وسلّمها للمستخدم — لن تظهر مرة ثانية، وسيُطلب منه تغييرها عند أول دخول.</p>
@@ -230,7 +222,7 @@ function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdi
         </div>
       </div>
       <div className="facts">
-        {u.email && <div className="fact"><small>البريد</small><b dir="ltr" style={{ display: 'block', textAlign: 'right' }}><a href={`mailto:${u.email}`}>{u.email}</a></b></div>}
+        {u.email && <div className="fact" style={{ gridColumn: '1 / -1' }}><small>البريد</small><b dir="ltr" style={{ display: 'block', textAlign: 'right', overflowWrap: 'anywhere' }}><a href={`mailto:${u.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>{u.email}</a></b></div>}
         <div className="fact"><small>الفريق المباشر</small><b className="big">{reports.length}</b></div>
         {u.lastLoginAt && <div className="fact"><small>آخر دخول</small><b>{ago(u.lastLoginAt)}</b></div>}
         <div className="fact"><small>المستوى</small><b>{LV[u.role]} من 5</b></div>

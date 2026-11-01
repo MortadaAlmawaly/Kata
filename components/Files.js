@@ -105,7 +105,7 @@ export function FilesBlock({ entity, id, compact = false, onError }) {
                 <small>{fmtSize(f.size)}{f.uploader ? ' · ' + f.uploader.name : ''}</small></div>
               <div className="file-acts">
                 <a href={f.url + '?download=1'} download={f.name} title="تنزيل" aria-label="تنزيل"><FIcon n="download" /></a>
-                {f.canDelete && <button type="button" onClick={() => remove(f)} title="حذف" aria-label="حذف">✕</button>}
+                {f.canDelete && <button type="button" onClick={() => remove(f)} title="حذف" aria-label="حذف"><FIcon n="x" size={14} /></button>}
               </div>
             </div>
           ))}

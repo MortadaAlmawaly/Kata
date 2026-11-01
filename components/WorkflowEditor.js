@@ -44,6 +44,7 @@ export default function WorkflowEditor({ cols, setCols, transitions, setTransiti
   const [view, setView] = useState({ x: 0, y: 0, z: 1 });
   const viewRef = useRef(view); viewRef.current = view;
   const pan = useRef(null);
+  const pinchOn = useRef(false);    // true أثناء القرص بإصبعين: يوقف سحب البلوكات وتحريك الخلفية
 
   /* معرّفات محلية ثابتة للأعمدة الجديدة */
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function WorkflowEditor({ cols, setCols, transitions, setTransiti
   const height = Math.max(240, ...nodes.map((c, i) => pos(c, i).y + H + 30));
 
   function down(e, c, i) {
-    if (e.target.closest('input,button,.wf-dot')) return;
+    if (pinchOn.current || e.target.closest('input,button,.wf-dot')) return;
     const p = pos(c, i);
     drag.current = { id: c._id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -97,9 +98,42 @@ export default function WorkflowEditor({ cols, setCols, transitions, setTransiti
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel);
   }, [full]);
+  /* لمس: إصبعان = تكبير/تصغير (قرص) مع تحريك المخطط بحركة منتصف الإصبعين */
+  useEffect(() => {
+    const el = vp.current; if (!el) return undefined;
+    const pts = new Map(); let pinch = null;
+    const mid = () => { const [a, b] = [...pts.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) || 1 }; };
+    const dn = e => {
+      if (e.pointerType !== 'touch') return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2) {
+        drag.current = null; pan.current = null; pinchOn.current = true;
+        const m = mid(), v = viewRef.current;
+        pinch = { d: m.d, z: v.z, x: v.x, y: v.y, cx: m.x, cy: m.y };
+      }
+    };
+    const mv = e => {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (!pinch || pts.size < 2) return;
+      const r = el.getBoundingClientRect(), m = mid();
+      const z = Math.max(0.25, Math.min(2, pinch.z * (m.d / pinch.d)));
+      const wx = (pinch.cx - r.left - pinch.x) / pinch.z, wy = (pinch.cy - r.top - pinch.y) / pinch.z;
+      setView({ z, x: (m.x - r.left) - wx * z, y: (m.y - r.top) - wy * z });
+    };
+    const upP = e => {
+      pts.delete(e.pointerId);
+      if (pts.size < 2) { pinch = null; if (!pts.size) pinchOn.current = false; }
+    };
+    el.addEventListener('pointerdown', dn, true);
+    el.addEventListener('pointermove', mv, true);
+    el.addEventListener('pointerup', upP, true);
+    el.addEventListener('pointercancel', upP, true);
+    return () => { el.removeEventListener('pointerdown', dn, true); el.removeEventListener('pointermove', mv, true); el.removeEventListener('pointerup', upP, true); el.removeEventListener('pointercancel', upP, true); };
+  }, [full]);
   const zoomBy = d => { const el = vp.current; if (!el) return; const mx = el.clientWidth / 2, my = el.clientHeight / 2; setView(v => { const cur = Math.round(v.z * 100); const nxt = d > 0 ? (Math.floor(cur / 5) + 1) * 5 : (Math.ceil(cur / 5) - 1) * 5; const z = Math.max(0.25, Math.min(2, nxt / 100)); return { z, x: mx - (mx - v.x) * (z / v.z), y: my - (my - v.y) * (z / v.z) }; }); };
   function panDown(e) {
-    if (e.target.closest('.wf-node,.wf-edge,button')) return;
+    if (pinchOn.current || e.target.closest('.wf-node,.wf-edge,button')) return;
     pan.current = { sx: e.clientX, sy: e.clientY, ox: viewRef.current.x, oy: viewRef.current.y };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
@@ -130,7 +164,7 @@ export default function WorkflowEditor({ cols, setCols, transitions, setTransiti
         <button type="button" className="btn ghost sm" onClick={() => preset('both')}>أمامي وخلفي</button>
         <button type="button" className="btn ghost sm" onClick={() => preset('free')}>حرّ (بلا قيود)</button>
         <span className="wf-zoom"><button type="button" className="tb-btn" onClick={() => zoomBy(-1)} aria-label="تصغير">−</button><b>{Math.round(view.z * 100)}%</b><button type="button" className="tb-btn" onClick={() => zoomBy(1)} aria-label="تكبير">＋</button><button type="button" className="btn ghost sm" onClick={fit}>ملاءمة</button></span>
-        <button type="button" className="btn ghost sm" onClick={() => setFull(f => !f)} title={full ? 'تصغير (Esc)' : 'ملء الشاشة'}>{full ? '✕ تصغير' : '⛶ ملء الشاشة'}</button>
+        <button type="button" className="btn ghost sm" onClick={() => setFull(f => !f)} title={full ? 'تصغير (Esc)' : 'ملء الشاشة'}>{full ? <><FIcon n="x" size={13} /> تصغير</> : <><FIcon n="maximize" size={13} /> ملء الشاشة</>}</button>
         {full && <button type="button" className="btn sm" onClick={onSave}>{dirty ? 'حفظ التغييرات' : 'حفظ'}</button>}
       </div>
       <div className="wf-vp" ref={vp} onPointerDown={panDown} onPointerMove={panMove} onPointerUp={panUp} onPointerCancel={panUp}
@@ -146,7 +180,7 @@ export default function WorkflowEditor({ cols, setCols, transitions, setTransiti
                 <g key={t.from + '>' + t.to} className={`wf-edge ${hoverEdge === i ? 'hov' : ''}`} onMouseEnter={() => setHoverEdge(i)} onMouseLeave={() => setHoverEdge(-1)} onClick={() => unlink(i)}>
                   <path d={g.d} className="wf-hit" />
                   <path d={g.d} className="wf-line" markerEnd="url(#wfArrow)" />
-                  {hoverEdge === i && <text x={g.mid.x} y={g.mid.y} className="wf-x" textAnchor="middle" dominantBaseline="middle">✕</text>}
+                  {hoverEdge === i && <text x={g.mid.x} y={g.mid.y} className="wf-x" textAnchor="middle" dominantBaseline="middle">×</text>}
                 </g>
               );
             })}

@@ -1,6 +1,6 @@
 'use client';
 /* مكوّنات واجهة صغيرة مشتركة: شعار، أيقونة، أفاتار، نافذة، زر اللغة، تهيئة المظهر. تستعمل أصناف app.css الحالية. */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FIcon } from './Icon';
 import { ICONS, hueOf, initialOf } from '../lib/constants';
 import { withBase } from '@/lib/base';
@@ -41,7 +41,7 @@ export function Avatar({ name, size }) {
 }
 
 /* نافذة منبثقة بنفس تصميم الواجهة القديمة */
-export function Modal({ title, onClose, children, actions, wide, cardClass = '', noLock = false }) {
+export function Modal({ title, onClose, children, actions, wide, cardClass = '', noLock = false, center = false }) {
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
@@ -57,7 +57,7 @@ export function Modal({ title, onClose, children, actions, wide, cardClass = '',
     return () => { if (!prev) document.documentElement.classList.remove('scroll-lock'); };
   }, [noLock]);
   return (
-    <div className="modal" onMouseDown={e => { if (e.target === e.currentTarget && onClose) onClose(); }}>
+    <div className={`modal ${center ? 'modal-center' : ''}`} onMouseDown={e => { if (e.target === e.currentTarget && onClose) onClose(); }}>
       <div className={`modal-card ${wide ? 'wide' : ''} ${cardClass}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="modal-head">
           <h2>{title}</h2>
@@ -89,14 +89,25 @@ export function toggleTheme() {
 
 /* زر اللغة: يعتمد على i18n-en.js (مترجم DOM) كما في الواجهة القديمة */
 export function LangButton({ className = 'icon-btn', style }) {
+  /* الحالة تُقرأ بعد التحميل من التخزين: النص الذي يرسمه الخادم دائماً «EN» ولا يُصحَّح وحده بعد الترطيب */
+  const [en, setEn] = useState(false);
+  useEffect(() => { try { setEn(localStorage.getItem('rb-lang') === 'en' || window.LANG === 'en'); } catch (_) { /* لا تخزين */ } }, []);
   const click = () => {
-    const cur = typeof window !== 'undefined' && window.LANG === 'en' ? 'en' : 'ar';
-    if (window.setLang) window.setLang(cur === 'en' ? 'ar' : 'en');
+    if (window.setLang) window.setLang(en ? 'ar' : 'en');
   };
   return (
     <button type="button" className={className} id="langBtn" aria-label="Language" title="English / عربي" data-no-i18n
-      onClick={click} style={{ fontWeight: 800, fontSize: '.76rem', ...style }} suppressHydrationWarning>
-      {typeof window !== 'undefined' && window.LANG === 'en' ? 'AR' : 'EN'}
+      onClick={click} style={{ fontWeight: 800, fontSize: '.76rem', ...style }}>
+      {en ? 'AR' : 'EN'}
     </button>
+  );
+}
+/* قائمة منسدلة بديلة لشريط التبويبات على الجوال والآيباد الصغير (تظهر بـ CSS فقط، وشريط التبويبات يُخفى عندها).
+   tabs: [[key, label], ...] — onPick(key) */
+export function MobileTabs({ tabs, value, onPick, label = 'القسم' }) {
+  return (
+    <select className="input m-pick" aria-label={label} value={value} onChange={e => onPick(e.target.value)}>
+      {tabs.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+    </select>
   );
 }

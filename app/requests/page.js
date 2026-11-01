@@ -4,13 +4,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import { fmtDT, ROLE, RTYPE } from '../../lib/constants';
 import AppShell, { useMe } from '../../components/AppShell';
-import { Avatar, Icon, Modal } from '../../components/ui';
+import { Avatar, Icon, MobileTabs, Modal } from '../../components/ui';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
+import MentionInput from '../../components/MentionInput';
 import { ago, useConfirm, useToast } from '../../components/hooks';
+import { FIcon } from '../../components/Icon';
 
 const RSTATUS = { PENDING: 'قيد الموافقة', APPROVED: 'معتمد', REJECTED: 'مرفوض', CANCELLED: 'ملغي' };
 const RSTATUS_HERO = { PENDING: 't-REQ-PENDING', APPROVED: 't-REQ-OK', REJECTED: 't-REQ-NO', CANCELLED: 't-TASK' };
-const STEP_ICON = { DONE: '✓', CURRENT: '⏳', FUTURE: '○', REJECTED: '✕' };
+const STEP_ICON = { DONE: 'check', CURRENT: 'hourglass', FUTURE: 'circle', REJECTED: 'x' };
 const fmt = n => Number(n || 0).toLocaleString('en-US');
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
@@ -47,7 +49,8 @@ export default function RequestsPage() {
     <AppShell active="requests" title="الطلبات والموافقات" sub="مصروفات ومشتريات" me={me}>
       {error && <div className="notice">{error}</div>}
       <div className="toolbar">
-        <div className="seg">
+        <MobileTabs label="نوع الطلبات" tabs={tabs} value={box} onPick={k => { if (k !== box) { setList(null); setBox(k); } }} />
+        <div className="seg m-hide-sm">
           {tabs.map(([k, l]) => <button key={k} className={box === k ? 'active' : ''} onClick={() => { if (k !== box) { setList(null); setBox(k); } }}>{l}</button>)}
         </div>
         <span className="grow" />
@@ -135,9 +138,16 @@ function RequestDetail({ id, me, onClose, onError, onDecide, onCancel }) {
     ((r.currentApprover && r.currentApprover.id === me.user.id) || me.user.role === 'CEO');
   const noteOf = new Map(r.steps.map(s => [s.approver.id, s]));
   const leaveName = r.type === 'LEAVE' ? ((me.org.settings.leaveTypes || []).find(t => t.key === (r.leaveType || 'annual')) || {}).name : null;
+  /* الإشارة (@): نكتب @الاسم ويُرسل للخادم بصيغة @[رقم] ويُعرض اسماً */
+  const people = r.mentionable || [];
+  const names = new Map(people.map(p => [p.id, p.name]));
+  names.set(r.requester.id, r.requester.name); r.chain.forEach(c => names.set(c.id, c.name)); names.set(me.user.id, me.user.name);
+  const renderMention = body => String(body).replace(/@\[(\d+)\]/g, (_, n) => '@' + (names.get(+n) || 'مستخدم'));
+  const toTokens = s => { let out = s; [...people].sort((a, b) => b.name.length - a.name.length).forEach(u => { out = out.split('@' + u.name).join(`@[${u.id}]`); }); return out; };
+  const tag = uid => { const p = people.find(x => String(x.id) === String(uid)); if (p) setText(t => (t && !/\s$/.test(t) ? t + ' ' : t) + '@' + p.name + ' '); };
   async function send() {
     if (!text.trim()) return;
-    try { await api('POST', `/api/requests/${id}/comments`, { body: text }); setText(''); load(); } catch (e) { onError(e.message); }
+    try { await api('POST', `/api/requests/${id}/comments`, { body: toTokens(text) }); setText(''); load(); } catch (e) { onError(e.message); }
   }
   return (
     <Modal title={r.title} wide onClose={onClose}
@@ -153,7 +163,7 @@ function RequestDetail({ id, me, onClose, onError, onDecide, onCancel }) {
         <div className="chips">
           <span className="badge role">{RTYPE[r.type]}</span>
           <span className="badge role">{RSTATUS[r.status]}</span>
-          {r.currentApprover && <span className="badge role">⏳ عند {r.currentApprover.name}</span>}
+          {r.currentApprover && <span className="badge role"><FIcon n="hourglass" size={12} /> عند {r.currentApprover.name}</span>}
         </div>
         <div className="muted small" style={{ marginTop: 6 }}>
           {r.type === 'LEAVE' ? `${r.startDate} ← ${r.endDate}${leaveName ? ' · ' + leaveName : ''}` : `${fmt(r.amount)} ${me.org.currency}`} · {r.requester.name}
@@ -162,12 +172,12 @@ function RequestDetail({ id, me, onClose, onError, onDecide, onCancel }) {
       {r.details && <p style={{ whiteSpace: 'pre-wrap' }}>{r.details}</p>}
       <h3 className="section-title">مسار الاعتماد</h3>
       <div className="chain">
-        <div className="chain-node DONE"><span className="ci">✓</span><div><b>{r.requester.name}</b><small>قدّم الطلب · {ago(r.createdAt)}</small></div></div>
+        <div className="chain-node DONE"><span className="ci"><FIcon n="check" size={14} /></span><div><b>{r.requester.name}</b><small>قدّم الطلب · {ago(r.createdAt)}</small></div></div>
         {r.chain.map(c => {
           const st = noteOf.get(c.id);
           return (
             <div className={`chain-node ${c.state}`} key={c.id}>
-              <span className="ci">{STEP_ICON[c.state]}</span>
+              <span className="ci"><FIcon n={STEP_ICON[c.state] || 'circle'} size={14} /></span>
               <div>
                 <b>{c.name}</b>
                 <small>{ROLE[c.role]}{c.limit != null ? ` · يعتمد حتى ${fmt(c.limit)}` : ' · بلا حد'}{c.canFinalize && c.state === 'FUTURE' ? ' · يُنهي الطلب' : ''}</small>
@@ -178,8 +188,8 @@ function RequestDetail({ id, me, onClose, onError, onDecide, onCancel }) {
             </div>
           );
         })}
-        {r.status === 'APPROVED' && <div className="chain-node DONE end"><span className="ci">★</span><div><b>تم الاعتماد</b></div></div>}
-        {r.status === 'REJECTED' && <div className="chain-node REJECTED end"><span className="ci">✕</span><div><b>تم الرفض</b></div></div>}
+        {r.status === 'APPROVED' && <div className="chain-node DONE end"><span className="ci"><FIcon n="star" size={14} /></span><div><b>تم الاعتماد</b></div></div>}
+        {r.status === 'REJECTED' && <div className="chain-node REJECTED end"><span className="ci"><FIcon n="x" size={14} /></span><div><b>تم الرفض</b></div></div>}
       </div>
       <FilesBlock entity="request" id={r.id} onError={onError} />
       <h3 className="section-title">النقاش ({r.comments.length})</h3>
@@ -188,13 +198,19 @@ function RequestDetail({ id, me, onClose, onError, onDecide, onCancel }) {
           ? r.comments.map(c => (
             <div className="comment" key={c.id}>
               <b>{c.user.name}</b> <small>{ago(c.createdAt)}</small>
-              <div style={{ whiteSpace: 'pre-wrap' }}>{c.body}</div>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{renderMention(c.body)}</div>
             </div>))
           : <p className="muted small">لا يوجد نقاش بعد — اسأل أو وضّح قبل القرار.</p>}
       </div>
       <div className="comment-box">
-        <input className="input" value={text} maxLength={1000} placeholder="اكتب تعليقاً على الطلب…"
-          onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); send(); } }} />
+        <MentionInput className="input" value={text} maxLength={1000} placeholder="اكتب تعليقاً… واكتب @ لتنبيه الشخص المعني" people={people}
+          onChange={setText} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); send(); } }} />
+        {people.length > 0 && (
+          <select className="input rq-tag" aria-label="نبّه شخصاً" value="" onChange={e => { tag(e.target.value); e.target.value = ''; }}>
+            <option value="">@ نبّه شخصاً</option>
+            {people.map(p => <option key={p.id} value={p.id}>{p.name} — {ROLE[p.role] || p.role}</option>)}
+          </select>
+        )}
         <button type="button" className="btn ghost" onClick={send}>إرسال</button>
       </div>
     </Modal>

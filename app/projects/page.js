@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 import { ROLE } from '../../lib/constants';
 import { dueInfo, PSTATUS, STATUS } from '../../lib/util';
 import AppShell, { useMe } from '../../components/AppShell';
-import { Avatar, Icon, Modal } from '../../components/ui';
+import { Avatar, Icon, MobileTabs, Modal } from '../../components/ui';
 import { Ring } from '../../components/charts';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import { ago, useConfirm, useToast } from '../../components/hooks';
@@ -32,9 +32,11 @@ export default function ProjectsPage() {
   const rows = all.filter(p => (!status || p.status === status) && (!s || p.name.toLowerCase().includes(s) || p.owner.name.toLowerCase().includes(s)));
 
   return (
-    <AppShell active="projects" title="المشاريع" sub="تقدّم المشاريع ومهامها" me={me}>
+    <AppShell active="projects" title="المساحات" sub="مساحات العمل وتقدّمها ومهامها" me={me}>
       {error && <div className="notice">{error}</div>}
-      <div className="tabs-row">
+      <MobileTabs label="حالة المساحة" value={status || '__all'} onPick={k => setStatus(k === '__all' ? '' : k)}
+        tabs={[['__all', `الكل (${all.length})`], ...Object.entries(PSTATUS).map(([k, l]) => [k, `${l} (${all.filter(p => p.status === k).length})`])]} />
+      <div className="tabs-row m-hide-sm">
         <button className={`tab-pill ${!status ? 'active' : ''}`} onClick={() => setStatus('')}>الكل <span className="n">{all.length}</span></button>
         {Object.entries(PSTATUS).map(([k, l]) => (
           <button key={k} className={`tab-pill ${status === k ? 'active' : ''}`} onClick={() => setStatus(k)}>{l} <span className="n">{all.filter(p => p.status === k).length}</span></button>
@@ -42,14 +44,14 @@ export default function ProjectsPage() {
       </div>
       <div className="toolbar">
         <label className="search-field"><Icon name="search" />
-          <input className="input" placeholder="ابحث في المشاريع…" value={q} autoComplete="off" onChange={e => setQ(e.target.value)} /></label>
+          <input className="input" placeholder="ابحث في المساحات…" value={q} autoComplete="off" onChange={e => setQ(e.target.value)} /></label>
         <span className="grow" />
-        {canCreate && <button className="btn" onClick={() => setForm({ project: null })}><Icon name="plus" /> مشروع جديد</button>}
+        {canCreate && <button className="btn" onClick={() => setForm({ project: null })}><Icon name="plus" /> مساحة جديدة</button>}
       </div>
       {list && !rows.length && (
         <div className="empty-box"><span className="ico"><Icon name="projects" /></span>
           <p>{all.length ? 'لا توجد مشاريع تطابق الفلتر.' : 'لا توجد مشاريع بعد.'}</p>
-          {!all.length && canCreate && <button className="btn" onClick={() => setForm({ project: null })}>+ مشروع جديد</button>}</div>
+          {!all.length && canCreate && <button className="btn" onClick={() => setForm({ project: null })}>+ مساحة جديدة</button>}</div>
       )}
       {rows.length > 0 && (
         <div className="goal-grid">
@@ -107,10 +109,10 @@ function ProjectForm({ me, project: p, onClose, onSaved, onError }) {
     } catch (ex) { setErr(ex.message); setBusy(false); }
   }
   return (
-    <Modal title={p ? 'تعديل المشروع' : 'مشروع جديد'} onClose={onClose}>
+    <Modal title={p ? 'تعديل المساحة' : 'مساحة جديدة'} onClose={onClose}>
       <form onSubmit={submit} noValidate>
         <label className="field"><span>الاسم</span><input value={f.name} maxLength={120} required onChange={set('name')} /></label>
-        <label className="field"><span>مفتاح المشروع (بادئة أرقام المهام، مثل NKH)</span>
+        <label className="field"><span>مفتاح المساحة (بادئة أرقام المهام، مثل NKH)</span>
           <input value={f.key} maxLength={10} dir="ltr" style={{ textAlign: 'right', textTransform: 'uppercase' }} placeholder="يُقترح تلقائياً" onChange={set('key')} /></label>
         <label className="field"><span>الوصف</span><textarea value={f.description} maxLength={4000} onChange={set('description')} /></label>
         <div className="row2">
@@ -165,7 +167,7 @@ function ProjectDetail({ id, me, onClose, onEdit, onChanged, onToast }) {
       actions={(
         <>
           {p.canEdit && <button type="button" className="btn ghost" onClick={() => onEdit(p)}>تعديل</button>}
-          {p.canEdit && <button type="button" className="btn danger" onClick={() => ask({ title: 'حذف المشروع', text: 'المهام تبقى لكن بدون مشروع.', ok: 'حذف',
+          {p.canEdit && <button type="button" className="btn danger" onClick={() => ask({ title: 'حذف المساحة', text: 'المهام تبقى لكن بدون مساحة.', ok: 'حذف',
             onOk: async () => { await api('DELETE', '/api/projects/' + id); onChanged(); onClose(); } })}>حذف</button>}
           <button type="button" className="btn ghost" onClick={onClose}>إغلاق</button>
         </>
@@ -200,8 +202,8 @@ function ProjectDetail({ id, me, onClose, onEdit, onChanged, onToast }) {
           </a>
         );
       })}
-      {!p.tasksList.length && <p className="muted small">لا توجد مهام بهذا المشروع بعد.</p>}
-      <a className="btn ghost sm" style={{ marginTop: 4 }} href={`/tasks?new=1&projectId=${id}`}>+ مهمة لهذا المشروع</a>
+      {!p.tasksList.length && <p className="muted small">لا توجد مهام بهذه المساحة بعد.</p>}
+      <a className="btn ghost sm" style={{ marginTop: 4 }} href={`/tasks?new=1&projectId=${id}`}>+ مهمة لهذه المساحة</a>
 
       <FilesBlock entity="project" id={id} onError={m => onToast(m, 'err')} />
 

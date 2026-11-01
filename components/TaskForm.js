@@ -168,7 +168,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
           <label className="field qc-extra"><span>التقدير (مثال: 2h 30m أو 1d)</span><input value={f.estimate} placeholder="2h 30m" onChange={set('estimate')} /></label>
           <label className="field qc-extra"><span>تاريخ البدء</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
           <label className="field"><span>تاريخ التسليم</span><input type="date" value={f.dueDate} onChange={set('dueDate')} /></label>
-          {!boardOptions.length && !lockBoard && <label className="field qc-extra"><span>المشروع</span>
+          {!boardOptions.length && !lockBoard && <label className="field qc-extra"><span>المساحة</span>
             <select value={f.projectId} onChange={set('projectId')}>
               <option value="">— بدون —</option>
               {R.projects.filter(p => p.status !== 'DONE' || p.id === t.projectId).map(p => <option key={p.id} value={p.id}>{p.key ? p.key + ' — ' : ''}{p.name}</option>)}

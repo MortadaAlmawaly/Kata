@@ -2,21 +2,26 @@
 /* الهيكل المشترك لصفحات React المرحَّلة: قائمة جانبية + شريط علوي + بطاقة المستخدم.
    يطابق تصميم الواجهة القديمة (نفس أصناف app.css) فلا يظهر فرق بصري عند التنقّل.
    الصفحات التي لم تُرحَّل بعد تفتح الواجهة القديمة عبر /#/<id>. */
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { logoutWithPush } from '../lib/pushClient';
-import { applyLabels, GROUPS, ICONS, PAGES, ROLE } from '../lib/constants';
+import { applyLabels, GROUPS, ICONS, navVisible, PAGES, ROLE } from '../lib/constants';
 import { Avatar, Icon, LangButton, LogoSet, ThemeInit, toggleTheme } from './ui';
 import { Bell, ForcePassword, Palette, useBadges } from './ShellExtras';
 import TourHost from './Tour';
 import { FIcon } from './Icon';
-import { withBase } from '@/lib/base';
+import { usePathname, useRouter } from 'next/navigation';
+import { stripBase, withBase } from '@/lib/base';
+import { installTouchDnd } from '../lib/touchDnd';
+
+/* آخر نسخة معروفة من بيانات المستخدم: تُعرض فوراً عند التنقل بين الصفحات ثم تُحدَّث بالخلفية (بدل شاشة فارغة بكل تنقل) */
+let ME_CACHE = null;
 
 export function useMe() {
-  const [me, setMe] = useState(null);
+  const [me, setMe] = useState(ME_CACHE);
   const [error, setError] = useState(null);
   const load = useCallback(async () => {
-    try { const d = await api('GET', '/api/me'); applyLabels(d); setMe(d); return d; } catch (e) { if (e.message !== 'unauthorized') setError(e.message); return null; }
+    try { const d = await api('GET', '/api/me'); applyLabels(d); ME_CACHE = d; setMe(d); return d; } catch (e) { if (e.message !== 'unauthorized') setError(e.message); return null; }
   }, []);
   useEffect(() => { load(); }, [load]);
   return { me, error, reload: load };
@@ -24,8 +29,42 @@ export function useMe() {
 
 const hrefOf = p => p.react || `/#/${p.id}`;
 
-export default function AppShell({ active, title, sub, me, children }) {
+function ShellChrome({ active, title, sub, me, shown = true, children }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  /* الهيكل مشترك بين الصفحات: عند الانتقال لصفحة جديدة يعود المحتوى لأعلاه */
+  useEffect(() => { const el = document.querySelector('.main'); if (el) el.scrollTop = 0; }, [pathname]);
+  const router = useRouter();
+  /* تنقل داخلي بلا إعادة تحميل: أي رابط داخلي لصفحة من التطبيق يُفتح عبر الموجّه (الهيكل والـ CSS والسكربتات تبقى محمّلة).
+     نفس الصفحة بوسائط مختلفة (مثل ?board=) تبقى بتحميل كامل لأن الصفحة تقرأ الوسائط عند فتحها فقط. */
+  useEffect(() => {
+    const routes = new Set([...PAGES.map(p => p.react).filter(Boolean), '/boards']);
+    const norm = p => stripBase(p).replace(/\/$/, '') || '/';
+    const go = h => {
+      try {
+        const u = new URL(h, window.location.href);
+        if (u.origin !== window.location.origin) return false;
+        const path = norm(u.pathname);
+        if (!routes.has(path) || path === norm(window.location.pathname)) return false;
+        router.push(path + u.search + u.hash);
+        setOpen(false);
+        return true;
+      } catch (_) { return false; }
+    };
+    window.__spaGo = go;
+    const onClick = e => {
+      if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = e.target.closest && e.target.closest('a[href]');
+      if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+      const h = a.getAttribute('href');
+      if (!h || h[0] !== '/' || h[1] === '/') return;
+      if (go(h)) e.preventDefault();
+    };
+    document.addEventListener('click', onClick);
+    return () => { document.removeEventListener('click', onClick); if (window.__spaGo === go) delete window.__spaGo; };
+  }, [router]);
+  /* سحب وإفلات باللمس (ضغطة مطوّلة ثم سحب) لبطاقات المهام وصفوف الـ Backlog */
+  useEffect(() => installTouchDnd(), []);
   /* الشريط العلوي شفاف أعلى الصفحة ويصير معتماً (مع تغبيش) عند التمرير حتى لا يتداخل المحتوى معه */
   useEffect(() => {
     const el = document.querySelector('.main'); const bar = document.querySelector('.topbar');
@@ -63,8 +102,11 @@ export default function AppShell({ active, title, sub, me, children }) {
   const perms = (me && me.perms) || [];
   const labels = (me && me.org && me.org.settings && me.org.settings.labels) || {};
   const roleName = r => (labels.roles && labels.roles[r]) || ROLE[r] || r;
-  const pageTitle = p => (labels.pages && labels.pages[p.id]) || p.title;
-  const visible = PAGES.filter(p => (!p.perm || perms.includes(p.perm)) && (!p.platform || (me && me.platformAdmin)));
+  const pageTitle = p => (labels.pages && labels.pages[p.id]) || (p.id === 'settings' && !perms.includes('admin') && ((me && me.level) || 1) < 2 ? 'حسابي' : p.title);
+  const level = (me && me.level) || 1;
+  const visible = PAGES.filter(p => navVisible(p, perms, level, !!(me && me.platformAdmin)));
+  /* صفحات مدموجة (التحليلات، السياسات، التدقيق…) تُضيء بند أمّها في القائمة */
+  const navActive = (PAGES.find(p => p.id === active) || {}).navAlias || active;
 
   async function logout() {
     await logoutWithPush(api);   // P1: يلغي اشتراك Push بهذا الجهاز ويبلّغ السيرفر يحذفه
@@ -77,6 +119,7 @@ export default function AppShell({ active, title, sub, me, children }) {
   }, []);
   /* اختصارات: Ctrl/⌘+K أو / لفتح البحث، N مهمة جديدة */
   useEffect(() => {
+    if (!shown) return undefined;
     const onKey = e => {
       const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
       if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyK' || e.key.toLowerCase() === 'k')) { e.preventDefault(); setPalette(p => !p); }
@@ -87,16 +130,16 @@ export default function AppShell({ active, title, sub, me, children }) {
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [shown]);
 
   const tabIds = ['dashboard', 'calendar', 'tasks', 'requests'];
   let last = null;
   return (
     <>
-      <ThemeInit />
-      <div className="shell">
-        {open && <div className="side-scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
-        <aside className={`side ${open ? 'open' : ''}`} id="side">
+      {shown && <ThemeInit />}
+      <div className={shown ? 'shell' : 'shell-off'}>
+        {shown && open && <div className="side-scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
+        {shown && <aside className={`side ${open ? 'open' : ''}`} id="side">
           <div className="brand brand-logo">
             <div><LogoSet /><small>{me ? me.org.name : ''}</small></div>
           </div>
@@ -110,7 +153,7 @@ export default function AppShell({ active, title, sub, me, children }) {
                   {p.id === 'tasks' && boards.length > 0 ? (
                     <>
                       <div className="nav-row">
-                        <a href={hrefOf(p)} className={p.id === active ? 'active' : ''} aria-current={p.id === active ? 'page' : undefined}>
+                        <a href={hrefOf(p)} className={p.id === navActive ? 'active' : ''} aria-current={p.id === navActive ? 'page' : undefined}>
                           <Icon name={p.icon} /><span>{pageTitle(p)}</span>
                         </a>
                         <button type="button" className={`nav-exp ${boardsOpen ? 'open' : ''}`} aria-expanded={boardsOpen} aria-label="اللوحات" title="اللوحات" onClick={toggleBoards}><FIcon n="chev" size={15} /></button>
@@ -131,7 +174,7 @@ export default function AppShell({ active, title, sub, me, children }) {
                       )}
                     </>
                   ) : (
-                    <a href={hrefOf(p)} className={p.id === active ? 'active' : ''} aria-current={p.id === active ? 'page' : undefined}>
+                    <a href={hrefOf(p)} className={p.id === navActive ? 'active' : ''} aria-current={p.id === navActive ? 'page' : undefined}>
                       <Icon name={p.icon} /><span>{pageTitle(p)}</span>
                       {p.id === 'requests' && badges.inbox > 0 && <span className="count">{badges.inbox}</span>}
                     </a>
@@ -149,10 +192,10 @@ export default function AppShell({ active, title, sub, me, children }) {
             </div>
             <button type="button" className="out" onClick={logout} aria-label="تسجيل الخروج" title="تسجيل الخروج"><Icon name="logout" /></button>
           </div>
-        </aside>
+        </aside>}
 
         <div className="main">
-          <header className="topbar">
+          {shown && <header className="topbar">
             <button className="menu-toggle" type="button" aria-label="القائمة" onClick={() => setOpen(o => !o)}><Icon name="menu" size={20} /></button>
             <div className="titles"><h1>{title}</h1><p className="sub">{sub}</p></div>
             <button className="search-btn" type="button" aria-label="بحث وأوامر سريعة" onClick={() => me && setPalette(true)}>
@@ -162,13 +205,13 @@ export default function AppShell({ active, title, sub, me, children }) {
             <LangButton />
             <button className="icon-btn" type="button" aria-label="تبديل المظهر" onClick={toggleTheme}><Icon name="moon" /></button>
             {me && <Bell badges={badges} />}
-          </header>
-          <main className="content">{children}</main>
+          </header>}
+          <div className="content" role={shown ? 'main' : undefined}>{children}</div>
         </div>
       </div>
-      <nav className="tabbar" aria-label="التنقل السريع">
+      {shown && <nav className="tabbar" aria-label="التنقل السريع">
         {tabIds.map(id => PAGES.find(p => p.id === id)).filter(Boolean).map(p => (
-          <a key={p.id} href={hrefOf(p)} className={p.id === active ? 'active' : ''}>
+          <a key={p.id} href={hrefOf(p)} className={p.id === navActive ? 'active' : ''}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS[p.icon]} /></svg>
             <span>{pageTitle(p).split(' ')[0]}</span>
             {p.id === 'requests' && badges.inbox > 0 && <i className="tb-count">{badges.inbox}</i>}
@@ -177,11 +220,40 @@ export default function AppShell({ active, title, sub, me, children }) {
         <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg><span>المزيد</span>
         </button>
-      </nav>
+      </nav>}
       {palette && me && <Palette me={me} onClose={() => setPalette(false)} onLogout={logout} onTheme={toggleTheme} />}
       {mustChange && me && <ForcePassword me={me} onDone={() => setMustChange(false)} />}
       {badges.toastNode}
-      {me && <TourHost me={me} />}
+      {shown && me && <TourHost me={me} />}
     </>
   );
+}
+/* ───── الهيكل المشترك: يوضع مرة واحدة في app/layout.js فيبقى (القائمة والشريط والإشعارات) أثناء التنقل بين الصفحات، وتتبدّل الصفحة فقط ───── */
+const ShellCtx = createContext(null);
+const KNOWN_ROUTES = new Set([...PAGES.map(p => p.react).filter(Boolean), '/boards']);
+const normPath = p => stripBase(p || '').replace(/\/$/, '') || '/';
+
+export function ShellProvider({ children }) {
+  const pathname = usePathname();
+  const path = normPath(pathname);
+  const [meta, setMeta] = useState({ path: null, active: null, title: '', sub: '', me: null });
+  const api2 = useMemo(() => ({ setMeta }), []);
+  const known = KNOWN_ROUTES.has(path);
+  const mine = meta.path === path;                     // الصفحة الحالية سجّلت بياناتها
+  const page = PAGES.find(p => p.react === path);
+  const eff = mine ? meta : { active: page ? page.id : null, title: page ? page.title : '', sub: page ? page.sub : '', me: meta.me || ME_CACHE };
+  return (
+    <ShellCtx.Provider value={api2}>
+      <ShellChrome active={eff.active} title={eff.title} sub={eff.sub} me={eff.me || ME_CACHE} shown={known || mine}>{children}</ShellChrome>
+    </ShellCtx.Provider>
+  );
+}
+
+/* ما تستعمله الصفحات: يسجّل العنوان والقسم والمستخدم للهيكل المشترك ويعرض محتوى الصفحة فقط */
+export default function AppShell({ active, title, sub, me, children }) {
+  const ctx = useContext(ShellCtx);
+  const pathname = usePathname();
+  useEffect(() => { if (ctx) ctx.setMeta({ path: normPath(pathname), active, title, sub, me }); }, [ctx, pathname, active, title, sub, me]);
+  if (!ctx) return <ShellChrome active={active} title={title} sub={sub} me={me}>{children}</ShellChrome>;   // بدون مزوّد: هيكل خاص بالصفحة
+  return <>{children}</>;
 }

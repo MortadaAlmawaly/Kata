@@ -132,12 +132,12 @@ function Calendar() {
         <span className={`chip ev-${evKind(e.type)}`} draggable={me && e.creator.id === me.user.id}
           onDragStart={ev => { dragged.current = e; ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', String(e.id)); }}
           onClick={ev => { ev.stopPropagation(); setDetail(e); }}>
-          {e.recurrence ? '🔁 ' : ''}{e.allDay || e.type === 'HOLIDAY' ? '' : fmtTime(e.startAt) + ' '}{e.title}
+          {e.recurrence ? <><FIcon n="repeat" size={12} /> </> : ''}{e.allDay || e.type === 'HOLIDAY' ? '' : fmtTime(e.startAt) + ' '}{e.title}
         </span>
       );
     }
     if (it.kind === 'task') return <span className="chip tk" onClick={ev => { ev.stopPropagation(); openItem(it); }}><FIcon n="pin" size={11} /> {it.task.title}</span>;
-    return <span className="chip lv">🌴 {it.l.person.name}</span>;
+    return <span className="chip lv"><FIcon n="palm" size={13} /> {it.l.person.name}</span>;
   };
   const AgendaItem = ({ it }) => {
     if (it.kind === 'event') {
@@ -146,12 +146,12 @@ function Calendar() {
         <div className={`ag-item ev-${evKind(e.type)}`} onClick={() => setDetail(e)} style={{ cursor: 'pointer' }}>
           <span className="ag-time">{all ? 'طوال اليوم' : fmtTime(e.startAt) + ' – ' + fmtTime(e.endAt)}</span>
           <span className="ag-title">{e.title}{e.myResponse === 'PENDING' && <> <span className="badge PENDING">بانتظار ردّك</span></>}</span>
-          {e.location && <small className="muted">📍 {e.location}</small>}
+          {e.location && <small className="muted"><FIcon n="mappin" size={12} /> {e.location}</small>}
         </div>
       );
     }
     if (it.kind === 'task') return <div className="ag-item tk" onClick={() => openItem(it)} style={{ cursor: 'pointer' }}><span className="ag-time">تسليم</span><span className="ag-title"><FIcon n="pin" size={13} /> {it.task.title}</span></div>;
-    return <div className="ag-item lv"><span className="ag-time">إجازة</span><span className="ag-title">🌴 {it.l.person.name}{it.l.mine ? ' (أنا)' : ''}</span></div>;
+    return <div className="ag-item lv"><span className="ag-time">إجازة</span><span className="ag-title"><FIcon n="palm" size={13} /> {it.l.person.name}{it.l.mine ? ' (أنا)' : ''}</span></div>;
   };
 
   function MonthView() {
@@ -247,7 +247,7 @@ function Calendar() {
                     return (
                       <div key={t.it.e.id + '-' + x.k} className={`wk-ev c-${t.it.e.type}`} onClick={() => setDetail(t.it.e)}
                         style={{ top, height: h, insetInlineStart: `calc(${t.lane} * 100% / ${t.n} + 2px)`, width: `calc(100% / ${t.n} - 4px)` }}>
-                        {t.it.e.recurrence ? '🔁 ' : ''}{t.it.e.title}<small>{fmtTime(t.it.e.startAt)} – {fmtTime(t.it.e.endAt)}</small>
+                        {t.it.e.recurrence ? <><FIcon n="repeat" size={12} /> </> : ''}{t.it.e.title}<small>{fmtTime(t.it.e.startAt)} – {fmtTime(t.it.e.endAt)}</small>
                       </div>
                     );
                   })}
@@ -280,10 +280,10 @@ function Calendar() {
               <div className={`ag-card c-${e.type}`} key={i} onClick={() => setDetail(e)} style={{ cursor: 'pointer' }}>
                 <div className="tm">{all ? 'طوال اليوم' : fmtTime(e.startAt)}<small>{all ? etLabel(e) : fmtTime(e.endAt) + ' · ' + etLabel(e)}</small></div>
                 <div>
-                  <div className="ti">{e.recurrence ? '🔁 ' : ''}{e.title}</div>
+                  <div className="ti">{e.recurrence ? <><FIcon n="repeat" size={12} /> </> : ''}{e.title}</div>
                   <div className="mt">
-                    {e.location && <span>📍 {e.location}</span>}
-                    {e.attendees.length > 1 && <span>👥 {e.attendees.length} ({acc} قبلوا)</span>}
+                    {e.location && <span><FIcon n="mappin" size={12} /> {e.location}</span>}
+                    {e.attendees.length > 1 && <span><FIcon n="users" size={12} /> {e.attendees.length} ({acc} قبلوا)</span>}
                     {e.myResponse === 'PENDING' && <span className="badge PENDING">بانتظار ردّك</span>}
                   </div>
                 </div>
@@ -293,7 +293,7 @@ function Calendar() {
           if (it.kind === 'task') {
             return <div className="ag-card c-tk" key={i} onClick={() => openItem(it)} style={{ cursor: 'pointer' }}><div className="tm">تسليم<small>مهمة</small></div><div><div className="ti"><FIcon n="pin" size={13} /> {it.task.title}</div></div></div>;
           }
-          return <div className="ag-card c-lv" key={i}><div className="tm">إجازة<small>{it.l.mine ? 'أنت' : 'زميل'}</small></div><div><div className="ti">🌴 {it.l.person.name}</div></div></div>;
+          return <div className="ag-card c-lv" key={i}><div className="tm">إجازة<small>{it.l.mine ? 'أنت' : 'زميل'}</small></div><div><div className="ti"><FIcon n="palm" size={13} /> {it.l.person.name}</div></div></div>;
         })}
       </div>
     ));
@@ -358,13 +358,13 @@ function EventDetail({ e, me, onClose, onEdit, onChanged, onToast }) {
       )}>
       <div className="chips" style={{ margin: '6px 0' }}>
         <span className="badge role">{etLabel(e)}</span>
-        {e.recurrence && <span className="badge role">🔁 {recurLabel(e)}</span>}
+        {e.recurrence && <span className="badge role"><FIcon n="repeat" size={12} /> {recurLabel(e)}</span>}
         {e.companyWide && <span className="badge role">للشركة كلها</span>}
         {!all && <span className="badge role">{relStart(e)}</span>}
       </div>
       <p className="muted small">{dayLabel(localDate(e.startAt))}{all ? ' · طوال اليوم' : ` · ${fmtTime(e.startAt)} – ${fmtTime(e.endAt)}`}</p>
       <div className="facts">
-        <div className="fact"><small>المكان</small><b>{e.location ? (url ? <a href={url} target="_blank" rel="noopener noreferrer">انضم للاجتماع ↗</a> : '📍 ' + e.location) : '—'}</b></div>
+        <div className="fact"><small>المكان</small><b>{e.location ? (url ? <a href={url} target="_blank" rel="noopener noreferrer">انضم للاجتماع <FIcon n="external" size={12} /></a> : <><FIcon n="mappin" size={13} /> {e.location}</>) : '—'}</b></div>
         <div className="fact"><small>المنظّم</small><b>{e.creator.name}</b></div>
         <div className="fact"><small>الحضور المؤكد</small><b className="big">{acc.length}<span className="muted small"> / {e.attendees.length}</span></b></div>
       </div>
@@ -385,8 +385,8 @@ function EventDetail({ e, me, onClose, onEdit, onChanged, onToast }) {
         <>
           <h3 className="section-title">ردّك على الدعوة</h3>
           <div className="rsvp-bar">
-            <button type="button" className={`btn ${e.myResponse === 'ACCEPTED' ? 'ok' : 'ghost'}`} onClick={() => rsvp('ACCEPTED')}>{e.myResponse === 'ACCEPTED' ? '✓ ستحضر' : 'سأحضر'}</button>
-            <button type="button" className={`btn ${e.myResponse === 'DECLINED' ? 'danger' : 'ghost'}`} onClick={() => rsvp('DECLINED')}>{e.myResponse === 'DECLINED' ? '✕ معتذر' : 'اعتذار'}</button>
+            <button type="button" className={`btn ${e.myResponse === 'ACCEPTED' ? 'ok' : 'ghost'}`} onClick={() => rsvp('ACCEPTED')}>{e.myResponse === 'ACCEPTED' ? <><FIcon n="check" size={14} /> ستحضر</> : 'سأحضر'}</button>
+            <button type="button" className={`btn ${e.myResponse === 'DECLINED' ? 'danger' : 'ghost'}`} onClick={() => rsvp('DECLINED')}>{e.myResponse === 'DECLINED' ? <><FIcon n="x" size={14} /> معتذر</> : 'اعتذار'}</button>
           </div>
         </>
       )}

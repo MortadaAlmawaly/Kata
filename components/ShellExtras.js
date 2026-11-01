@@ -7,8 +7,9 @@ import { PAGES, ROLE } from '../lib/constants';
 import { ago, useToast } from './hooks';
 import { Icon, Modal } from './ui';
 import { withBase } from '@/lib/base';
+import { FIcon } from './Icon';
 
-const NTYPE_ICON = { MENTION: '@', TASK: '✓', REQUEST: '⎘', EVENT: '◷', ANNOUNCEMENT: '✉', INFO: '•' };
+const NTYPE_ICON = { MENTION: 'at', TASK: 'checksq', REQUEST: 'filetext', EVENT: 'calendar', ANNOUNCEMENT: 'megaphone', INFO: 'dot' };
 
 /* روابط الإشعارات القديمة (#/tasks?open=12) تُحوَّل إلى مسارات الصفحات المرحَّلة */
 export function mapLink(link) {
@@ -93,7 +94,7 @@ export function Bell({ badges }) {
           {shown.length
             ? shown.map(i => (
               <a key={i.id} className={`item ${i.read ? '' : 'unread'} ${i.type === 'MENTION' ? 'mention' : ''}`} href={mapLink(i.link)} onClick={() => readOne(i)}>
-                <span className="ni">{NTYPE_ICON[i.type] || '•'}</span>
+                <span className="ni"><FIcon n={NTYPE_ICON[i.type] || 'dot'} size={15} /></span>
                 <span className="nb">{i.text}<small>{ago(i.createdAt)}</small></span>
               </a>))
             : <div className="empty">{tab === 'mention' ? 'لا توجد إشارات إليك' : 'لا توجد إشعارات'}</div>}
@@ -136,7 +137,7 @@ export function Palette({ me, onClose, onLogout, onTheme }) {
   }, [q]);
 
   const base = [];
-  PAGES.filter(p => (!p.perm || perms.includes(p.perm)) && (!p.platform || me.platformAdmin))
+  PAGES.filter(p => (!p.perm || perms.includes(p.perm)) && (!p.platform || me.platformAdmin) && (!p.minLevel || perms.includes('admin') || (me.level || 1) >= p.minLevel))
     .forEach(p => base.push({ g: 'انتقال', label: p.title, hint: p.sub || '', icon: p.icon, href: p.react || `/#/${p.id}` }));
   base.push({ g: 'إنشاء', label: 'مهمة جديدة', icon: 'plus', href: '/tasks?new=1' });
   base.push({ g: 'إنشاء', label: 'موعد / اجتماع جديد', icon: 'calendar', href: '/calendar?new=1' });

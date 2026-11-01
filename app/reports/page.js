@@ -5,6 +5,7 @@ import { api } from '../../lib/api';
 import { ROLE } from '../../lib/constants';
 import { fmt, todayStr } from '../../lib/util';
 import AppShell, { useMe } from '../../components/AppShell';
+import PageTabs, { REPORT_TABS } from '../../components/PageTabs';
 import { Avatar } from '../../components/ui';
 import { useToast } from '../../components/hooks';
 
@@ -46,6 +47,7 @@ export default function ReportsPage() {
 
   return (
     <AppShell active="reports" title="التقارير" sub="أداء الفريق لفترة محددة" me={me}>
+      <PageTabs items={REPORT_TABS} active="reports" />
       {error && <div className="notice">{error}</div>}
       <div className="toolbar">
         <label className="muted small">من <input className="input" type="date" style={{ width: 'auto' }} value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /></label>

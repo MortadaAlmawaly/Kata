@@ -8,6 +8,7 @@ import { WEEKDAYS } from '../../lib/util';
 import { Modal } from '../../components/ui';
 import { ago } from '../../components/hooks';
 import { withBase } from '@/lib/base';
+import { FIcon } from '../../components/Icon';
 
 const b64ToUint8 = s => {
   const pad = '='.repeat((4 - (s.length % 4)) % 4);
@@ -101,7 +102,7 @@ export function TabAccount({ me, reload, toast }) {
             {deferred && <button className="btn" style={{ marginTop: 12 }} onClick={async () => { deferred.prompt(); await deferred.userChoice; setDeferred(null); }}>تثبيت التطبيق</button>}
             <ol className="steps">
               {ios
-                ? <><li>افتح الموقع بمتصفح <b>Safari</b></li><li>اضغط زر المشاركة <b>⬆</b></li><li>اختر <b>إضافة إلى الشاشة الرئيسية</b></li></>
+                ? <><li>افتح الموقع بمتصفح <b>Safari</b></li><li>اضغط زر المشاركة <b><FIcon n="share" size={14} /></b></li><li>اختر <b>إضافة إلى الشاشة الرئيسية</b></li></>
                 : <><li>افتح الموقع بمتصفح <b>Chrome</b></li><li>اضغط القائمة <b>⋮</b></li><li>اختر <b>تثبيت التطبيق</b> أو <b>إضافة إلى الشاشة الرئيسية</b></li></>}
             </ol>
           </>
@@ -264,6 +265,13 @@ export function TabSecurity({ me, reload, toast }) {
         <p className="muted small">نزّل نسخة كاملة من بيانات شركتك (مستخدمون، مهام، أهداف، مشاريع، طلبات، مواعيد، تعاميم) بصيغة JSON.</p>
         <button className="btn" style={{ marginTop: 12 }} onClick={() => run(exportData, null)}>تصدير بيانات الشركة</button>
       </section>
+      {me.perms.includes('audit.view') && (
+        <section className="card">
+          <h3>سجل التدقيق</h3>
+          <p className="muted small">كل العمليات الحساسة في النظام: من فعل ماذا ومتى (إنشاء مستخدمين، تغيير صلاحيات، اعتمادات…).</p>
+          <a className="btn ghost" style={{ marginTop: 12 }} href="/audit">فتح سجل التدقيق</a>
+        </section>
+      )}
     </div>
   );
 }

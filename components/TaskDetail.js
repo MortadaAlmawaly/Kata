@@ -220,7 +220,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                   {ed ? <select className="fsel" value={t.priority} onChange={e => patch({ priority: e.target.value })}>{ctx.priorityOpts(t.priority).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
                     : <span>{ctx.priority[t.priority] || t.priority}</span>}</div></div> },
                 { key: 'labels', node: <div className="fr top"><label>{ctx.fl('labels')}</label><div className="fv lbl-edit">
-                  {(t.labels || []).length ? t.labels.map(l => <span key={l} className={`lbl ${ed ? 'rm' : ''}`} onClick={() => ed && patch({ labels: t.labels.filter(x => x !== l) })}>{l}{ed ? ' ✕' : ''}</span>) : (ed ? null : <span className="muted">—</span>)}
+                  {(t.labels || []).length ? t.labels.map(l => <span key={l} className={`lbl ${ed ? 'rm' : ''}`} onClick={() => ed && patch({ labels: t.labels.filter(x => x !== l) })}>{l}{ed ? <> <FIcon n="x" size={11} /></> : ''}</span>) : (ed ? null : <span className="muted">—</span>)}
                   {ed && <input className="fin lbl-add" maxLength={30} placeholder="+ إضافة وسم" value={labelNew} onChange={e => setLabelNew(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const v = labelNew.trim(); if (v) { setLabelNew(''); patch({ labels: [...(t.labels || []), v] }); } } }} />}
                 </div></div> },
@@ -448,7 +448,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
 
             {showSec('description') && (
             <section className="td-sec">
-              <div className="files-head"><b>{ctx.fl('description')}</b>{ed && editDesc === null && <button type="button" className="btn sm td-editbtn" onClick={() => setEditDesc(t.description || '')}>✎ تعديل</button>}</div>
+              <div className="files-head"><b>{ctx.fl('description')}</b>{ed && editDesc === null && <button type="button" className="btn sm td-editbtn" onClick={() => setEditDesc(t.description || '')}><FIcon n="pencil" size={13} /> تعديل</button>}</div>
               {editDesc !== null ? (
                 <div className="td-desc">
                   <textarea className="input" rows={6} maxLength={10000} value={editDesc} autoFocus onChange={e => setEditDesc(e.target.value)} />
@@ -500,7 +500,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                 <div className={`ck-row ${i.done ? 'done' : ''}`} key={i.id}>
                   <label><input type="checkbox" checked={!!i.done} disabled={!up}
                     onChange={act(async () => { await api('PATCH', '/api/task-items/' + i.id, { done: !i.done }); await reload(); })} /><span>{i.text}</span></label>
-                  {up && <button type="button" className="ck-del" aria-label="حذف البند" onClick={act(async () => { await api('DELETE', '/api/task-items/' + i.id); await reload(); })}>✕</button>}
+                  {up && <button type="button" className="ck-del" aria-label="حذف البند" onClick={act(async () => { await api('DELETE', '/api/task-items/' + i.id); await reload(); })}><FIcon n="x" size={14} /></button>}
                 </div>
               ))}
               {up && (
@@ -528,7 +528,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                         <span className="bl-title">{l.task.title}</span><span className="grow" />
                         <span className={`badge ${l.task.status}`}>{statusName(l.task.status)}</span>
                         {up && <button type="button" className="ck-del" aria-label="إزالة الرابط"
-                          onClick={e => { e.stopPropagation(); act(async () => { await api('DELETE', '/api/task-links/' + l.id); await reload(false); })(); }}>✕</button>}
+                          onClick={e => { e.stopPropagation(); act(async () => { await api('DELETE', '/api/task-links/' + l.id); await reload(false); })(); }}><FIcon n="x" size={14} /></button>}
                       </div>
                     ))}
                   </div>))
@@ -568,8 +568,8 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                           <b>{c.user.name}</b> <small>{fmtDT(c.createdAt)}</small>{c.editedAt && <small className="muted"> · معدَّل</small>}
                           {(c.user.id === ctx.me.user.id || ctx.me.user.isAdmin) && editCm !== c.id && (
                             <span className="cm-acts">
-                              {c.user.id === ctx.me.user.id && <button type="button" className="tb-btn" title="تعديل التعليق" aria-label="تعديل التعليق" onClick={() => { setEditCm(c.id); setEditCmText(renderMention(c.body)); }}>✎</button>}
-                              <button type="button" className="tb-btn" title="حذف التعليق" aria-label="حذف التعليق" onClick={() => { if (window.confirm('سيُحذف هذا التعليق نهائياً. متابعة؟')) act(async () => { await api('DELETE', `/api/tasks/${id}/comments/${c.id}`); await reload(false); })(); }}>🗑</button>
+                              {c.user.id === ctx.me.user.id && <button type="button" className="tb-btn" title="تعديل التعليق" aria-label="تعديل التعليق" onClick={() => { setEditCm(c.id); setEditCmText(renderMention(c.body)); }}><FIcon n="pencil" size={14} /></button>}
+                              <button type="button" className="tb-btn" title="حذف التعليق" aria-label="حذف التعليق" onClick={() => { if (window.confirm('سيُحذف هذا التعليق نهائياً. متابعة؟')) act(async () => { await api('DELETE', `/api/tasks/${id}/comments/${c.id}`); await reload(false); })(); }}><FIcon n="trash" size={14} /></button>
                             </span>
                           )}
                           {editCm === c.id
@@ -608,7 +608,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                     ? t.worklogs.map(w => (
                       <div className="wl-row" key={w.id}>
                         <div><b>{w.user.name}</b> سجّل <b dir="ltr">{fmtMin(w.minutes)}</b> <small className="muted">{w.workedOn}</small>{w.note && <div className="muted small">{w.note}</div>}</div>
-                        {(w.mine || t.canManage) && <button type="button" className="ck-del" aria-label="حذف" onClick={act(async () => { await api('DELETE', '/api/task-worklogs/' + w.id); await reload(false); })}>✕</button>}
+                        {(w.mine || t.canManage) && <button type="button" className="ck-del" aria-label="حذف" onClick={act(async () => { await api('DELETE', '/api/task-worklogs/' + w.id); await reload(false); })}><FIcon n="x" size={14} /></button>}
                       </div>))
                     : <p className="muted small">لا توجد ساعات مسجّلة.</p>}
                   {up && (

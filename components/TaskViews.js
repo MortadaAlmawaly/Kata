@@ -7,6 +7,7 @@ import { PRIORITY, STATUS } from '../lib/constants';
 import { addDaysStr, dayLabel, fmt, MONTHS, parseYMD, todayStr, WEEKDAYS, ymd } from '../lib/util';
 import { Avatar, Icon } from './ui';
 import { Bar, ChartBars, ChartLine, Ring } from './charts';
+import { FIcon } from './Icon';
 
 const STATUS_COLOR = { TODO: '#6b7a90', IN_PROGRESS: '#2f7cf6', REVIEW: '#d4a017', DONE: '#2fa56b' };
 const colorOf = k => STATUS_COLOR[k] || '#8e4ec6';
@@ -114,7 +115,7 @@ export function TaskProjects({ tasks, onOpen, onShowInBoard, onCreate }) {
     tasks.forEach(t => { const k = t.projectId || 0; if (!m.has(k)) m.set(k, []); m.get(k).push(t); });
     const rows = [...m.entries()].map(([id, list]) => {
       const p = projects.find(x => x.id === id) || (list[0].project ? { id, name: list[0].project.name, key: list[0].project.key } : null);
-      return { id, name: p ? p.name : 'بدون مشروع', key: p && p.key, status: p && p.status, list };
+      return { id, name: p ? p.name : 'بدون مساحة', key: p && p.key, status: p && p.status, list };
     });
     projects.forEach(p => { if (!m.has(p.id)) rows.push({ id: p.id, name: p.name, key: p.key, status: p.status, list: [] }); });
     return rows.sort((a, b) => (a.id === 0) - (b.id === 0) || a.name.localeCompare(b.name, 'ar'));
@@ -158,7 +159,7 @@ export function TaskProjects({ tasks, onOpen, onShowInBoard, onCreate }) {
                   <td><span className={`badge ${t.status}`}>{STATUS[t.status] || t.status}</span></td>
                 </tr>
               ))}
-              {!sel.list.length && <tr><td colSpan={5} className="muted">لا مهام بهذا المشروع بعد.</td></tr>}
+              {!sel.list.length && <tr><td colSpan={5} className="muted">لا مهام بهذه المساحة بعد.</td></tr>}
             </tbody></table></div>
         </section>
       )}
@@ -306,7 +307,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
             <span className="grow" style={{ flex: 1 }} /><small className="due late">{dayLabel(t.dueDate)}</small>{t.assignee && <Avatar name={t.assignee.name} size={22} />}
           </button>
         ))}
-        {!overdue.length && <p className="muted">لا توجد مهام متأخرة 🎉</p>}
+        {!overdue.length && <p className="muted">لا توجد مهام متأخرة</p>}
       </section>
     </div>
   );

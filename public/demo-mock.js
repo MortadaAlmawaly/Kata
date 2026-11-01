@@ -20,7 +20,7 @@
     'reports.view': { min: 2, group: 'الفريق', label: 'التقارير وتصديرها', hint: 'تقارير الأداء لمن تحتي مع تصدير CSV' },
     'attendance.team': { min: 2, group: 'الفريق', label: 'حالة حضور الفريق', hint: 'من حضر ومن بإجازة اليوم' },
     'goals.cascade': { min: 2, group: 'العمل', label: 'وضع أهداف لمن تحتي', hint: 'تكليف الفريق بأهداف ونتائج رئيسية' },
-    'projects.manage': { min: 2, group: 'العمل', label: 'إنشاء وإدارة المشاريع', hint: '' },
+    'projects.manage': { min: 2, group: 'العمل', label: 'إنشاء وإدارة المساحات', hint: '' },
     'requests.approve': { min: 2, group: 'العمل', label: 'الموافقة على الطلبات', hint: 'ضمن حدّ المبلغ ثم تصعد للأعلى' },
     'announcements.team': { min: 2, group: 'التواصل', label: 'نشر تعاميم للفريق', hint: '' },
     'announcements.company': { min: 4, group: 'التواصل', label: 'تعميم على الشركة وتثبيته', hint: '' },
@@ -189,6 +189,11 @@
   const evJSON = (e, myId) => ({ id: e.id, type: e.type, customType: e.customType || null, title: e.title, description: e.description, location: e.location, startAt: e.startAt, endAt: e.endAt, allDay: e.allDay, companyWide: e.companyWide, recurrence: e.recurrence || null, recurEvery: e.recurEvery || null, recurUntil: e.recurUntil || null, creator: person(e.creatorId), attendees: e.attendees.map(a => ({ id: a.userId, name: byId(a.userId).name, response: a.response })), myResponse: (e.attendees.find(a => a.userId === myId) || {}).response || null });
   const krProgress = g => (g.keyResults.length ? Math.round(g.keyResults.reduce((s, k) => s + Math.min(k.current / k.target, 1), 0) / g.keyResults.length * 100) : 0);
   const goalJSON = (g, sc) => ({ id: g.id, title: g.title, description: g.description, period: g.period, status: g.status, parentId: g.parentId, owner: person(g.ownerId), editable: sc.has(g.ownerId), progress: krProgress(g), keyResults: g.keyResults, tasks: tasks.filter(t => t.goalId === g.id).length });
+  /* من يمكن الإشارة إليه بنقاش طلب: المشاركون + رؤساء صاحبه + المدير التنفيذي (كلهم يرون الطلب) */
+  const reqMentionable = (r, viewer) => {
+    const ids = new Set([r.requesterId, r.currentApproverId, ...r.steps.map(s => s.approverId), ...anc(r.requesterId).map(a => a.id), ...users.filter(x => x.role === 'CEO').map(x => x.id)]);
+    return [...ids].filter(i => i && i !== viewer.id && byId(i) && byId(i).active);
+  };
   const reqJSON = r => ({ ...r, leaveType: r.leaveType || null, comments: requestComments.filter(c => c.requestId === r.id).length, amount: r.amount, requester: person(r.requesterId), currentApprover: person(r.currentApproverId), steps: r.steps.map(s => ({ approver: person(s.approverId), decision: s.decision, note: s.note, createdAt: s.createdAt })) });
   const limitOk = (role, r) => r.type === 'LEAVE' || role === 'CEO' || r.amount <= (org.approvalLimits[role] ?? 0);
   const nearest = id => anc(id).find(a => a.active) || null;
@@ -678,13 +683,18 @@
         if (enough) break;
       }
       return ok({ ...reqJSON(r), chain: r.status === 'PENDING' || r.status === 'REJECTED' ? chain : chain.filter(c => c.state !== 'FUTURE'),
-        comments: requestComments.filter(c => c.requestId === r.id).map(c => ({ id: c.id, body: c.body, user: person(c.userId), createdAt: c.createdAt })) });
+        comments: requestComments.filter(c => c.requestId === r.id).map(c => ({ id: c.id, body: c.body, user: person(c.userId), createdAt: c.createdAt })),
+        mentionable: reqMentionable(r, u).map(i => person(i)) });
     }
     if ((m = path.match(/^\/api\/requests\/(\d+)\/comments$/)) && method === 'POST') {
       const r = requests.find(x => x.id === +m[1]);
       if (!r) return err(404, 'الطلب غير موجود');
       requestComments.push({ id: ++seq, requestId: r.id, userId: u.id, body: body.body, createdAt: now() });
-      [r.requesterId, r.currentApproverId, ...r.steps.map(s => s.approverId)].filter(i => i && i !== u.id).forEach(i =>
+      /* الإشارة @[id]: المذكورون المسموح لهم فقط يصلهم إشعار «إشارة»، والباقون إشعار تعليق */
+      const allowedM = new Set(reqMentionable(r, u));
+      const mentionedM = [...new Set([...String(body.body).matchAll(/@\[(\d+)\]/g)].map(x => +x[1]))].filter(i => allowedM.has(i));
+      mentionedM.forEach(i => notifs.push({ id: ++seq, userId: i, type: 'MENTION', actor: u.name, text: `${u.name} أشار إليك في الطلب «${r.title}»`, link: '#/requests', read: false, createdAt: now() }));
+      [r.requesterId, r.currentApproverId, ...r.steps.map(s => s.approverId)].filter(i => i && i !== u.id && !mentionedM.includes(i)).forEach(i =>
         notifs.push({ id: ++seq, userId: i, type: 'REQUEST', actor: u.name, text: `${u.name} علّق على الطلب «${r.title}»`, link: '#/requests', read: false, createdAt: now() }));
       return ok(null, 201);
     }
@@ -798,14 +808,14 @@
       }));
     }
     if (path === '/api/projects' && method === 'POST') {
-      if (!can(u, 'projects.manage')) return err(403, 'ليست لديك صلاحية إنشاء المشاريع');
+      if (!can(u, 'projects.manage')) return err(403, 'ليست لديك صلاحية إنشاء المساحات');
       const p = { id: ++seq, name: body.name, description: body.description || null, status: body.status || 'ACTIVE', ownerId: body.ownerId || u.id, startDate: body.startDate || null, endDate: body.endDate || null };
       projects.push(p); logA(u, 'project.create', 'project', p.id, {});
       return ok({ id: p.id }, 201);
     }
     if (method !== 'GET' && (m = path.match(/^\/api\/projects\/(\d+)$/))) {
       const p = projects.find(x => x.id === +m[1]);
-      if (!p || !sc.has(p.ownerId)) return err(404, 'المشروع غير موجود');
+      if (!p || !sc.has(p.ownerId)) return err(404, 'المساحة غير موجودة');
       if (method === 'PATCH') { Object.assign(p, body); return ok(null); }
       if (method === 'DELETE') { projects.splice(projects.indexOf(p), 1); tasks.forEach(t => { if (t.projectId === p.id) t.projectId = null; }); return ok(null); }
     }
@@ -815,7 +825,7 @@
       const p = projects.find(x => x.id === +m[1]);
       const upper = new Set(anc(u.id).map(a => a.id));
       const ts = p ? tasks.filter(t => t.projectId === p.id) : [];
-      if (!p || !(sc.has(p.ownerId) || upper.has(p.ownerId) || ts.some(t => sc.has(t.assigneeId)))) return err(404, 'المشروع غير موجود');
+      if (!p || !(sc.has(p.ownerId) || upper.has(p.ownerId) || ts.some(t => sc.has(t.assigneeId)))) return err(404, 'المساحة غير موجودة');
       const ids = new Set([p.ownerId, ...ts.map(t => t.assigneeId), ...anc(p.ownerId).map(a => a.id), ...users.filter(x => x.role === 'CEO').map(x => x.id)]);
       return ok({
         id: p.id, name: p.name, description: p.description, status: p.status, owner: person(p.ownerId), startDate: p.startDate, endDate: p.endDate,
@@ -829,12 +839,12 @@
     }
     if ((m = path.match(/^\/api\/projects\/(\d+)\/comments$/)) && method === 'POST') {
       const p = projects.find(x => x.id === +m[1]);
-      if (!p) return err(404, 'المشروع غير موجود');
+      if (!p) return err(404, 'المساحة غير موجودة');
       projectComments.push({ id: ++seq, projectId: p.id, userId: u.id, body: body.body, createdAt: now() });
       const ts = tasks.filter(t => t.projectId === p.id);
       const allowed = new Set([p.ownerId, ...ts.map(t => t.assigneeId), ...anc(p.ownerId).map(a => a.id), ...users.filter(x => x.role === 'CEO').map(x => x.id)]);
       [...new Set([...body.body.matchAll(/@\[(\d+)\]/g)].map(x => +x[1]))].filter(i => allowed.has(i) && i !== u.id).forEach(i =>
-        notifs.push({ id: ++seq, userId: i, type: 'MENTION', actor: u.name, text: `${u.name} أشار إليك في مشروع «${p.name}»`, link: '#/projects', read: false, createdAt: now() }));
+        notifs.push({ id: ++seq, userId: i, type: 'MENTION', actor: u.name, text: `${u.name} أشار إليك في مساحة «${p.name}»`, link: '#/projects', read: false, createdAt: now() }));
       return ok(null, 201);
     }
 
@@ -1028,7 +1038,18 @@
       logA(u, 'access.update', 'user', id, body);
       return ok(null);
     }
-    if (path === '/api/admin/settings' && method === 'PATCH') {
+    /* تخطيط الهيكل المرئي: مواضع البطاقات وجهة الربط (يمين/يسار/أسفل) */
+    if (path === '/api/org/layout' && method === 'GET') { const l = org.settings.orgLayout || {}; return ok({ pos: l.pos || {}, side: l.side || {}, colors: l.colors || {}, wire: l.wire || '' }); }
+    if (path === '/api/org/layout' && method === 'PUT') {
+      if (!can(u, 'users.manage') && !can(u, 'admin')) return err(403, 'ليست لديك صلاحية لهذا الإجراء');
+      const pos = {}, side = {};
+      Object.entries(body.pos || {}).slice(0, 2000).forEach(([k, v]) => { if (/^\d{1,12}$/.test(k) && v && isFinite(v.x) && isFinite(v.y)) pos[k] = { x: Math.max(-5000, Math.min(5000, +v.x)), y: Math.max(-5000, Math.min(5000, +v.y)) }; });
+      Object.entries(body.side || {}).slice(0, 2000).forEach(([k, v]) => { if (/^\d{1,12}$/.test(k) && ['l', 'r', 'b'].includes(v)) side[k] = v; });
+      const colors = {}; Object.entries(body.colors || {}).slice(0, 2000).forEach(([k, v]) => { if (/^\d{1,12}$/.test(k) && /^#[0-9a-fA-F]{6}$/.test(v)) colors[k] = v; });
+      const wire = /^#[0-9a-fA-F]{6}$/.test(body.wire || '') ? body.wire : '';
+      org.settings.orgLayout = { pos, side, colors, wire };
+      return ok(null);
+    }    if (path === '/api/admin/settings' && method === 'PATCH') {
       if (!can(u, 'admin')) return err(403, 'ليست لديك صلاحية لهذا الإجراء');
       if (body.name) org.name = body.name;
       if (body.currency) org.currency = body.currency;
@@ -1115,8 +1136,8 @@
         if (has(t.title) || has(t.description)) out.push({ type: 'task', id: t.id, title: t.title, snippet: snip(t.description), meta: 'مهمة' });
         t.comments.filter(c => has(c.body)).forEach(c => out.push({ type: 'task', id: t.id, title: t.title, snippet: `${byId(c.userId).name}: ${snip(strip(c.body))}`, meta: 'تعليق على مهمة' }));
       });
-      projects.forEach(p => { if (has(p.name) || has(p.description)) out.push({ type: 'project', id: p.id, title: p.name, snippet: snip(p.description), meta: 'مشروع' }); });
-      projectComments.filter(c => has(c.body)).forEach(c => { const p = projects.find(x => x.id === c.projectId); if (p) out.push({ type: 'project', id: p.id, title: p.name, snippet: `${byId(c.userId).name}: ${snip(strip(c.body))}`, meta: 'تعليق على مشروع' }); });
+      projects.forEach(p => { if (has(p.name) || has(p.description)) out.push({ type: 'project', id: p.id, title: p.name, snippet: snip(p.description), meta: 'مساحة' }); });
+      projectComments.filter(c => has(c.body)).forEach(c => { const p = projects.find(x => x.id === c.projectId); if (p) out.push({ type: 'project', id: p.id, title: p.name, snippet: `${byId(c.userId).name}: ${snip(strip(c.body))}`, meta: 'تعليق على مساحة' }); });
       requests.filter(r => sc.has(r.requesterId) || r.currentApproverId === u.id).forEach(r => { if (has(r.title) || has(r.details)) out.push({ type: 'request', id: r.id, title: r.title, snippet: snip(r.details), meta: 'طلب' }); });
       requestComments.filter(c => has(c.body)).forEach(c => { const r = requests.find(x => x.id === c.requestId); if (r) out.push({ type: 'request', id: r.id, title: r.title, snippet: `${byId(c.userId).name}: ${snip(c.body)}`, meta: 'نقاش على طلب' }); });
       announcements.filter(a => a.audience === 'COMPANY' || a.authorId === u.id || (a.audience === 'TEAM' && desc(a.authorId).has(u.id)) || (a.audience === 'CUSTOM' && (a.recipientIds || []).includes(u.id)))
