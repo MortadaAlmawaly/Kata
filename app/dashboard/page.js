@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FIcon } from '../../components/Icon';
 import { api } from '../../lib/api';
-import { fmtDT, LEVEL_ORDER, ROLE } from '../../lib/constants';
+import { fmtDT, LEVEL_ORDER, ROLE, RTYPE } from '../../lib/constants';
 import { addDaysStr, buildAgenda, dayLabel, fmt, fmtTime, todayStr } from '../../lib/util';
 import AppShell, { useMe } from '../../components/AppShell';
-import { Avatar, Icon } from '../../components/ui';
+import { Avatar, Icon, Modal } from '../../components/ui';
 import { Bar } from '../../components/charts';
 import { useToast } from '../../components/hooks';
 
@@ -42,7 +42,7 @@ function Agenda({ days, showDates }) {
             </a>
           );
         }
-        return <div className="ag-item lv" key={i}><span className="ag-time">إجازة</span><span className="ag-title">🌴 {it.l.person.name}{it.l.mine ? ' (أنا)' : ''}</span></div>;
+        return <div className="ag-item lv" key={i}><span className="ag-time">إجازة</span><span className="ag-title"><FIcon n="palm" size={13} /> {it.l.person.name}{it.l.mine ? ' (أنا)' : ''}</span></div>;
       })}
     </div>
   ));
@@ -104,6 +104,30 @@ export default function DashboardPage() {
             {!att.checkIn && <button type="button" onClick={() => act('/api/attendance/check-in')}><Icon name="attendance" /> تسجيل حضور</button>}
           </div>
         </section>
+        {(() => {
+          /* مساحة عمل جديدة: خطوات البداية بدل بطاقات أصفار. تختفي كلما أُنجزت خطوة وتزول كلها بعد إتمامها */
+          const people = d.org ? Object.values(d.org.headcount).reduce((a, b) => a + b, 0) : null;
+          const orgTasks = d.org ? d.org.tasks.open + d.org.tasks.done30 : null;
+          const steps = [
+            { done: people == null || people > 1, text: 'ادعُ فريقك', sub: 'أنشئ رابط دعوة لكل موظف', href: '/settings?tab=invites', icon: 'team' },
+            { done: orgTasks == null || orgTasks > 0 || m.open > 0, text: 'أنشئ أول مهمة', sub: 'من لوحة المهام أو بالزر أعلاه', href: '/tasks?new=1', icon: 'tasks' },
+          ].filter(s => !s.done);
+          if (!steps.length) return null;
+          return (
+            <section className="card start-card" aria-label="ابدأ هنا">
+              <h3>ابدأ هنا</h3>
+              <div className="start-list">
+                {steps.map(s => (
+                  <a key={s.href} className="start-item" href={s.href}>
+                    <span className="kpi-ico"><Icon name={s.icon} /></span>
+                    <span><b>{s.text}</b><small className="muted">{s.sub}</small></span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
+        {me.perms.includes('requests.approve') && <ApprovalsCard me={me} toast={toast} onChanged={load} />}
         <div className="grid kpis">
           <Kpi label="مهامي المفتوحة" val={m.open} sub={m.urgent ? `${m.urgent} عاجلة` : 'بدون عاجل'} cls={m.urgent ? 'warn' : ''} icon="tasks" />
           <Kpi label="متأخرة" val={m.overdue} sub="تجاوزت تاريخ التسليم" cls={m.overdue ? 'bad' : 'ok'} icon="audit" />
@@ -186,5 +210,63 @@ export default function DashboardPage() {
       {body}
       {toastNode}
     </AppShell>
+  );
+}
+
+
+/* بطاقة الموافقات للمدير: الطلبات التي تنتظر قراره، يقرّر منها مباشرة (موافقة أو رفض بملاحظة اختيارية) دون فتح صفحة الطلبات */
+function ApprovalsCard({ me, toast, onChanged }) {
+  const [list, setList] = useState(null);
+  const [pick, setPick] = useState(null);       // { kind, r }
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(async () => { try { setList(await api('GET', '/api/requests?box=inbox')); } catch (_) { setList([]); } }, []);
+  useEffect(() => { load(); }, [load]);
+  if (!list || !list.length) return null;
+  const cur = (me.org && me.org.currency) || '';
+  const needNote = pick && pick.kind === 'reject' && me.org.settings && me.org.settings.requireApprovalNote;
+  async function submit(e) {
+    e.preventDefault();
+    if (needNote && !note.trim()) { toast('الملاحظة مطلوبة عند الرفض', 'err'); return; }
+    setBusy(true);
+    try {
+      const res = await api('POST', `/api/requests/${pick.r.id}/${pick.kind}`, { note: note.trim() || undefined });
+      toast(pick.kind === 'reject' ? 'تم الرفض' : res && res.status === 'PENDING' ? 'تمت الموافقة وصعد الطلب للمستوى الأعلى' : 'تم الاعتماد');
+      setPick(null); setNote(''); await load(); if (onChanged) onChanged();
+    } catch (ex) { toast(ex.message, 'err'); } finally { setBusy(false); }
+  }
+  return (
+    <section className="card appr-card" aria-label="بانتظار موافقتك">
+      <h3>بانتظار موافقتك <span className="n">{list.length}</span></h3>
+      <div className="appr-list">
+        {list.slice(0, 5).map(r => (
+          <div className="appr-row" key={r.id}>
+            <Avatar name={r.requester.name} size={34} />
+            <div className="appr-tx">
+              <b>{r.title}</b>
+              <small className="muted">{r.requester.name} · {RTYPE[r.type] || r.type} · {r.type === 'LEAVE' ? `${r.startDate} ← ${r.endDate}` : `${fmt(r.amount)} ${cur}`}</small>
+            </div>
+            <span className="appr-btns">
+              <button type="button" className="btn sm ok" onClick={() => { setNote(''); setPick({ kind: 'approve', r }); }}>موافقة</button>
+              <button type="button" className="btn sm danger" onClick={() => { setNote(''); setPick({ kind: 'reject', r }); }}>رفض</button>
+            </span>
+          </div>
+        ))}
+      </div>
+      {list.length > 5 && <a className="btn ghost sm" style={{ marginTop: 10 }} href="/requests">عرض الكل ({list.length})</a>}
+      {pick && (
+        <Modal center title={(pick.kind === 'approve' ? 'الموافقة على: ' : 'رفض: ') + pick.r.title} onClose={() => setPick(null)}>
+          <form onSubmit={submit} noValidate>
+            <p className="muted small" style={{ marginTop: 6 }}>{pick.r.requester.name}</p>
+            <label className="field"><span>ملاحظة{needNote ? ' (إلزامية)' : ' (اختياري)'}</span>
+              <textarea value={note} maxLength={500} onChange={e => setNote(e.target.value)} /></label>
+            <div className="modal-actions">
+              <button type="button" className="btn ghost" onClick={() => setPick(null)}>إلغاء</button>
+              <button type="submit" className={`btn ${pick.kind === 'reject' ? 'danger' : 'ok'}`} disabled={busy}>{pick.kind === 'approve' ? 'تأكيد الموافقة' : 'تأكيد الرفض'}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </section>
   );
 }

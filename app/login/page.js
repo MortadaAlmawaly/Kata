@@ -2,7 +2,7 @@
 /* صفحة الدخول وتسجيل شركة جديدة — ترحيل React لـ public/login.html + login.js (نفس السلوك والـ API). */
 import { useState } from 'react';
 import { authCall } from '../../lib/api';
-import { LangButton, LogoSet, ThemeInit } from '../../components/ui';
+import { LangButton, LogoSet, Modal, ThemeInit } from '../../components/ui';
 import './login.css';
 import { withBase } from '@/lib/base';
 
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ company: '', name: '', email: '', password: '' });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showLevels, setShowLevels] = useState(false);
   const reg = mode === 'register';
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -41,18 +42,12 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <ThemeInit />
-      <section className="lhero">
-        <LogoSet hero />
+      <div className="intro">
+        <div className="intro-brand"><LogoSet hero /></div>
         <h2>إدارة الأداء والمهام والموافقات بهرم صلاحيات واضح</h2>
-        <p>كل مستوى يرى ويدير نطاقه فقط، والموافقات تصعد تلقائياً حسب حدود المبالغ، وكل عملية حساسة مسجّلة.</p>
-        <div className="levels">
-          {LEVELS.map(([n, t]) => <div key={n}><b>{n}</b> {t}</div>)}
-        </div>
-      </section>
+        <p className="intro-lead">كل مستوى يرى ويدير نطاقه فقط، والموافقات تصعد تلقائياً حسب حدود المبالغ، وكل عملية حساسة مسجّلة.</p>
 
-      <section className="form-side">
         <main className="box">
-          <div className="m-logo"><LogoSet /></div>
           <h1>{reg ? 'ابدأ شركتك' : 'تسجيل الدخول'}</h1>
           <p className="lead">{reg ? 'أنشئ شركتك وكن مديرها التنفيذي، ثم أضف فريقك' : 'ادخل بحساب شركتك'}</p>
           <div className="tabs" role="tablist">
@@ -84,8 +79,22 @@ export default function LoginPage() {
           </form>
           <p className="muted small">الحسابات تُنشأ من قِبل مديرك. التسجيل بالأعلى لمن يُنشئ شركته لأول مرة.</p>
         </main>
-      </section>
-      <LangButton className="" style={{ position: 'fixed', top: 14, insetInlineEnd: 14, zIndex: 50, padding: '6px 12px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--panel)' }} />
+
+        <button type="button" className="levels-btn" onClick={() => setShowLevels(true)}>كيف تعمل مستويات الصلاحيات؟</button>
+      </div>
+      {showLevels && (
+        <Modal center title="هرم الصلاحيات" onClose={() => setShowLevels(false)} actions={<button className="btn" type="button" onClick={() => setShowLevels(false)}>فهمت</button>}>
+          <p className="muted small" style={{ marginTop: 0 }}>كل مستوى أعلى يرى كل ما تحته، ولا يرى من هم بمستواه أو فوقه. الموافقات تصعد درجة درجة حسب حدود المبالغ.</p>
+          <div className="lvl-list">
+            {LEVELS.map(([n, t]) => { const [role, desc] = t.split(' — '); return (
+              <div className="lvl-row" key={n}>
+                <span className="lvl-n" aria-label={`المستوى ${n}`}><small>مستوى</small>{n}</span>
+                <span><b>{role}</b><small className="muted">{desc}</small></span>
+              </div>
+            ); })}
+          </div>
+        </Modal>
+      )}      <LangButton className="" style={{ position: 'fixed', top: 14, insetInlineEnd: 14, zIndex: 50, padding: '6px 12px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--text)' }} />
     </div>
   );
 }

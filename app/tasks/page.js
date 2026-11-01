@@ -10,13 +10,13 @@ import { addDaysStr, dueInfo, todayStr } from '../../lib/util';
 import { copyText } from '../../lib/clipboard';
 import { cfShort, COLOR_PRI, COLOR_TYPE, makeCtx, PRI_ICON, PRI_ORDER } from '../../lib/tasks';
 import AppShell, { useMe } from '../../components/AppShell';
-import { Avatar, Icon, Modal } from '../../components/ui';
+import { Avatar, Icon, MobileTabs, Modal } from '../../components/ui';
 import { Bar } from '../../components/charts';
 import { useConfirm, useToast } from '../../components/hooks';
 import TaskForm from '../../components/TaskForm';
 import TaskDetail, { TypeIcon } from '../../components/TaskDetail';
 import TypeInput from '../../components/TypeInput';
-import { TaskCalendar, TaskGoals, TaskProjects, TaskReports } from '../../components/TaskViews';
+import { TaskCalendar, TaskGoals, TaskReports } from '../../components/TaskViews';
 import TaskFilterBar, { compileJql, EMPTY_FILTER, useTaskFilter } from '../../components/TaskFilter';
 import { withBase } from '@/lib/base';
 
@@ -61,7 +61,7 @@ function Tasks() {
   const isCfg = !!(me && (me.perms.includes('admin') || me.perms.includes('boards.manage')));   // الأدمن والمدير التنفيذي فقط يتحكّمان بشكل المهام
 
   useEffect(() => {
-    try { const v = localStorage.getItem('rb-taskview'); if (['board', 'backlog', 'list', 'calendar', 'projects', 'goals', 'reports', 'archive'].includes(v)) setView(v); } catch (_) { /* لا تخزين */ }
+    try { const v = localStorage.getItem('rb-taskview'); if (['board', 'backlog', 'list', 'calendar', 'goals', 'reports', 'archive'].includes(v)) setView(v); } catch (_) { /* لا تخزين */ }
   }, []);
   const pickView = v => { setView(v); try { localStorage.setItem('rb-taskview', v); } catch (_) { /* تجاهل */ } };
   useEffect(() => { if (me && !canTeam && scope !== 'mine') setScope('mine'); }, [me, canTeam, scope]);
@@ -274,6 +274,16 @@ function Tasks() {
       if (none.length) lanes.push({ id: '__none', name: gf.none || 'بدون', items: none });
     }
     const cols = boardCols();
+    /* أقرب عمود (حالة) أفقياً لموضع المؤشر داخل اللوحة */
+    const colAtX = e => {
+      let best = null, bd = Infinity;
+      e.currentTarget.querySelectorAll(':scope > .col').forEach(c => {
+        const r = c.getBoundingClientRect();
+        const d = e.clientX < r.left ? r.left - e.clientX : e.clientX > r.right ? e.clientX - r.right : 0;
+        if (d < bd) { bd = d; best = c; }
+      });
+      return best ? best.dataset.status : null;
+    };
     const drop = (e, status) => {
       e.preventDefault(); setOver('');
       const id = +e.dataTransfer.getData('text/plain');
@@ -299,7 +309,10 @@ function Tasks() {
                 <span className="chev" style={{ display: 'inline-grid', verticalAlign: 'middle', transform: laneOff.has(l.id) ? 'rotate(90deg)' : 'none', marginInlineEnd: 6 }}><FIcon n="chev" size={14} /></span>{l.name} <span className="n">{l.items.length}</span>
               </h3>
             )}
-            {!(l.name && laneOff.has(l.id)) && <div className="board">
+            {!(l.name && laneOff.has(l.id)) && <div className="board"
+              /* الإفلات في المساحة الفارغة تحت العمود أو بين الأعمدة يُحسب لأقرب عمود أفقياً */
+              onDragOver={e => { if (e.target.closest('.col')) return; const k = colAtX(e); if (k) { e.preventDefault(); setOver(`${l.id}:${k}`); } }}
+              onDrop={e => { if (e.target.closest('.col')) return; const k = colAtX(e); if (k) drop(e, k); }}>
               {cols.map(c => {
                 const k = c.status, items = l.items.filter(t => t.status === k), folded = folds.has(k);
                 const key = `${l.id}:${k}`;
@@ -308,7 +321,7 @@ function Tasks() {
                 const common = { onDragOver: e => { e.preventDefault(); setOver(key); }, onDragLeave: () => setOver(''), onDrop: e => drop(e, k) };
                 if (folded) {
                   return (
-                    <section key={k} className={`col collapsed ${over === key ? 'drop' : ''}`} style={c.color ? { '--colc': c.color } : undefined} {...common}>
+                    <section key={k} data-status={k} className={`col collapsed ${over === key ? 'drop' : ''}`} style={c.color ? { '--colc': c.color } : undefined} {...common}>
                       <div className="col-unfold">
                         <span className="vt">{c.label}</span><span className="n">{items.length}</span>
                         <button type="button" className="fi" title="توسيع العمود" aria-label={`توسيع العمود ${c.label}`}
@@ -318,7 +331,7 @@ function Tasks() {
                   );
                 }
                 return (
-                  <section key={k} className={`col ${over === key ? 'drop' : ''}`} data-done={k === 'DONE' ? '1' : undefined} style={c.color ? { '--colc': c.color } : undefined} {...common}>
+                  <section key={k} data-status={k} className={`col ${over === key ? 'drop' : ''}`} data-done={k === 'DONE' ? '1' : undefined} style={c.color ? { '--colc': c.color } : undefined} {...common}>
                     <div className={`col-head ${c.color ? 'colored' : ''} ${wip}`}>
                       <span className="col-title">{c.label}</span>
                       <span className="n col-count" title={c.max ? `الحدّ الأعلى ${c.max}` : undefined}>{items.length}{c.max ? `/${c.max}` : ''}</span>
@@ -376,7 +389,7 @@ function Tasks() {
               return (
                 <tr key={t.id} className={`click ${isOverdue(t) ? 'overdue' : ''}`} onClick={() => openDetail(t.id)}>
                   <td className="nowrap"><TypeIcon k={t.issueType} ctx={ctx} /> <small className="muted key">{t.key}</small></td>
-                  <td><b>{t.title}</b>{t.recurrence ? ' 🔁' : ''} {(t.labels || []).map(l => <span className="lbl" key={l}>{l}</span>)}
+                  <td><b>{t.title}</b>{t.recurrence ? <> <FIcon n="repeat" size={12} /></> : ''} {(t.labels || []).map(l => <span className="lbl" key={l}>{l}</span>)}
                     {t.checklist && t.checklist.total > 0 && <small className="muted kmi"> <FIcon n="checksq" size={12} /> {t.checklist.done}/{t.checklist.total}</small>}
                     {t.comments > 0 && <small className="muted kmi"> <FIcon n="msg" size={12} /> {t.comments}</small>}</td>
                   <td><span className="who"><Avatar name={t.assignee.name} size={24} />{t.assignee.name}</span></td>
@@ -435,7 +448,7 @@ function Tasks() {
                 <div>
                   <b>{s.name}</b> <span className={`badge ${s.state === 'ACTIVE' ? 'IN_PROGRESS' : 'TODO'}`}>{s.state === 'ACTIVE' ? 'جارٍ' : 'مخطَّط'}</span>
                   {(s.startDate || s.endDate) && <small className="muted"> {s.startDate || '…'} ← {s.endDate || '…'}</small>}
-                  {s.goal && <div className="muted small">🎯 {s.goal}</div>}
+                  {s.goal && <div className="muted small"><FIcon n="target" size={13} /> {s.goal}</div>}
                 </div>
                 <div className="bl-stats">
                   <span className="n">{items.length} مهمة</span><span className="n">{pts} نقطة</span><span className="n">{doneN} منجزة</span>
@@ -502,12 +515,13 @@ function Tasks() {
           <span className="grow" />
           <span className="muted small">{open} مفتوحة</span>
         </div>
-        <nav className="jp-tabs" aria-label="أقسام اللوحة">
+        <MobileTabs label="عرض اللوحة" value={view} onPick={pickView}
+          tabs={[['board', 'اللوحة'], ['backlog', 'Backlog'], ['list', 'قائمة'], ['calendar', 'التقويم'], ['goals', 'الأهداف'], ['reports', 'التقارير'], ['archive', 'الأرشيف']]} />
+        <nav className="jp-tabs m-hide-sm" aria-label="أقسام اللوحة">
           <button type="button" className={view === 'board' ? 'on' : ''} onClick={() => pickView('board')}><Icon name="projects" size={15} /> اللوحة</button>
           <button type="button" className={view === 'backlog' ? 'on' : ''} onClick={() => pickView('backlog')}><Icon name="menu" size={15} /> Backlog</button>
           <button type="button" className={view === 'list' ? 'on' : ''} onClick={() => pickView('list')}><Icon name="tasks" size={15} /> قائمة</button>
           <button type="button" className={view === 'calendar' ? 'on' : ''} onClick={() => pickView('calendar')}><Icon name="calendar" size={15} /> التقويم</button>
-          <button type="button" className={view === 'projects' ? 'on' : ''} onClick={() => pickView('projects')}><Icon name="projects" size={15} /> المشاريع</button>
           <button type="button" className={view === 'goals' ? 'on' : ''} onClick={() => pickView('goals')}><Icon name="goals" size={15} /> الأهداف</button>
           <button type="button" className={view === 'reports' ? 'on' : ''} onClick={() => pickView('reports')}><Icon name="reports" size={15} /> التقارير</button>
           <button type="button" className={view === 'archive' ? 'on' : ''} onClick={() => pickView('archive')}><FIcon n="folder" size={15} /> الأرشيف</button>
@@ -539,8 +553,6 @@ function Tasks() {
         {all && (view === 'board' ? <BoardView />
           : view === 'backlog' ? <BacklogView />
           : view === 'calendar' ? <TaskCalendar tasks={filtered(true)} ctx={ctx} onOpen={openDetail} onMove={move} onCreate={k => setForm({ task: null, preset: { dueDate: k } })} />
-          : view === 'projects' ? <TaskProjects tasks={filtered(true)} onOpen={openDetail} onCreate={pid => setForm({ task: null, preset: { projectId: pid } })}
-            onShowInBoard={pid => { setFilter({ ...EMPTY_FILTER, basic: { project: [String(pid)] } }); pickView('board'); }} />
           : view === 'goals' ? <TaskGoals tasks={filtered(true)} onOpen={openDetail} onCreate={gid => setForm({ task: null, preset: { goalId: gid } })} />
           : view === 'reports' ? <TaskReports tasks={filtered(true)} ctx={ctx} sprints={sprints} onOpen={openDetail} />
           : view === 'archive' ? <ArchiveView pid={spaceId} onOpen={openDetail} toast={toast} onChanged={() => { load(); loadArch(); }} />
@@ -668,7 +680,7 @@ function SprintForm({ sprint: s, onClose, onSaved }) {
           <label className="field"><span>البداية</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
           <label className="field"><span>النهاية</span><input type="date" value={f.endDate} onChange={set('endDate')} /></label>
         </div>
-        {!s && <label className="field"><span>المشروع (اختياري)</span>
+        {!s && <label className="field"><span>المساحة (اختياري)</span>
           <select value={f.projectId} onChange={set('projectId')}><option value="">— بدون —</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
         <p className="err" role="alert">{err}</p>
         <div className="modal-actions">
@@ -701,7 +713,7 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
               <label className="field"><span>البداية</span><input type="date" value={start} onChange={e => setStart(e.target.value)} /></label>
               <label className="field"><span>النهاية</span><input type="date" value={end} onChange={e => setEnd(e.target.value)} /></label>
             </div>
-            <p className="muted small">يوجد سباق جارٍ واحد فقط لكل مشروع.</p>
+            <p className="muted small">يوجد سباق جارٍ واحد فقط لكل مساحة.</p>
           </>
         ) : (
           <>

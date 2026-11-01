@@ -194,6 +194,10 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
       <form onSubmit={e => { e.preventDefault(); setErr(''); setConfirmSave(true); }} noValidate className={asPage ? 'bp-form' : undefined}>
         {asPage && (
           <nav className="bp-nav" aria-label="أقسام التخصيص">
+            <select className="input bp-pick" aria-label="قسم التخصيص" value={sec}
+              onChange={e => { const k = e.target.value; setSec(k); try { const u = new URL(window.location.href); u.searchParams.set('sec', k); window.history.replaceState(null, '', u); } catch (_) { /* تجاهل */ } }}>
+              {BOARD_SECS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
             {BOARD_SECS.map(([k, l]) => <button type="button" key={k} className={sec === k ? 'on' : ''} onClick={() => { setSec(k); try { const u = new URL(window.location.href); u.searchParams.set('sec', k); window.history.replaceState(null, '', u); } catch (_) { /* تجاهل */ } }}>{l}</button>)}
           </nav>
         )}
@@ -226,8 +230,8 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
           <h4 className="bf-sub" style={{ marginTop: 16 }}>ترتيب الأعمدة وحدود العمل</h4>
           {cols.map((c, i) => (
             <div className="bf-col" key={i}>
-              <button type="button" className="tb-btn" disabled={!i} aria-label="أعلى" onClick={() => swap(cols, setCols, i, i - 1)}>↑</button>
-              <button type="button" className="tb-btn" disabled={i >= cols.length - 1} aria-label="أسفل" onClick={() => swap(cols, setCols, i, i + 1)}>↓</button>
+              <button type="button" className="tb-btn" disabled={!i} aria-label="أعلى" onClick={() => swap(cols, setCols, i, i - 1)}><FIcon n="up" size={14} /></button>
+              <button type="button" className="tb-btn" disabled={i >= cols.length - 1} aria-label="أسفل" onClick={() => swap(cols, setCols, i, i + 1)}><FIcon n="down" size={14} /></button>
               <input className="input bf-name" maxLength={40} value={c.newName !== undefined ? c.newName : (c.name || '')}
                 placeholder={c.newName !== undefined ? 'اسم الحالة الجديدة' : statusName(c.status)}
                 onChange={e => setCol(i, c.newName !== undefined ? { newName: e.target.value } : { name: e.target.value || undefined })} />
@@ -236,7 +240,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
               <input type="number" className="input bf-wip" min="1" max="999" placeholder="الأدنى" title="حدّ أدنى للمهام (WIP) — يصفرّ العدّاد إن نقص" value={c.min || ''} onChange={e => setCol(i, { min: e.target.value ? +e.target.value : null })} />
               <input type="number" className="input bf-wip" min="1" max="999" placeholder="الأعلى" title="حدّ أعلى للمهام (WIP) — يحمرّ العدّاد إن زاد" value={c.max || ''} onChange={e => setCol(i, { max: e.target.value ? +e.target.value : null })} />
               <label className="bf-eye" title="السماح بإنشاء مهام جديدة داخل هذا العمود (زر + بالعمود ومن نموذج الإنشاء)"><input type="checkbox" checked={!c.noCreate} onChange={e => setCol(i, { noCreate: !e.target.checked })} /><span>إنشاء</span></label>
-              <button type="button" className="tb-btn" aria-label="حذف العمود" onClick={() => setCols(cs => cs.filter((_, j) => j !== i))}>✕</button>
+              <button type="button" className="tb-btn" aria-label="حذف العمود" onClick={() => setCols(cs => cs.filter((_, j) => j !== i))}><FIcon n="x" size={14} /></button>
             </div>
           ))}
           <div className="bf-add">
@@ -246,7 +250,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
             }}>
               <option value="">＋ إضافة عمود…</option>
               {free.map(k => <option key={k} value={k}>{statusName(k)}</option>)}
-              <option value="__new">✚ حالة جديدة باسم من عندي</option>
+              <option value="__new">+ حالة جديدة باسم من عندي</option>
             </select>
           </div>
         </div>
@@ -271,7 +275,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
                 <div className="bf-rule" key={i}>
                   <input className="input" dir="ltr" placeholder='priority = HIGH AND status != DONE' value={r.jql || ''} onChange={e => setRules(rs => rs.map((x, j) => (j === i ? { ...x, jql: e.target.value } : x)))} />
                   <input type="color" className="bf-color" value={r.color || '#2f7cf6'} onChange={e => setRules(rs => rs.map((x, j) => (j === i ? { ...x, color: e.target.value } : x)))} />
-                  <button type="button" className="tb-btn" aria-label="حذف" onClick={() => setRules(rs => rs.filter((_, j) => j !== i))}>✕</button>
+                  <button type="button" className="tb-btn" aria-label="حذف" onClick={() => setRules(rs => rs.filter((_, j) => j !== i))}><FIcon n="x" size={14} /></button>
                 </div>
               ))}
               <button type="button" className="jf-addbtn" style={{ marginTop: 6 }} onClick={() => setRules(rs => [...rs, { jql: '', color: '#2f7cf6' }])}>+ قاعدة لون</button>
@@ -296,7 +300,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
         <div className="bf-sec" hidden={asPage && sec !== 'layout'}>
           <details className="bf-more">
             <summary>تسمية الأزرار والتبويبات</summary>
-            <p className="muted small">أسماء أزرار نافذة المهمة وتبويبات النشاط. الاسم الفارغ = الافتراضي. أسماء الحقول والأقسام تعدّلها من ✎ في التخطيط أعلاه.</p>
+            <p className="muted small">أسماء أزرار نافذة المهمة وتبويبات النشاط. الاسم الفارغ = الافتراضي. أسماء الحقول والأقسام تعدّلها من أيقونة القلم في التخطيط أعلاه.</p>
             <div className="row2">
               {['startWork', 'createBtn', 'tabComments', 'tabWorklog', 'tabHistory', 'epicIssues'].map(k => (
                 <label className="field" key={k}><span>{FL_KEYS[k]}</span>
@@ -313,18 +317,18 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
           <div className="row2">
             {Object.entries(ITYPE).filter(([k]) => !hide.has('it:' + k)).map(([k, l]) => (
               <div className="bf-fld" key={k}><input className="input bf-fname" maxLength={40} placeholder={l} value={lab['it:' + k] || ''} onChange={e => setLab({ ...lab, ['it:' + k]: e.target.value })} />
-                <button type="button" className="tb-btn" aria-label="حذف النوع" title="حذف هذا النوع الجاهز من اللوحة" onClick={() => toggleSet(setHide, 'it:' + k)}>✕</button></div>
+                <button type="button" className="tb-btn" aria-label="حذف النوع" title="حذف هذا النوع الجاهز من اللوحة" onClick={() => toggleSet(setHide, 'it:' + k)}><FIcon n="x" size={14} /></button></div>
             ))}
           </div>
           {btypes.map((t, i) => (
             <div className="bf-fld bf-own" key={t.key}>{eye(!hide.has('it:' + t.key), () => toggleSet(setHide, 'it:' + t.key))}
               <input className="input bf-fname" maxLength={40} placeholder="اسم النوع" value={t.name} onChange={e => setBtypes(ts => ts.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-              <button type="button" className="tb-btn" aria-label="حذف النوع" onClick={() => setBtypes(ts => ts.filter((_, j) => j !== i))}>✕</button></div>
+              <button type="button" className="tb-btn" aria-label="حذف النوع" onClick={() => setBtypes(ts => ts.filter((_, j) => j !== i))}><FIcon n="x" size={14} /></button></div>
           ))}
           <div className="bf-add"><button type="button" className="btn ghost sm" onClick={() => setBtypes(ts => [...ts, { key: 'bt_' + Math.random().toString(36).slice(2, 8).replace(/[^a-z0-9]/g, 'x'), name: 'نوع جديد' }])}>+ نوع جديد لهذه اللوحة</button></div>
           {Object.keys(ITYPE).some(k => hide.has('it:' + k)) && (
             <p className="muted small" style={{ marginTop: 8 }}>أنواع جاهزة محذوفة (اضغط للاستعادة):{' '}
-              {Object.entries(ITYPE).filter(([k]) => hide.has('it:' + k)).map(([k, l]) => <button type="button" key={k} className="btn ghost sm" style={{ marginInlineStart: 4 }} onClick={() => toggleSet(setHide, 'it:' + k)}>↩ {l}</button>)}</p>
+              {Object.entries(ITYPE).filter(([k]) => hide.has('it:' + k)).map(([k, l]) => <button type="button" key={k} className="btn ghost sm" style={{ marginInlineStart: 4 }} onClick={() => toggleSet(setHide, 'it:' + k)}><FIcon n="undo" size={13} /> {l}</button>)}</p>
           )}
           <h4 className="bf-sub">الأولويات</h4>
           <div className="row2">
@@ -334,7 +338,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
             {prios.map((p, i) => (
               <div className="bf-fld bf-own" key={p.key}>{eye(!hide.has('pr:' + p.key), () => toggleSet(setHide, 'pr:' + p.key))}
                 <input className="input bf-fname" maxLength={40} placeholder="اسم الأولوية" value={p.name} onChange={e => setPrios(ps => ps.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-                <button type="button" className="tb-btn" aria-label="حذف الأولوية" onClick={() => setPrios(ps => ps.filter((_, j) => j !== i))}>✕</button></div>
+                <button type="button" className="tb-btn" aria-label="حذف الأولوية" onClick={() => setPrios(ps => ps.filter((_, j) => j !== i))}><FIcon n="x" size={14} /></button></div>
             ))}
           </div>
           <div className="bf-add"><button type="button" className="btn ghost sm" onClick={() => setPrios(ps => [...ps, { key: 'bp_' + Math.random().toString(36).slice(2, 8).replace(/[^a-z0-9]/g, 'x'), name: 'أولوية جديدة' }])}>+ أولوية لهذه اللوحة</button></div>

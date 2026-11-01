@@ -1,31 +1,40 @@
-/* أنماط صفحة الدخول (منقولة من login.html). الأساس العام يأتي من /app.css */
-.login-page{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:100vh}
-.lhero{
-  background:linear-gradient(160deg,#031A4D 0%,#06307A 55%,#0A7EC2 100%);color:#fff;
-  padding:56px;display:flex;flex-direction:column;justify-content:center;gap:22px;
+/* أنماط صفحة الدخول: مقدمة بعمود واحد مرتّب (شعار ← عنوان ← بطاقة الدخول ← شرح المستويات). الأساس العام يأتي من /app.css */
+.login-page{
+  min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:clamp(24px,6vh,64px) 16px 40px;
+  background:
+    radial-gradient(900px 420px at 85% -10%,rgba(2,206,210,.22),transparent 60%),
+    radial-gradient(800px 460px at 10% 110%,rgba(10,126,194,.35),transparent 60%),
+    linear-gradient(165deg,#031A4D 0%,#06307A 55%,#0A5FA8 100%);
+  color:#fff;
 }
-.lhero .lg-hero{height:58px;width:auto}
-.lhero h2{font-size:2rem;line-height:1.4;font-weight:800;max-width:520px}
-.lhero p{color:#BFD3F5;max-width:480px}
-.levels{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.levels div{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 14px;max-width:420px;font-weight:600;font-size:.9rem}
-.levels b{width:26px;height:26px;border-radius:8px;background:#02CED2;color:#031A4D;display:grid;place-items:center;font-size:.8rem}
-.form-side{display:grid;place-items:center;padding:28px}
-.login-page .box{width:100%;max-width:400px}
-.login-page .box h1{font-size:1.4rem;font-weight:800}
-.login-page .box .lead{color:var(--muted);margin:2px 0 18px}
-.m-logo{display:none;margin-bottom:18px}
-.m-logo .lg{height:40px}
+.intro{width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
+.intro-brand{margin-bottom:6px}
+.intro-brand .lg-hero{height:54px;width:auto}
+.intro h2{font-size:clamp(1.25rem,3.6vw,1.65rem);line-height:1.5;font-weight:800;max-width:420px}
+.intro-lead{color:#BFD3F5;font-size:.92rem;line-height:1.8;max-width:420px;margin-bottom:6px}
+.login-page .box{
+  width:100%;text-align:start;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:20px;
+  padding:26px 24px 20px;box-shadow:0 24px 60px rgba(2,12,40,.45);
+}
+.login-page .box h1{font-size:1.35rem;font-weight:800}
+.login-page .box .lead{color:var(--muted);margin:2px 0 16px}
 .tabs{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:12px;margin-bottom:6px}
-.tabs button{flex:1;padding:8px;border-radius:9px;font-weight:700;color:var(--muted)}
+.tabs button{flex:1;padding:9px;border-radius:9px;font-weight:700;color:var(--muted)}
 .tabs button.active{background:var(--panel);color:var(--text);box-shadow:var(--shadow)}
 .login-page input[type=email],.login-page input[type=password]{direction:ltr;text-align:right}
 .pw-wrap{position:relative;display:block}
 .pw-wrap input{padding-inline-end:64px}
 .pw-toggle{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);font-size:.74rem;font-weight:700;color:var(--accent);padding:4px 8px}
 .btn.full{width:100%;margin-top:18px;padding:12px}
-@media (max-width:860px){ .login-page{grid-template-columns:1fr} .lhero{display:none} .m-logo{display:block} }
-
+/* زر شرح المستويات يفتح نافذة منبثقة */
+.levels-btn{align-self:center;margin-top:4px;padding:9px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);color:#E4EEFF;font-weight:700;font-size:.88rem;cursor:pointer;transition:background .15s,border-color .15s}
+.levels-btn:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.5)}
+.lvl-list{display:grid;gap:8px}
+.lvl-row{display:flex;align-items:center;gap:14px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2)}
+.lvl-row b{display:block}
+.lvl-row small{display:block;margin-top:2px}
+.lvl-n{flex:none;width:46px;height:46px;border-radius:12px;background:#02CED2;color:#031A4D;display:grid;place-items:center;align-content:center;font-weight:800;font-size:1.15rem;line-height:1}
+.lvl-n small{font-size:.58rem;font-weight:700;opacity:.8;margin:0 0 1px}
 /* الانضمام بدعوة */
 .join-page{display:grid;place-items:center;min-height:100vh;padding:20px}
 .join-page .box{width:100%;max-width:420px}

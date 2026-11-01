@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import { ROLE } from '../../lib/constants';
 import AppShell, { useMe } from '../../components/AppShell';
-import { Avatar, Icon, Modal } from '../../components/ui';
+import { Avatar, Icon, MobileTabs, Modal } from '../../components/ui';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import { useConfirm, useToast } from '../../components/hooks';
+import { FIcon } from '../../components/Icon';
 
 const GSTATUS = { ACTIVE: 'جارٍ', ACHIEVED: 'تحقق', CANCELLED: 'ملغى' };
 const fmt = n => Number(n || 0).toLocaleString('en-US');
@@ -23,7 +24,7 @@ function expectedPct(period) {
   return Math.max(0, Math.min(100, ((Date.now() - s) / (e - s)) * 100));
 }
 function goalHealth(g) {
-  if (g.status === 'ACHIEVED') return { cls: 'done', text: '✓ تحقق' };
+  if (g.status === 'ACHIEVED') return { cls: 'done', text: <><FIcon n="check" size={13} /> تحقق</> };
   if (g.status === 'CANCELLED') return { cls: '', text: 'ملغى' };
   if (!g.keyResults.length) return { cls: '', text: 'بلا نتائج رئيسية' };
   const exp = expectedPct(g.period);
@@ -120,7 +121,8 @@ export default function GoalsPage() {
             <div><b>{list.reduce((s, g) => s + g.keyResults.length, 0)}</b><small>نتيجة رئيسية</small></div></div>
         </div>
       )}
-      <div className="tabs-row">
+      <MobileTabs label="نوع الأهداف" value={curTab} onPick={setTab} tabs={tabs.map(([k, l]) => [k, `${l} (${sets[k].length})`])} />
+      <div className="tabs-row m-hide-sm">
         {tabs.map(([k, l]) => <button key={k} className={`tab-pill ${curTab === k ? 'active' : ''}`} onClick={() => setTab(k)}>{l} <span className="n">{sets[k].length}</span></button>)}
       </div>
       <div className="toolbar">
@@ -274,7 +276,7 @@ function GoalDetail({ id, goals, onOpen, onClose, onChanged, onToast }) {
       actions={(
         <>
           {g.editable && (g.status === 'ACTIVE'
-            ? <button type="button" className="btn ok" onClick={() => setStatus('ACHIEVED')}>تحقق الهدف ✓</button>
+            ? <button type="button" className="btn ok" onClick={() => setStatus('ACHIEVED')}>تحقق الهدف <FIcon n="check" size={14} /></button>
             : <button type="button" className="btn ghost" onClick={() => setStatus('ACTIVE')}>إعادة فتح</button>)}
           {g.editable && <button type="button" className="btn danger" onClick={() => ask({ title: 'حذف الهدف', text: 'سيتم حذف الهدف ونتائجه الرئيسية.', ok: 'حذف',
             onOk: async () => { await api('DELETE', '/api/goals/' + id); onChanged(); onClose(); } })}>حذف</button>}

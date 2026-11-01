@@ -1,6 +1,7 @@
 'use client';
 /* حقل مخصص واحد (نص/رقم/تاريخ/رابط/قائمة/شخص…) كمكوّن متحكَّم به. onChange(value) يُستدعى بالقيمة المطبَّعة. */
 import { useEffect, useState } from 'react';
+import { FIcon } from './Icon';
 
 const ARR = ['multiselect', 'tags', 'users'];
 
@@ -31,7 +32,7 @@ export default function CfInput({ d, value, users, onChange, commitOnBlur = fals
       return (
         <span className="cf-stars">
           {[1, 2, 3, 4, 5].map(n => <button type="button" key={n} disabled={disabled} className={Number(v) >= n ? 'on' : ''} aria-label={n + ' نجوم'}
-            onClick={() => { const nv = Number(v) === n ? '' : n; setV(nv); push(nv === '' ? null : nv); }}>★</button>)}
+            onClick={() => { const nv = Number(v) === n ? '' : n; setV(nv); push(nv === '' ? null : nv); }}><FIcon n="star" size={20} /></button>)}
         </span>
       );
     case 'datetime':
@@ -46,7 +47,7 @@ export default function CfInput({ d, value, users, onChange, commitOnBlur = fals
         onChange={e => setV(e.target.value)} onBlur={() => push(v === '' ? null : v)} />;
     case 'color':
       return <span className="cf-color"><input type="color" disabled={disabled} value={v || '#2f7cf6'} onChange={e => { setV(e.target.value); push(e.target.value); }} />
-        {v && <button type="button" className="tb-btn" disabled={disabled} aria-label="مسح" onClick={() => { setV(''); push(null); }}>✕</button>}</span>;
+        {v && <button type="button" className="tb-btn" disabled={disabled} aria-label="مسح" onClick={() => { setV(''); push(null); }}><FIcon n="x" size={14} /></button>}</span>;
     case 'radio':
       return (
         <div className="cf-radio">
@@ -58,7 +59,7 @@ export default function CfInput({ d, value, users, onChange, commitOnBlur = fals
     case 'tags':
       return (
         <div className="cf-tags">
-          {(Array.isArray(v) ? v : []).map(t => <span className="cf-tag" key={t}>{t}<button type="button" disabled={disabled} aria-label="إزالة" onClick={() => { const n = v.filter(x => x !== t); setV(n); push(n); }}>✕</button></span>)}
+          {(Array.isArray(v) ? v : []).map(t => <span className="cf-tag" key={t}>{t}<button type="button" disabled={disabled} aria-label="إزالة" onClick={() => { const n = v.filter(x => x !== t); setV(n); push(n); }}><FIcon n="x" size={14} /></button></span>)}
           <input className="cf-taginp" maxLength={30} placeholder="أضف وسماً…" disabled={disabled}
             onKeyDown={e => {
               if (e.key !== 'Enter' && e.key !== ',') return;

@@ -20,7 +20,7 @@ const CL_TEXT = {
   priority: { h: 'أولويات إضافية (بلا حد للعدد)', p: 'تظهر بقائمة أولوية المهمة وفلاتر المهام. تُرتَّب بعد الأولويات الأساسية. حذف أولوية يرجع مهامها إلى «متوسطة».', add: 'إضافة أولوية', ph: 'اسم الأولوية مثل: حرجة جداً' },
   requestType: { h: 'أنواع طلبات إضافية (بلا حد للعدد)', p: 'تظهر بنموذج الطلب وتُعامَل كطلب بمبلغ وسلسلة اعتماد مثل المصروف. حذف نوع يحوّل طلباته إلى «مصروف».', add: 'إضافة نوع طلب', ph: 'اسم النوع مثل: سلفة، سفر' },
   eventType: { h: 'أنواع مواعيد إضافية (بلا حد للعدد)', p: 'تظهر بنموذج الموعد وتصير فلتراً بالتقويم. حذف نوع يحوّل مواعيده إلى «اجتماع».', add: 'إضافة نوع موعد', ph: 'اسم النوع مثل: تدريب، مقابلة' },
-  projectStatus: { h: 'حالات مشاريع إضافية (بلا حد للعدد)', p: 'تظهر بنموذج المشروع وبتبويبات المشاريع. حذف حالة يرجع مشاريعها إلى «جارٍ».', add: 'إضافة حالة مشروع', ph: 'اسم الحالة مثل: بانتظار الاعتماد' },
+  projectStatus: { h: 'حالات مساحات إضافية (بلا حد للعدد)', p: 'تظهر بنموذج المساحة وبتبويبات المساحات. حذف حالة يرجع مساحاتها إلى «جارٍ».', add: 'إضافة حالة مساحة', ph: 'اسم الحالة مثل: بانتظار الاعتماد' },
 };
 
 /* ── المسميات ── */
@@ -31,7 +31,7 @@ export function TabLabels({ me, reload, toast, ask }) {
   const groups = [
     ['roles', 'الأدوار الوظيفية', ROLE, 'مثال: «رئيس قسم» بدل «مدير قسم»، «مدير فرع» بدل «مدير إدارة»'],
     ['taskStatus', 'حالات المهام', STATUS, ''], ['issueType', 'أنواع المهام', ITYPE, ''], ['priority', 'أولويات المهام', PRIORITY, ''],
-    ['requestType', 'أنواع الطلبات', RTYPE, ''], ['eventType', 'أنواع المواعيد', ETYPE, ''], ['projectStatus', 'حالات المشاريع', PSTATUS, ''],
+    ['requestType', 'أنواع الطلبات', RTYPE, ''], ['eventType', 'أنواع المواعيد', ETYPE, ''], ['projectStatus', 'حالات المساحات', PSTATUS, ''],
   ];
   const defaults = Object.fromEntries(groups.map(([g, , map]) => [g, DEFAULT_LABELS[g] || map]));
   const pages = PAGES.filter(p => p.id !== 'platform');
@@ -214,10 +214,10 @@ export function TabFields({ me, reload, toast, ask }) {
                   <td><b>{d.name}</b>{d.options && d.options.length > 0 && <><br /><small className="muted">{d.options.join('، ')}</small></>}</td>
                   <td>{CF_TYPE_AR[d.type] || d.type}</td>
                   <td>{d.section === 'main' ? secName('main') : secName('side')}</td>
-                  <td>{d.card ? '✓' : '—'}</td>
+                  <td>{d.card ? <FIcon n="check" size={14} /> : '—'}</td>
                   <td className="nowrap">
-                    <button className="btn sm ghost" disabled={!i} aria-label="أعلى" onClick={() => move(i, i - 1)}>↑</button>{' '}
-                    <button className="btn sm ghost" disabled={i >= list.length - 1} aria-label="أسفل" onClick={() => move(i, i + 1)}>↓</button>{' '}
+                    <button className="btn sm ghost" disabled={!i} aria-label="أعلى" onClick={() => move(i, i - 1)}><FIcon n="up" size={14} /></button>{' '}
+                    <button className="btn sm ghost" disabled={i >= list.length - 1} aria-label="أسفل" onClick={() => move(i, i + 1)}><FIcon n="down" size={14} /></button>{' '}
                     <button className="btn sm ghost" onClick={() => setEdit({ d, idx: i })}>تعديل</button>{' '}
                     <button className="btn sm danger" onClick={() => ask({ title: 'حذف الحقل', text: 'تُحذف قيمه من المهام عند العرض ولا يمكن استرجاعها.', ok: 'حذف',
                       onOk: () => save(list.filter((_, j) => j !== i)) })}>حذف</button>
@@ -277,7 +277,7 @@ function FieldForm({ d, secName, onClose, onSave, preset }) {
 }
 
 /* ── الأتمتة ── */
-const AUTO_TRIGGER_AR = { MANUAL: 'يدوي — زر ⚡ داخل المهمة', STATUS_CHANGED: 'عند انتقال المهمة إلى حالة', CREATED: 'عند إنشاء مهمة' };
+const AUTO_TRIGGER_AR = { MANUAL: 'يدوي — زر الإجراء داخل المهمة', STATUS_CHANGED: 'عند انتقال المهمة إلى حالة', CREATED: 'عند إنشاء مهمة' };
 const AUTO_ACTION_AR = { setStatus: 'تغيير الحالة', setPriority: 'تغيير الأولوية', assign: 'إسناد إلى شخص', addLabel: 'إضافة وسم', notify: 'إرسال إشعار', comment: 'إضافة تعليق', startTimer: 'بدء مؤقّت العمل', stopTimer: 'إيقاف المؤقّت وتسجيل الوقت', setField: 'تعيين حقل مخصص' };
 
 export function TabAutomation({ me, reload, toast, ask }) {
@@ -301,7 +301,7 @@ export function TabAutomation({ me, reload, toast, ask }) {
           await save([...rules, ...presets]);
         } })}>+ قواعد جاهزة</button>
         <button className="btn sm" onClick={() => setEdit({ r: null, idx: -1 })}>+ قاعدة جديدة</button></div>
-      <p className="muted small">قواعد تنفّذ إجراءات تلقائياً أو بضغطة زر ⚡ داخل المهمة، مثل «بدء العمل» (يحوّل الحالة ويشغّل المؤقّت) أو «إرسال للمراجعة».</p>
+      <p className="muted small">قواعد تنفّذ إجراءات تلقائياً أو بضغطة زر داخل المهمة، مثل «بدء العمل» (يحوّل الحالة ويشغّل المؤقّت) أو «إرسال للمراجعة».</p>
       {rules.length ? (
         <div className="table-wrap">
           <table>
@@ -392,7 +392,7 @@ function RuleForm({ r, users, fields, onClose, onSave }) {
             <select className="input" value={a.type} onChange={e => setAct(i, { type: e.target.value, value: e.target.value === 'setStatus' ? 'IN_PROGRESS' : e.target.value === 'setPriority' ? 'HIGH' : '' })}>
               {Object.entries(AUTO_ACTION_AR).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
             <div className="au-val">{valueInput(a, i)}</div>
-            <button type="button" className="btn sm danger" aria-label="حذف الإجراء" onClick={() => setCur(c => ({ ...c, actions: c.actions.filter((_, j) => j !== i) }))}>✕</button>
+            <button type="button" className="btn sm danger" aria-label="حذف الإجراء" onClick={() => setCur(c => ({ ...c, actions: c.actions.filter((_, j) => j !== i) }))}><FIcon n="x" size={14} /></button>
           </div>
         ))}
         <button type="button" className="btn ghost sm" onClick={() => setCur(c => ({ ...c, actions: [...c.actions, { type: 'setStatus', value: 'IN_PROGRESS' }] }))}>+ إضافة إجراء</button>
@@ -703,8 +703,8 @@ export function TabBoards({ me, reload, toast, ask }) {
             {boards.map((b, i) => (
               <tr key={b.id}>
                 <td className="nowrap">
-                  <button className="btn sm ghost" disabled={!i} aria-label="أعلى" onClick={() => move(i, -1)}>↑</button>{' '}
-                  <button className="btn sm ghost" disabled={i >= boards.length - 1} aria-label="أسفل" onClick={() => move(i, 1)}>↓</button>
+                  <button className="btn sm ghost" disabled={!i} aria-label="أعلى" onClick={() => move(i, -1)}><FIcon n="up" size={14} /></button>{' '}
+                  <button className="btn sm ghost" disabled={i >= boards.length - 1} aria-label="أسفل" onClick={() => move(i, 1)}><FIcon n="down" size={14} /></button>
                 </td>
                 <td><span className="jp-ico bsw-ico" aria-hidden="true" style={{ background: ((b.detail || {}).icon || {}).c || '#e5484d', marginInlineEnd: 8 }}><FIcon n={((b.detail || {}).icon || {}).k || 'layout'} size={13} /></span><b>{b.name}</b></td>
                 <td>{b.autoColumns ? 'حالات الشركة' : (b.columns || []).map(c => c.name || c.status).join(' ‹ ')}</td>

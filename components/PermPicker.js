@@ -18,7 +18,7 @@ export default function PermPicker({ catalog, extra, denied, setExtra, setDenied
           {list.map(([k, c]) => (
             <div className="perm-row" key={k}>
               <div><b>{c.label}</b>{c.hint && <small className="muted">{c.hint}</small>}</div>
-              <div className="seg" role="group" aria-label={c.label}>
+              <div className="seg-g" role="group" aria-label={c.label}>
                 {[['def', 'افتراضي'], ['allow', 'مسموح'], ['deny', 'ممنوع']].map(([v, l]) => (
                   <button type="button" key={v} className={`seg-b ${stateOf(k) === v ? 'on ' + v : ''}`} onClick={() => set(k, v)}>{l}</button>
                 ))}

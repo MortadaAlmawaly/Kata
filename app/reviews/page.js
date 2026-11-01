@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { ROLE } from '../../lib/constants';
 import AppShell, { useMe } from '../../components/AppShell';
-import { Avatar, Icon, Modal } from '../../components/ui';
+import { Avatar, Icon, MobileTabs, Modal } from '../../components/ui';
 import { useToast } from '../../components/hooks';
+import { FIcon } from '../../components/Icon';
 
 const RV_STATUS = { DRAFT: 'مسودة', SUBMITTED: 'بانتظار إقرار الموظف', ACKNOWLEDGED: 'تم الإقرار' };
 const RV_BADGE = { DRAFT: 'TODO', SUBMITTED: 'PENDING', ACKNOWLEDGED: 'DONE' };
@@ -31,8 +32,8 @@ function Stars({ value, size = 18, onPick }) {
   return (
     <span className={onPick ? 'stars' : 'stars-ro'}>
       {[1, 2, 3, 4, 5].map(i => onPick
-        ? <button type="button" key={i} className={i <= value ? 'on' : ''} onClick={() => onPick(i)}>★</button>
-        : <i key={i} style={{ fontSize: size }} className={i <= value ? 'on' : ''}>★</i>)}
+        ? <button type="button" key={i} className={i <= value ? 'on' : ''} onClick={() => onPick(i)}><FIcon n="star" size={26} /></button>
+        : <i key={i} className={i <= value ? 'on' : ''}><FIcon n="star" size={size} /></i>)}
     </span>
   );
 }
@@ -58,7 +59,8 @@ export default function ReviewsPage() {
   return (
     <AppShell active="reviews" title="التقييمات" sub="تقييم الأداء الدوري" me={me}>
       {error && <div className="notice">{error}</div>}
-      <div className="tabs-row">
+      <MobileTabs label="نوع التقييمات" tabs={tabs} value={box} onPick={k => { if (k !== box) { setList(null); setBox(k); } }} />
+      <div className="tabs-row m-hide-sm">
         {tabs.map(([k, l]) => <button key={k} className={`tab-pill ${box === k ? 'active' : ''}`} onClick={() => { if (k !== box) { setList(null); setBox(k); } }}>{l}</button>)}
       </div>
       <div className="toolbar">

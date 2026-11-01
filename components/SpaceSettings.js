@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { ROLE } from '../lib/constants';
 import { CF_TYPE_AR } from '../lib/tasks';
 import { CAPS, PRESETS, RECOMMENDED, capsOf, presetKeyOf, valueFromCaps } from '../lib/spacePerms';
-import { Avatar, Modal } from './ui';
+import { Avatar, MobileTabs, Modal } from './ui';
 import { FIcon } from './Icon';
 import { withBase } from '@/lib/base';
 
@@ -82,8 +82,8 @@ export function BgPicker({ value, onChange }) {
         <label className="sp-ang"><span>الاتجاه ({g.a}°)</span>
           <input type="range" min="0" max="360" step="5" value={g.a} onChange={e => push({ ...g, a: +e.target.value })} /></label>
         <div className="sp-dirs">
-          {[[90, '→'], [135, '↘'], [180, '↓'], [225, '↙'], [270, '←'], [315, '↖'], [0, '↑'], [45, '↗']].map(([a, l]) => <button type="button" key={a} className={`sp-dir ${g.a === a ? 'on' : ''}`} onClick={() => push({ ...g, a })} aria-label={a + '°'}>{l}</button>)}
-          <button type="button" className="btn ghost sm" onClick={() => push({ ...g, c1: g.c2, c2: g.c1 })}>⇄ عكس الألوان</button>
+          {[90, 135, 180, 225, 270, 315, 0, 45].map(a => <button type="button" key={a} className={`sp-dir ${g.a === a ? 'on' : ''}`} onClick={() => push({ ...g, a })} aria-label={a + '°'}><FIcon n="arrow" size={16} rot={(a - 90 + 360) % 360} /></button>)}
+          <button type="button" className="btn ghost sm" onClick={() => push({ ...g, c1: g.c2, c2: g.c1 })}><FIcon n="arrows" size={14} /> عكس الألوان</button>
         </div>
         {!isGrad && <p className="muted small">اضغط أي لون/اتجاه لتطبيق التدرّج.</p>}
       </div>
@@ -124,7 +124,7 @@ export function SpacesHome({ me, toast }) {
   return (
     <>
       <div className="notice" style={{ margin: '0 0 12px' }}>
-        <b>إعدادات المساحة:</b> المساحة = مشروع مستقل له <b>خلفيته ولوحاته وسير عمل كل لوحة وحقول مهامه وصلاحياته</b>. أنشئ مساحة، ثم ادخل إعداداتها لإضافة اللوحات وتحديد الحقول ومن يرى ويحرّك المهام.
+        <b>إعدادات المساحة:</b> المساحة = مكان عمل مستقل له <b>خلفيته ولوحاته وسير عمل كل لوحة وحقول مهامه وصلاحياته</b>. أنشئ مساحة، ثم ادخل إعداداتها لإضافة اللوحات وتحديد الحقول ومن يرى ويحرّك المهام.
       </div>
       <div className="toolbar" style={{ margin: '0 0 12px' }}>
         <h3 style={{ margin: 0 }}>المساحات ({spaces.length})</h3><span className="grow" />
@@ -190,7 +190,7 @@ export function SpaceDetail({ me, id, toast, ask, reloadMe }) {
         <a className="btn sm ghost" href="/spaces">كل المساحات</a>
         <a className="btn sm" href={'/tasks?space=' + space.id}>فتح المهام</a>
       </div>
-      <div className="toolbar"><div className="seg wrap">{TABS.map(([k, l]) => <button key={k} className={k === tab ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>)}</div></div>
+      <div className="toolbar"><MobileTabs label="قسم المساحة" tabs={TABS} value={tab} onPick={setTab} /><div className="seg wrap m-hide-sm">{TABS.map(([k, l]) => <button key={k} className={k === tab ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>)}</div></div>
       {tab === 'general' && <GeneralTab space={space} toast={toast} ask={ask} onSaved={load} />}
       {tab === 'boards' && <BoardsTab space={space} boards={boards} me={me} toast={toast} ask={ask} bform={bform} setBform={setBform} reload={load} reloadMe={reloadMe} />}
       {tab === 'items' && <ItemsTab space={space} toast={toast} onSaved={load} />}

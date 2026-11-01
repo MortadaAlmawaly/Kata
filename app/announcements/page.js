@@ -5,6 +5,7 @@ import { FIcon } from '../../components/Icon';
 import { api } from '../../lib/api';
 import { fmtDT, ROLE } from '../../lib/constants';
 import AppShell, { useMe } from '../../components/AppShell';
+import PageTabs, { COMPANY_TABS } from '../../components/PageTabs';
 import { Avatar, Icon, Modal } from '../../components/ui';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import { ago, useConfirm, useToast } from '../../components/hooks';
@@ -34,6 +35,7 @@ export default function AnnouncementsPage() {
 
   return (
     <AppShell active="announcements" title="التعاميم" sub="أخبار الشركة والفريق" me={me}>
+      <PageTabs items={COMPANY_TABS} active="announcements" />
       {error && <div className="notice">{error}</div>}
       <div className="toolbar">
         <span className="grow muted">تعاميم الشركة وتعاميم فريقك والتعاميم الموجّهة إليك.</span>
