@@ -668,6 +668,13 @@
         const bal = leaveBal(u).find(b => b.key === (body.leaveType || 'annual'));
         const want = Math.round((new Date(body.endDate) - new Date(body.startDate)) / 864e5) + 1;
         if (!bal) return err(400, 'نوع إجازة غير معروف');
+        if (!body.startDate || !body.endDate || body.endDate < body.startDate) return err(400, 'حدّد تاريخ بداية ونهاية صحيحين');
+        /* سياسة الدوام والإجازات: إشعار مسبق 3 أيام عمل (الأحد–الخميس) لغير المرضية */
+        if ((body.leaveType || 'annual') !== 'sick') {
+          let wd = 0; const cur = new Date(day(0) + 'T00:00:00'), st = new Date(body.startDate + 'T00:00:00');
+          for (cur.setDate(cur.getDate() + 1); cur <= st; cur.setDate(cur.getDate() + 1)) if (cur.getDay() !== 5 && cur.getDay() !== 6) wd++;
+          if (wd < 3) return err(400, 'سياسة الإجازات تشترط إشعاراً مسبقاً 3 أيام عمل على الأقل (الإجازة المرضية مستثناة)');
+        }
         if (bal.remaining != null && want > bal.remaining) return err(400, `رصيد «${bal.name}» غير كافٍ: المتبقي ${bal.remaining} يوم والمطلوب ${want}`);
       }
       const a = nearest(u.id);

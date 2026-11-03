@@ -109,7 +109,7 @@ export default function AttendancePage() {
                   <span>{t.remaining == null
                     ? <><b>{t.used}</b> <span className="muted small">يوم مستخدم · غير محدود</span></>
                     : <><b>{t.remaining}</b> <span className="muted small">متبقٍّ من {t.entitlement}</span></>}</span></div>
-                {t.entitlement ? <div className="bar"><i style={{ width: `${Math.min(100, Math.round(t.used / t.entitlement * 100))}%` }} /></div> : null}
+                {t.entitlement ? <div className="bar"><i style={{ width: `${Math.max(0, Math.min(100, Math.round((t.remaining ?? (t.entitlement - t.used)) / t.entitlement * 100)))}%` }} role="img" aria-label={`المتبقي ${t.remaining ?? (t.entitlement - t.used)} من ${t.entitlement}`} /></div> : null}
               </div>
             ))}
             <button type="button" className="btn sm" style={{ marginTop: 12 }} onClick={() => setLeaveForm(true)}>+ طلب إجازة</button>

@@ -91,7 +91,7 @@ export default function DashboardPage() {
       <>
         {polSum && polSum.pending > 0 && (
           <a className="notice" href="/policies" style={{ display: 'block', margin: '0 0 14px' }}>
-            لديك <b>{polSum.pending}</b> {polSum.pending === 1 ? 'سياسة تحتاج' : 'سياسات تحتاج'} إقرارك — اضغط للاطّلاع.
+            {polSum.pending === 1 ? <>لديك <b>سياسة واحدة</b> تحتاج إقرارك</> : polSum.pending === 2 ? <>لديك <b>سياستان</b> تحتاجان إقرارك</> : <>لديك <b>{polSum.pending}</b> {polSum.pending <= 10 ? 'سياسات' : 'سياسة'} تحتاج إقرارك</>} — اضغط للاطّلاع.
           </a>
         )}
         <section className="hero">

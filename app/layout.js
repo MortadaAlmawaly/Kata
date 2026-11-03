@@ -19,7 +19,7 @@ export const metadata = {
 export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#031A4D' };
 
 /* الروابط المطلقة الداخلية (href="/tasks" ...) تُحوَّل لتشمل المسار الفرعي عند النقر */
-const BASE_SHIM = `(function(b){document.addEventListener('click',function(e){if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;var a=e.target.closest&&e.target.closest('a[href]');if(!a||(a.target&&a.target!=='_self')||a.hasAttribute('download'))return;var h=a.getAttribute('href');if(!h||h[0]!=='/'||h[1]==='/'||h===b||h.indexOf(b+'/')===0||h.indexOf(b+'?')===0)return;e.preventDefault();e.stopPropagation();if(window.__spaGo&&window.__spaGo(h))return;location.href=b+h},true)})(${JSON.stringify(B)})`;
+const BASE_SHIM = `(function(b){document.addEventListener('click',function(e){if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;var a=e.target.closest&&e.target.closest('a[href]');if(!a||(a.target&&a.target!=='_self')||a.hasAttribute('download'))return;var h=a.getAttribute('href');if(!h||h[0]!=='/'||h[1]==='/'||h===b||h.indexOf(b+'/')===0||h.indexOf(b+'?')===0)return;e.preventDefault();e.stopPropagation();if(window.__spaGo&&window.__spaGo(h))return;location.href=b+h},true);var fix=function(e){var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;var h=a.getAttribute('href');if(h&&h[0]==='/'&&h[1]!=='/'&&h!==b&&h.indexOf(b+'/')!==0&&h.indexOf(b+'?')!==0)a.setAttribute('href',b+h)};['mouseover','touchstart','focusin','contextmenu','mousedown','auxclick'].forEach(function(n){document.addEventListener(n,fix,true)})})(${JSON.stringify(B)})`;
 
 export default function RootLayout({ children }) {
   return (

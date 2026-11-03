@@ -33,7 +33,7 @@ export default function ReportsPage() {
   }
   function csv() {
     const head = ['الاسم', 'الدور', 'القسم', 'مهام منجزة', 'مهام مفتوحة', 'متأخرة', 'متوسط أيام الإنجاز', 'نسبة بالموعد %', 'طلبات', 'مصروف معتمد', 'أيام إجازة', 'أيام حضور'];
-    const q = c => `"${String(c ?? '').replace(/"/g, '""')}"`;
+    const q = c => `"${String(c ?? '').trim().replace(/"/g, '""')}"`;
     const lines = [head.map(q).join(',')].concat(rows.map(x => [x.name, ROLE[x.role], x.department, x.tasksDone, x.tasksOpen, x.tasksOverdue,
       x.avgDaysToDone, x.onTimeRate, x.requests, x.approvedSpend, x.leaveDays, x.attendanceDays].map(q).join(',')));
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
