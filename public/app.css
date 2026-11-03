@@ -2710,3 +2710,18 @@ html[data-intro="skip"] .intro-splash{display:none}
 
 /* QA: ست بطاقات إحصاء → 3×2 بدل أن تنزل السادسة وحدها */
 @media (min-width:900px){.grid.kpis:has(>:nth-child(6):last-child){grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* QA2: تباين شريط التنبيه + أرقام لا تلتف + أوقات LTR داخل RTL */
+.notice{color:var(--text)}
+.notice b{color:inherit}
+.kpi b,.kpi .sub,.stat b{white-space:nowrap}
+bdi.t,.ev-time,.ag-time{unicode-bidi:isolate;direction:ltr;display:inline-block}
+.file-ar{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.file-ar input[type=file]{position:absolute;inline-size:1px;block-size:1px;opacity:0;overflow:hidden}
+.file-ar .btn{cursor:pointer}
+
+/* QA2: نموذج المهمة على الهاتف: النوع/الأولوية/الحالة جنب بعض بدل سطر لكل حقل */
+@media (max-width:760px){
+  .modal .row2:has(> .field select):not(:has(> .field textarea)){grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+  .modal .row2>.field small{display:none}
+}

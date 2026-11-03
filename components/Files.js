@@ -33,11 +33,24 @@ export async function uploadFiles(entity, id, files) {
   return { ok, failed, ids };
 }
 
+/* حقل ملف بنص عربي (بدل «Choose File / No file chosen» الخاص بلغة المتصفح) */
+export function FileInputAr({ inputRef, multiple, accept, onChange, btn = 'اختيار ملف' }) {
+  const [names, setNames] = useState('');
+  return (
+    <span className="file-ar">
+      <label className="btn ghost sm">{btn}
+        <input type="file" multiple={multiple} accept={accept} ref={inputRef}
+          onChange={e => { setNames([...(e.target.files || [])].map(f => f.name).join('، ')); if (onChange) onChange(e); }} /></label>
+      <span className="muted small" dir="auto">{names || 'لم يُختر ملف'}</span>
+    </span>
+  );
+}
+
 export function FilePicker({ label = 'مرفقات (PDF أو صور)', inputRef }) {
   return (
-    <label className="field file-field"><span>{label}</span>
-      <input type="file" multiple accept={FILE_ACCEPT} ref={inputRef} />
-      <small className="muted">PDF أو PNG أو JPG أو WEBP — حتى 8MB للملف</small></label>
+    <div className="field file-field"><span>{label}</span>
+      <FileInputAr multiple accept={FILE_ACCEPT} inputRef={inputRef} btn="اختيار ملفات" />
+      <small className="muted">PDF أو PNG أو JPG أو WEBP — حتى 8MB للملف</small></div>
   );
 }
 

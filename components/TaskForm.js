@@ -9,7 +9,7 @@ import { Modal } from './ui';
 import { shrinkImage } from '../lib/image';
 import CfInput from './CustomFields';
 import TypeInput from './TypeInput';
-import { FilePicker, uploadFiles } from './Files';
+import { FileInputAr, FilePicker, uploadFiles } from './Files';
 
 export async function resolveIssueKey(text) {
   const key = String(text || '').trim().toUpperCase();
@@ -218,7 +218,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
         <div className="field"><span>غلاف المهمة (اختياري)</span>
           <div className="cover-field">
             {coverUrl ? <img src={coverUrl} alt="" className="cover-thumb" /> : <span className="cover-thumb ph"><FIcon n="image" size={22} /></span>}
-            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={pickCover} />
+            <FileInputAr accept="image/png,image/jpeg,image/webp" onChange={pickCover} btn="اختيار صورة" />
             {cover && <button type="button" className="btn ghost sm" onClick={() => { setCover(null); if (coverUrl) URL.revokeObjectURL(coverUrl); setCoverUrl(''); }}>إزالة</button>}
           </div>
           <small className="muted">صورة تظهر أعلى بطاقة المهمة على اللوحة (PNG / JPG / WEBP حتى 8MB)</small></div>

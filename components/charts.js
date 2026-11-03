@@ -17,11 +17,11 @@ export function Ring({ pct, size = 64, stroke = 7, color }) {
 export const Bar = ({ p }) => <div className="bar" title={`${p}%`}><i style={{ width: `${Math.max(0, Math.min(100, p))}%` }} /></div>;
 
 export function ChartLine({ points, series, w = 640, h = 220 }) {
-  const pad = { l: 34, r: 12, t: 12, b: 26 };
+  const pad = { l: 12, r: 34, t: 12, b: 26 };   // RTL: المحور الرأسي يمين والأقدم يمين
   const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
   const max = Math.max(1, ...series.flatMap(s => s.values));
   const nice = Math.ceil(max / 4) * 4 || 4;
-  const x = i => pad.l + (points.length > 1 ? (i / (points.length - 1)) * iw : iw / 2);
+  const x = i => pad.l + iw - (points.length > 1 ? (i / (points.length - 1)) * iw : iw / 2);
   const y = v => pad.t + ih - (v / nice) * ih;
   const every = Math.max(1, Math.ceil(points.length / 8));
   return (
@@ -32,7 +32,7 @@ export function ChartLine({ points, series, w = 640, h = 220 }) {
           return (
             <g key={i}>
               <line x1={pad.l} x2={w - pad.r} y1={y(v)} y2={y(v)} className="gl" />
-              <text x={pad.l - 6} y={y(v) + 4} className="gt" textAnchor="end">{Math.round(v)}</text>
+              <text x={w - pad.r + 6} y={y(v) + 4} className="gt" textAnchor="start">{Math.round(v)}</text>
             </g>
           );
         })}
@@ -65,7 +65,7 @@ export function ChartBars({ items, w = 640, h = 220, color = 'var(--accent)', fm
     <svg viewBox={`0 0 ${w} ${h}`} className="chart" role="img">
       <line x1={pad.l} x2={w - pad.r} y1={pad.t + ih} y2={pad.t + ih} className="gl" />
       {items.map((it, i) => {
-        const bh = (it.value / max) * ih, bx = pad.l + i * bw + bw * 0.18;
+        const bh = (it.value / max) * ih, bx = pad.l + (items.length - 1 - i) * bw + bw * 0.18;
         return (
           <g key={i}>
             <rect x={bx} y={pad.t + ih - bh} width={bw * 0.64} height={Math.max(bh, 1)} rx="5" fill={color}><title>{`${it.label}: ${fmtV(it.value)}`}</title></rect>

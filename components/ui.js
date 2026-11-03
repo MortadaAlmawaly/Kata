@@ -52,9 +52,14 @@ export function Modal({ title, onClose, children, actions, wide, cardClass = '',
   /* النافذة الجانبية المصغّرة (noLock) لا تجمّد التمرير ولا تغبّش الصفحة خلفها */
   useEffect(() => {
     if (noLock) return undefined;
-    const prev = document.documentElement.classList.contains('scroll-lock');
+    /* عدّاد عام: النوافذ المتداخلة لا تترك القفل عالقاً ولا تفكّه مبكراً */
+    const w = window;
+    w.__lockN = (w.__lockN || 0) + 1;
     document.documentElement.classList.add('scroll-lock');
-    return () => { if (!prev) document.documentElement.classList.remove('scroll-lock'); };
+    return () => {
+      w.__lockN = Math.max(0, (w.__lockN || 1) - 1);
+      if (!w.__lockN) document.documentElement.classList.remove('scroll-lock');
+    };
   }, [noLock]);
   return (
     <div className={`modal ${center ? 'modal-center' : ''}`} onMouseDown={e => { if (e.target === e.currentTarget && onClose) onClose(); }}>
