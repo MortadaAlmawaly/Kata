@@ -10,6 +10,7 @@ import { shrinkImage } from '../lib/image';
 import CfInput from './CustomFields';
 import TypeInput from './TypeInput';
 import { FileInputAr, FilePicker, uploadFiles } from './Files';
+import DateInput from './DateInput';
 
 export async function resolveIssueKey(text) {
   const key = String(text || '').trim().toUpperCase();
@@ -167,8 +168,8 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
           <datalist id="dlLabels">{R.labels.map(l => <option key={l} value={l} />)}</datalist>
           <label className="field qc-extra"><span>نقاط القصة</span><input type="number" min="0" max="1000" step="0.5" value={f.storyPoints} placeholder="مثال: 5" onChange={set('storyPoints')} /></label>
           <label className="field qc-extra"><span>التقدير (مثال: 2h 30m أو 1d)</span><input value={f.estimate} placeholder="2h 30m" onChange={set('estimate')} /></label>
-          <label className="field qc-extra"><span>تاريخ البدء</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
-          <label className="field"><span>تاريخ التسليم</span><input type="date" value={f.dueDate} onChange={set('dueDate')} /></label>
+          <label className="field qc-extra"><span>تاريخ البدء</span><DateInput value={f.startDate} onChange={set('startDate')} /></label>
+          <label className="field"><span>تاريخ التسليم</span><DateInput value={f.dueDate} onChange={set('dueDate')} /></label>
           {!boardOptions.length && !lockBoard && <label className="field qc-extra"><span>المساحة</span>
             <select value={f.projectId} onChange={set('projectId')}>
               <option value="">— بدون —</option>
@@ -176,7 +177,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
             </select></label>}
           <label className="field qc-extra"><span>السباق</span>
             <select value={f.sprintId} onChange={set('sprintId')}>
-              <option value="">Backlog</option>
+              <option value="">قائمة الانتظار</option>
               {R.sprints.filter(s => s.state !== 'CLOSED').map(s => <option key={s.id} value={s.id}>{s.name}{s.state === 'ACTIVE' ? ' (جارٍ)' : ''}</option>)}
             </select></label>
           <label className="field qc-extra"><span>الأم / الملحمة (اكتب الرقم مثل NKH-3)</span>
@@ -223,7 +224,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
           </div>
           <small className="muted">صورة تظهر أعلى بطاقة المهمة على اللوحة (PNG / JPG / WEBP حتى 8MB)</small></div>
         <FilePicker label="مرفقات (اختياري)" inputRef={files} />
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           {!ex && <button type="button" className="btn ghost" onClick={() => setMore(m => !m)}>{more ? 'حقول أقل' : 'كل الحقول'}</button>}
           {!ex && <label className="check" style={{ marginInlineEnd: 'auto' }}><input type="checkbox" checked={another} onChange={e => setAnother(e.target.checked)} /> إنشاء مهمة أخرى</label>}

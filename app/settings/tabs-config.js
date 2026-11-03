@@ -266,7 +266,7 @@ function FieldForm({ d, secName, onClose, onSave, preset }) {
                 onChange={e => setF(s => { const n = new Set(s.issueTypes); if (e.target.checked) n.add(k); else n.delete(k); return { ...s, issueTypes: n }; })} /> {l}</label>
             ))}
           </div></div>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn">حفظ</button>
@@ -396,7 +396,7 @@ function RuleForm({ r, users, fields, onClose, onSave }) {
           </div>
         ))}
         <button type="button" className="btn ghost sm" onClick={() => setCur(c => ({ ...c, actions: [...c.actions, { type: 'setStatus', value: 'IN_PROGRESS' }] }))}>+ إضافة إجراء</button>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn">حفظ</button>

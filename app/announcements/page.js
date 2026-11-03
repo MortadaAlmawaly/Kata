@@ -163,7 +163,7 @@ function AnnouncementForm({ me, perms, onClose, onSaved, onError }) {
           </div>
         )}
         <FilePicker label="مرفقات (اختياري)" inputRef={files} />
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>نشر</button>

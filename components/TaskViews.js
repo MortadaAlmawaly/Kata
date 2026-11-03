@@ -296,7 +296,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
               { name: 'الفعلي', values: burn.actual, color: 'var(--accent-text, var(--accent))', area: true }]} w={760} h={240} />
             <small className="muted">الإجمالي {burn.totalPts} نقطة (المهمة بلا نقاط تُحسب بنقطة واحدة).</small>
           </>
-        ) : <p className="muted">لا يوجد سباق جارٍ بتاريخي بداية ونهاية. أنشئ سباقاً وابدأه من تبويب Backlog.</p>}
+        ) : <p className="muted">لا يوجد سباق جارٍ بتاريخي بداية ونهاية. أنشئ سباقاً وابدأه من تبويب قائمة الانتظار.</p>}
       </section>
 
       <section className="card">

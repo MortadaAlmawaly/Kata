@@ -68,7 +68,7 @@ function JoinInner() {
               );
             })()}
             <button className="btn full" type="submit" disabled={busy}>إنشاء الحساب والدخول</button>
-            <p className="err" role="alert">{err}</p>
+            <p className="err" role={err ? 'alert' : undefined}>{err}</p>
           </form>
         </>
       )}

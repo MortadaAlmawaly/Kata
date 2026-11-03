@@ -9,6 +9,8 @@ import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import MentionInput from '../../components/MentionInput';
 import { ago, useConfirm, useToast } from '../../components/hooks';
 import { FIcon } from '../../components/Icon';
+import { withBase } from '@/lib/base';
+import DateInput from '../../components/DateInput';
 
 const RSTATUS = { PENDING: 'قيد الموافقة', APPROVED: 'معتمد', REJECTED: 'مرفوض', CANCELLED: 'ملغي' };
 const RSTATUS_HERO = { PENDING: 't-REQ-PENDING', APPROVED: 't-REQ-OK', REJECTED: 't-REQ-NO', CANCELLED: 't-TASK' };
@@ -34,7 +36,7 @@ export default function RequestsPage() {
   useEffect(() => { if (me) load(); }, [me, load]);
   useEffect(() => { if (me && box !== 'mine' && !canApprove) setBox('mine'); }, [me, box, canApprove]);
   useEffect(() => {   // /requests?new=1 من لوحة المتابعة
-    if (me && new URLSearchParams(window.location.search).get('new')) { setForm(true); window.history.replaceState(null, '', '/requests'); }
+    if (me && new URLSearchParams(window.location.search).get('new')) { setForm(true); window.history.replaceState(null, '', withBase('/requests')); }
   }, [me]);
 
   const tabs = [['mine', 'طلباتي'], ...(canApprove ? [['inbox', 'بانتظار موافقتي'], ['team', 'طلبات فريقي'], ['decided', 'قرارات سابقة']] : [])];
@@ -78,7 +80,8 @@ export default function RequestsPage() {
                         <button className="btn sm danger" onClick={() => setDecide({ kind: 'reject', r })}>رفض</button>
                       </>
                     )}
-                    {box === 'mine' && r.status === 'PENDING' && <button className="btn sm ghost" onClick={() => cancel(r)}>إلغاء</button>}
+                    {box === 'mine' && r.status === 'PENDING' && <button className="btn sm ghost" onClick={() => cancel(r)}>إلغاء الطلب</button>}
+                    {box === 'mine' && ['CANCELLED', 'REJECTED'].includes(r.status) && <button className="btn sm ghost" onClick={() => ask({ title: 'حذف الطلب', text: 'سيُحذف الطلب من قائمتك نهائياً.', ok: 'حذف', onOk: async () => { try { await api('DELETE', `/api/requests/${r.id}`); toast('تم الحذف'); load(); } catch (e) { toast(e.message, 'err'); } } })}>حذف</button>}
                   </td>
                 </tr>
               ))}
@@ -116,7 +119,7 @@ function DecideModal({ kind, r, me, onClose, onDone }) {
         <p className="muted small" style={{ marginTop: 6 }}>{r.requester.name} · {r.type === 'LEAVE' ? RTYPE.LEAVE : `${fmt(r.amount)} ${me.org.currency}`}</p>
         <label className="field"><span>ملاحظة{need ? ' (إلزامية)' : ' (اختياري)'}</span>
           <textarea value={note} maxLength={500} onChange={e => setNote(e.target.value)} /></label>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className={`btn ${kind === 'reject' ? 'danger' : 'ok'}`} disabled={busy}>{kind === 'approve' ? 'تأكيد الموافقة' : 'تأكيد الرفض'}</button>
@@ -265,8 +268,8 @@ function RequestForm({ me, onClose, onSaved, onError }) {
         {leave && (
           <>
             <div className="row2">
-              <label className="field"><span>من</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
-              <label className="field"><span>إلى</span><input type="date" value={f.endDate} onChange={set('endDate')} /></label>
+              <label className="field"><span>من</span><DateInput value={f.startDate} onChange={set('startDate')} /></label>
+              <label className="field"><span>إلى</span><DateInput value={f.endDate} onChange={set('endDate')} /></label>
             </div>
             <p className="muted small">
               {days ? <>المدة: <b>{days}</b> يوم{over && <span style={{ color: 'var(--bad)' }}> — تتجاوز رصيدك المتبقي</span>}</> : <span style={{ color: 'var(--bad)' }}>الفترة غير صالحة</span>}
@@ -277,7 +280,7 @@ function RequestForm({ me, onClose, onSaved, onError }) {
         <label className="field"><span>التفاصيل / المبررات</span><textarea value={f.details} maxLength={4000} onChange={set('details')} /></label>
         <FilePicker label="مرفقات داعمة (فواتير، عروض أسعار، صور)" inputRef={files} />
         <p className="notice">يمرّ الطلب على رئيسك المباشر، ويصعد تلقائياً إذا تجاوز حدّ موافقته.</p>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>تقديم الطلب</button>

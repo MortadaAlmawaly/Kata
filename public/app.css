@@ -2725,3 +2725,18 @@ bdi.t,.ev-time,.ag-time{unicode-bidi:isolate;direction:ltr;display:inline-block}
   .modal .row2:has(> .field select):not(:has(> .field textarea)){grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
   .modal .row2>.field small{display:none}
 }
+
+/* QA3: حقل التاريخ الموحّد YYYY-MM-DD */
+.date-in{position:relative;display:flex;align-items:center;min-width:0}
+.date-in>input[type=text]{flex:1;min-width:0;padding-inline-end:36px;text-align:start}
+.date-pick{position:absolute;inset-inline-end:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:8px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.date-pick:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--text)}
+.date-nat{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
+.fin.dt.date-in,.date-in .fin{min-width:0}
+
+/* عناوين المهام: اتجاه تلقائي حسب أول حرف (TEST مهمة / مهمة TEST) */
+.ktitle b,.bl-title,.arch-title,.td-title.ro,.tview-title{unicode-bidi:plaintext;text-align:start}
+
+/* حقل التاريخ: الأرقام يميناً (بداية السطر بالعربي) والأيقونة يساراً دون تداخل */
+.date-in>input[type=text]{text-align:right;padding-inline:38px 12px}
+.date-pick{left:6px;right:auto;inset-inline-end:auto}

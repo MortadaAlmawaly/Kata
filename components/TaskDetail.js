@@ -17,6 +17,7 @@ import TypeInput from './TypeInput';
 import { FilesBlock, uploadFiles } from './Files';
 import { resolveIssueKey } from './TaskForm';
 import { useConfirm } from './hooks';
+import DateInput from './DateInput';
 
 const TI = {
   TASK: <><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="#4c8dff" strokeWidth="2" /><path d="m8 12.5 3 3 5-6" fill="none" stroke="#4c8dff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></>,
@@ -230,9 +231,9 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                     : <span>{t.storyPoints ?? '—'}</span>}</div></div> },
                 { key: 'sprint', node: <div className="fr"><label>{ctx.fl('sprint')}</label><div className="fv">
                   {ed ? <select className="fsel" value={t.sprintId || ''} onChange={e => patch({ sprintId: e.target.value ? +e.target.value : null })}>
-                    <option value="">Backlog</option>
+                    <option value="">قائمة الانتظار</option>
                     {sprints.filter(s => s.state !== 'CLOSED' || s.id === t.sprintId).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
-                    : <span>{(t.sprint && t.sprint.name) || 'Backlog'}</span>}</div></div> },
+                    : <span>{(t.sprint && t.sprint.name) || 'قائمة الانتظار'}</span>}</div></div> },
                 { key: 'parent', node: <div className="fr"><label>{ctx.fl('parent')}</label><div className="fv">
                   {ed ? <input className="fin key-in" dir="ltr" placeholder="NKH-3" key={t.parent ? t.parent.key : ''} defaultValue={t.parent ? t.parent.key : ''}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
@@ -261,9 +262,9 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
               ];
   const datesRows = [
                 { key: 'start', node: <div className="fr"><label>{ctx.fl('start')}</label><div className="fv">
-                  {ed ? <input type="date" className={`fin dt ${t.startDate ? '' : 'empty'}`} value={t.startDate || ''} onChange={e => patch({ startDate: e.target.value || null })} /> : <span>{t.startDate || '—'}</span>}</div></div> },
+                  {ed ? <DateInput className={`fin dt ${t.startDate ? '' : 'empty'}`} value={t.startDate || ''} onChange={e => patch({ startDate: e.target.value || null })} /> : <span>{t.startDate || '—'}</span>}</div></div> },
                 { key: 'due', node: <div className="fr"><label>{ctx.fl('due')}</label><div className="fv">
-                  {ed ? <input type="date" className={`fin dt ${t.dueDate ? '' : 'empty'}`} value={t.dueDate || ''} onChange={e => patch({ dueDate: e.target.value || null })} /> : <span>{t.dueDate || '—'}</span>}</div></div> },
+                  {ed ? <DateInput className={`fin dt ${t.dueDate ? '' : 'empty'}`} value={t.dueDate || ''} onChange={e => patch({ dueDate: e.target.value || null })} /> : <span>{t.dueDate || '—'}</span>}</div></div> },
                 { key: 'created', node: <div className="fr"><label>{ctx.fl('created')}</label><div className="fv"><span className="muted">{fmtDT(t.createdAt)}</span></div></div> },
                 { key: 'updated', node: <div className="fr"><label>{ctx.fl('updated')}</label><div className="fv"><span className="muted">{fmtDT(t.updatedAt)}</span></div></div> },
               ];
@@ -614,7 +615,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                   {up && (
                     <div className="wl-form">
                       <input className="input" placeholder="الوقت: 1h 30m" maxLength={20} value={wl.time} onChange={e => setWl({ ...wl, time: e.target.value })} />
-                      <input className="input" type="date" value={wl.date} onChange={e => setWl({ ...wl, date: e.target.value })} />
+                      <DateInput className="input" value={wl.date} onChange={e => setWl({ ...wl, date: e.target.value })} />
                       <input className="input" placeholder="ملاحظة (اختياري)" maxLength={255} value={wl.note} onChange={e => setWl({ ...wl, note: e.target.value })} />
                       <button type="button" className="btn ghost" onClick={act(async () => {
                         const mins = parseMin(wl.time);

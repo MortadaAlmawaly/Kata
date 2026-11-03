@@ -147,7 +147,8 @@
     const ci = new Date(rec.checkIn), co = rec.checkOut ? new Date(rec.checkOut) : null;
     const inM = ci.getHours() * 60 + ci.getMinutes(), outM = co ? co.getHours() * 60 + co.getMinutes() : null;
     const late = inM - st;
-    return { lateMin: late > (org.settings.graceMinutes ?? 10) ? late : 0, earlyMin: outM != null && outM < en ? en - outM : 0, overtimeMin: outM != null && outM - en >= 15 ? outM - en : 0,
+    const afterHours = inM >= en;   /* حضور بعد نهاية الدوام: لا يُحسب تأخيراً بل يُعلَّم خارج الدوام */
+    return { afterHours, lateMin: !afterHours && late > (org.settings.graceMinutes ?? 10) ? late - (org.settings.graceMinutes ?? 10) : 0, earlyMin: outM != null && outM < en ? en - outM : 0, overtimeMin: outM != null && outM - en >= 15 ? outM - en : 0,
       workedMin: co ? Math.round((co - ci) / 60000) : null };
   };
   /* صلاحيات المساحات: users/roles → NONE|VIEW|MOVE|EDIT */
@@ -660,6 +661,13 @@
       else if (box === 'team') list = list.filter(r => r.requesterId !== u.id && sc.has(r.requesterId));
       else list = list.filter(r => r.steps.some(s => s.approverId === u.id));
       return ok(list.slice().reverse().map(reqJSON));
+    }
+    if ((m = path.match(/^\/api\/requests\/(\d+)$/)) && method === 'DELETE') {
+      const i = requests.findIndex(x => x.id === +m[1]);
+      if (i < 0) return err(404, 'الطلب غير موجود');
+      if (requests[i].requesterId !== u.id) return err(403, 'الحذف لصاحب الطلب فقط');
+      if (!['CANCELLED', 'REJECTED'].includes(requests[i].status)) return err(409, 'يُحذف الطلب الملغي أو المرفوض فقط');
+      requests.splice(i, 1); return ok(null);
     }
     if (path === '/api/requests' && method === 'POST') {
       if (!String(body.title || '').trim()) return err(400, 'العنوان مطلوب');

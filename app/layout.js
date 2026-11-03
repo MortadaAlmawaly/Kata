@@ -28,6 +28,8 @@ export default function RootLayout({ children }) {
         {/* يضبط الوضع الداكن قبل أول رسم لمنع وميض الأبيض */}
         <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('rb-theme');document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}try{if(sessionStorage.getItem('kata-intro')&&!/[?&]intro=1/.test(location.search))document.documentElement.dataset.intro='skip'}catch(e){}" }} />
         {B && <script dangerouslySetInnerHTML={{ __html: BASE_SHIM }} />}
+        {/* حدث التثبيت يُطلَق مرة وحدة عند التحميل: نحتفظ به ليعمل زر «تثبيت التطبيق» بالإعدادات لاحقاً */}
+        <script dangerouslySetInnerHTML={{ __html: "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaPrompt=e})" }} />
         <link rel="preload" href={B + '/fonts/Tajawal-Regular.ttf'} as="font" type="font/ttf" crossOrigin="" />
         <link rel="stylesheet" href={B + '/app.css?v=' + ver()} />
         {/* وضع التجربة: خادم وهمي داخل المتصفح (NEXT_PUBLIC_DEMO=1) يعمل قبل أي طلب */}

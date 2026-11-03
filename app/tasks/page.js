@@ -1,5 +1,5 @@
 'use client';
-/* المهام (لوحة / Backlog / قائمة) — ترحيل viewTasks (tasks-pro.js). */
+/* المهام (لوحة / قائمة الانتظار / قائمة) — ترحيل viewTasks (tasks-pro.js). */
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bgCss, bgCssThemed } from '../../components/SpaceSettings';
 import { createPortal } from 'react-dom';
@@ -19,6 +19,7 @@ import TypeInput from '../../components/TypeInput';
 import { TaskCalendar, TaskGoals, TaskReports } from '../../components/TaskViews';
 import TaskFilterBar, { compileJql, EMPTY_FILTER, useTaskFilter } from '../../components/TaskFilter';
 import { withBase } from '@/lib/base';
+import DateInput from '../../components/DateInput';
 
 export default function TasksPage() {
   return <Suspense fallback={null}><Tasks /></Suspense>;
@@ -82,13 +83,13 @@ function Tasks() {
   useEffect(() => {
     if (!me) return;
     const p = new URLSearchParams(window.location.search);
-    if (p.get('board')) { pendingBoard.current = +p.get('board'); window.history.replaceState(null, '', '/tasks'); }
-    if (p.get('archive')) { pendingBoard.current = +p.get('archive'); openArchRef.current = true; window.history.replaceState(null, '', '/tasks'); }
-    if (p.get('space')) { pendingSpace.current = +p.get('space'); window.history.replaceState(null, '', '/tasks'); }
-    if (p.get('open')) { setDetailId(+p.get('open')); window.history.replaceState(null, '', '/tasks'); }
+    if (p.get('board')) { pendingBoard.current = +p.get('board'); window.history.replaceState(null, '', withBase('/tasks')); }
+    if (p.get('archive')) { pendingBoard.current = +p.get('archive'); openArchRef.current = true; window.history.replaceState(null, '', withBase('/tasks')); }
+    if (p.get('space')) { pendingSpace.current = +p.get('space'); window.history.replaceState(null, '', withBase('/tasks')); }
+    if (p.get('open')) { setDetailId(+p.get('open')); window.history.replaceState(null, '', withBase('/tasks')); }
     else if (p.get('new')) {
       setForm({ task: null, free: true, preset: p.get('projectId') ? { projectId: +p.get('projectId') } : null });
-      window.history.replaceState(null, '', '/tasks');
+      window.history.replaceState(null, '', withBase('/tasks'));
     }
   }, [me]);
 
@@ -406,7 +407,7 @@ function Tasks() {
     );
   }
 
-  /* ───────── Backlog ───────── */
+  /* ───────── قائمة الانتظار ───────── */
   function BacklogView() {
     const [qType, setQType] = useState('');
     const [qTitle, setQTitle] = useState('');
@@ -417,7 +418,7 @@ function Tasks() {
       const id = +e.dataTransfer.getData('text/plain');
       const t = A.find(x => x.id === id);
       if (!t || (t.sprintId || null) === to) return;
-      move(id, { sprintId: to }, to ? `نُقلت ${t.key} إلى السباق` : `أُعيدت ${t.key} إلى الـ Backlog`);
+      move(id, { sprintId: to }, to ? `نُقلت ${t.key} إلى السباق` : `أُعيدت ${t.key} إلى قائمة الانتظار`);
     };
     const Row = ({ t }) => (
       <div className={`bl-row ${t.status === 'DONE' ? 'done' : ''}`} draggable={canMove} onClick={() => openDetail(t.id)}
@@ -436,7 +437,7 @@ function Tasks() {
       <>
         <div className="bl-bar">
           {canTeam && <button className="btn ghost sm" onClick={() => setSprintForm({ sprint: null })}>+ إنشاء سباق</button>}
-          <span className="muted small">اسحب المهام بين السباقات والـ Backlog لتخطيط العمل.</span>
+          <span className="muted small">اسحب المهام بين السباقات وقائمة الانتظار لتخطيط العمل.</span>
         </div>
         {liveSprints.map(s => {
           const items = list.filter(t => t.sprintId === s.id);
@@ -457,7 +458,7 @@ function Tasks() {
                       {s.state === 'PLANNED' && <button type="button" className="btn sm" onClick={() => setSprintAct({ kind: 'start', sprint: s })}>بدء السباق</button>}
                       {s.state === 'ACTIVE' && <button type="button" className="btn sm ok" onClick={() => setSprintAct({ kind: 'done', sprint: s })}>إنهاء السباق</button>}
                       <button type="button" className="btn sm ghost" onClick={() => setSprintForm({ sprint: s })}>تعديل</button>
-                      {s.state !== 'ACTIVE' && <button type="button" className="btn sm danger" onClick={() => ask({ title: 'حذف السباق', text: 'تعود مهامه إلى الـ Backlog.', ok: 'حذف',
+                      {s.state !== 'ACTIVE' && <button type="button" className="btn sm danger" onClick={() => ask({ title: 'حذف السباق', text: 'تعود مهامه إلى قائمة الانتظار.', ok: 'حذف',
                         onOk: async () => { await api('DELETE', '/api/sprints/' + s.id); toast('تم حذف السباق'); load(); } })}>حذف</button>}
                     </>
                   )}
@@ -465,23 +466,23 @@ function Tasks() {
               </header>
               <div className="bl-list" {...dz(s.id)}>
                 {items.map(t => <Row key={t.id} t={t} />)}
-                {!items.length && <p className="muted small bl-empty">اسحب مهاماً من الـ Backlog إلى هنا</p>}
+                {!items.length && <p className="muted small bl-empty">اسحب مهاماً من قائمة الانتظار إلى هنا</p>}
               </div>
             </section>
           );
         })}
         <section className="bl-box">
           <header className="bl-head">
-            <div><b>Backlog</b> <small className="muted">مهام غير مجدولة</small></div>
+            <div><b>قائمة الانتظار</b> <small className="muted">مهام غير مجدولة</small></div>
             <div className="bl-stats"><span className="n">{backlog.length} مهمة</span><span className="n">{backlog.reduce((a, t) => a + (t.storyPoints || 0), 0)} نقطة</span></div>
           </header>
           <div className="bl-list" {...dz(null)}>
             {backlog.map(t => <Row key={t.id} t={t} />)}
-            {!backlog.length && <p className="muted small bl-empty">لا توجد مهام في الـ Backlog</p>}
+            {!backlog.length && <p className="muted small bl-empty">لا توجد مهام في قائمة الانتظار</p>}
           </div>
           <div className="bl-quick">
             <TypeInput ctx={ctx} value={qType} onChange={setQType} className="input" placeholder="النوع (اختياري)" />
-            <input className="input" maxLength={120} placeholder="+ أنشئ مهمة سريعة في الـ Backlog (Enter)" value={qTitle} onChange={e => setQTitle(e.target.value)}
+            <input className="input" maxLength={120} placeholder="+ أنشئ مهمة سريعة في قائمة الانتظار (Enter)" value={qTitle} onChange={e => setQTitle(e.target.value)}
               onKeyDown={async e => {
                 if (e.key !== 'Enter') return;
                 e.preventDefault();
@@ -516,10 +517,10 @@ function Tasks() {
           <span className="muted small">{open} مفتوحة</span>
         </div>
         <MobileTabs label="عرض اللوحة" value={view} onPick={pickView}
-          tabs={[['board', 'اللوحة'], ['backlog', 'Backlog'], ['list', 'قائمة'], ['calendar', 'التقويم'], ['goals', 'الأهداف'], ['reports', 'التقارير'], ['archive', 'الأرشيف']]} />
+          tabs={[['board', 'اللوحة'], ['backlog', 'قائمة الانتظار'], ['list', 'قائمة'], ['calendar', 'التقويم'], ['goals', 'الأهداف'], ['reports', 'التقارير'], ['archive', 'الأرشيف']]} />
         <nav className="jp-tabs m-hide-sm" aria-label="أقسام اللوحة">
           <button type="button" className={view === 'board' ? 'on' : ''} onClick={() => pickView('board')}><Icon name="projects" size={15} /> اللوحة</button>
-          <button type="button" className={view === 'backlog' ? 'on' : ''} onClick={() => pickView('backlog')}><Icon name="menu" size={15} /> Backlog</button>
+          <button type="button" className={view === 'backlog' ? 'on' : ''} onClick={() => pickView('backlog')}><Icon name="menu" size={15} /> قائمة الانتظار</button>
           <button type="button" className={view === 'list' ? 'on' : ''} onClick={() => pickView('list')}><Icon name="tasks" size={15} /> قائمة</button>
           <button type="button" className={view === 'calendar' ? 'on' : ''} onClick={() => pickView('calendar')}><Icon name="calendar" size={15} /> التقويم</button>
           <button type="button" className={view === 'goals' ? 'on' : ''} onClick={() => pickView('goals')}><Icon name="goals" size={15} /> الأهداف</button>
@@ -677,12 +678,12 @@ function SprintForm({ sprint: s, onClose, onSaved }) {
         <label className="field"><span>اسم السباق</span><input value={f.name} required maxLength={80} onChange={set('name')} /></label>
         <label className="field"><span>هدف السباق (اختياري)</span><input value={f.goal} maxLength={255} onChange={set('goal')} /></label>
         <div className="row2">
-          <label className="field"><span>البداية</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
-          <label className="field"><span>النهاية</span><input type="date" value={f.endDate} onChange={set('endDate')} /></label>
+          <label className="field"><span>البداية</span><DateInput value={f.startDate} onChange={set('startDate')} /></label>
+          <label className="field"><span>النهاية</span><DateInput value={f.endDate} onChange={set('endDate')} /></label>
         </div>
         {!s && <label className="field"><span>المساحة (اختياري)</span>
           <select value={f.projectId} onChange={set('projectId')}><option value="">— بدون —</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn">حفظ</button>
@@ -710,8 +711,8 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
         {kind === 'start' ? (
           <>
             <div className="row2">
-              <label className="field"><span>البداية</span><input type="date" value={start} onChange={e => setStart(e.target.value)} /></label>
-              <label className="field"><span>النهاية</span><input type="date" value={end} onChange={e => setEnd(e.target.value)} /></label>
+              <label className="field"><span>البداية</span><DateInput value={start} onChange={e => setStart(e.target.value)} /></label>
+              <label className="field"><span>النهاية</span><DateInput value={end} onChange={e => setEnd(e.target.value)} /></label>
             </div>
             <p className="muted small">يوجد سباق جارٍ واحد فقط لكل مساحة.</p>
           </>
@@ -720,11 +721,11 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
             <p className="muted">المهام المنجزة تبقى بالسباق. أين تنقل المهام غير المنتهية؟</p>
             <label className="field"><span>نقل غير المنتهية إلى</span>
               <select value={moveTo} onChange={e => setMoveTo(e.target.value)}>
-                <option value="">Backlog</option>{live.filter(x => x.id !== s.id).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                <option value="">قائمة الانتظار</option>{live.filter(x => x.id !== s.id).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select></label>
           </>
         )}
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn">{kind === 'start' ? 'بدء' : 'إنهاء السباق'}</button>

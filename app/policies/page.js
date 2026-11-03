@@ -124,7 +124,7 @@ function PolicyForm({ policy: p, cats, onClose, onSaved, onError }) {
         <label className="switch-row"><span><b>يتطلب إقراراً من الموظفين</b><small className="muted">تعديل النص لاحقاً يطلب إقراراً جديداً من الجميع</small></span>
           <input type="checkbox" checked={f.requireAck} onChange={e => setF({ ...f, requireAck: e.target.checked })} /></label>
         <FilePicker label={p ? 'إضافة ملفات جديدة (PDF أو صور) — الحالية من نافذة التفاصيل' : 'ملفات مرفقة (PDF أو صور)'} inputRef={files} />
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>حفظ</button>

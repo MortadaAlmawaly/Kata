@@ -128,7 +128,7 @@ function NewReview({ me, onClose, onCreated, onError }) {
           <label className="field"><span>فترة التقييم</span>
             <select value={cycle} onChange={e => setCycle(e.target.value)}>{cycleOptions().map(c => <option key={c} value={c}>{cycleLabel(c)}</option>)}</select></label>
           <p className="muted small">تظهر لك أرقام الموظف من النظام (المهام، الالتزام، الأهداف، الحضور) داخل التقييم.</p>
-          <p className="err" role="alert">{err}</p>
+          <p className="err" role={err ? 'alert' : undefined}>{err}</p>
           <div className="modal-actions">
             <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
             <button type="submit" className="btn">بدء التقييم</button>
