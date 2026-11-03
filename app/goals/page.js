@@ -244,7 +244,7 @@ function GoalForm({ me, goals, onClose, onSaved, onError }) {
           </div>
         ))}
         <FilePicker label="مرفقات (اختياري)" inputRef={files} />
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>حفظ</button>
@@ -367,7 +367,7 @@ function KrForm({ goalId, onClose, onSaved }) {
           <label className="field"><span>المستهدف</span><input type="number" min="0" step="any" value={f.target} required onChange={e => setF({ ...f, target: e.target.value })} /></label>
           <label className="field"><span>الوحدة (اختياري)</span><input value={f.unit} maxLength={16} onChange={e => setF({ ...f, unit: e.target.value })} /></label>
         </div>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn">إضافة</button>

@@ -11,6 +11,7 @@ import { Avatar, Icon, Modal } from '../../components/ui';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import { useConfirm, useToast } from '../../components/hooks';
 import { withBase } from '@/lib/base';
+import DateInput from '../../components/DateInput';
 
 const RESP = { PENDING: 'لم يرد', ACCEPTED: 'قبل', DECLINED: 'اعتذر' };
 const EV_RECUR = { '': 'لا يتكرر', HOURLY: 'كل عدد ساعات أحدده', DAILY: 'يومياً', WEEKLY: 'أسبوعياً', MONTHLY: 'شهرياً' };
@@ -90,10 +91,10 @@ function Calendar() {
   useEffect(() => {
     if (!me) return;
     const p = new URLSearchParams(window.location.search);
-    if (p.get('new')) { setForm({ event: null, date: today }); window.history.replaceState(null, '', '/calendar'); }
+    if (p.get('new')) { setForm({ event: null, date: today }); window.history.replaceState(null, '', withBase('/calendar')); }
     const ev = p.get('event');
     if (ev) {
-      window.history.replaceState(null, '', '/calendar');
+      window.history.replaceState(null, '', withBase('/calendar'));
       api('GET', `/api/calendar?from=${today}&to=${addDaysStr(today, 30)}`).then(c => { const e = c.events.find(x => x.id === +ev); if (e) setDetail(e); }).catch(() => {});
     }
   }, [me]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -144,7 +145,7 @@ function Calendar() {
       const e = it.e, all = e.allDay || e.type === 'HOLIDAY';
       return (
         <div className={`ag-item ev-${evKind(e.type)}`} onClick={() => setDetail(e)} style={{ cursor: 'pointer' }}>
-          <span className="ag-time">{all ? 'طوال اليوم' : fmtTime(e.startAt) + ' – ' + fmtTime(e.endAt)}</span>
+          <span className="ag-time">{all ? 'طوال اليوم' : <bdi dir="ltr">{fmtTime(e.startAt)} – {fmtTime(e.endAt)}</bdi>}</span>
           <span className="ag-title">{e.title}{e.myResponse === 'PENDING' && <> <span className="badge PENDING">بانتظار ردّك</span></>}</span>
           {e.location && <small className="muted"><FIcon n="mappin" size={12} /> {e.location}</small>}
         </div>
@@ -247,7 +248,7 @@ function Calendar() {
                     return (
                       <div key={t.it.e.id + '-' + x.k} className={`wk-ev c-${t.it.e.type}`} onClick={() => setDetail(t.it.e)}
                         style={{ top, height: h, insetInlineStart: `calc(${t.lane} * 100% / ${t.n} + 2px)`, width: `calc(100% / ${t.n} - 4px)` }}>
-                        {t.it.e.recurrence ? <><FIcon n="repeat" size={12} /> </> : ''}{t.it.e.title}<small>{fmtTime(t.it.e.startAt)} – {fmtTime(t.it.e.endAt)}</small>
+                        {t.it.e.recurrence ? <><FIcon n="repeat" size={12} /> </> : ''}{t.it.e.title}<small><bdi dir="ltr">{fmtTime(t.it.e.startAt)} – {fmtTime(t.it.e.endAt)}</bdi></small>
                       </div>
                     );
                   })}
@@ -278,7 +279,7 @@ function Calendar() {
             const acc = e.attendees.filter(a => a.response === 'ACCEPTED').length;
             return (
               <div className={`ag-card c-${e.type}`} key={i} onClick={() => setDetail(e)} style={{ cursor: 'pointer' }}>
-                <div className="tm">{all ? 'طوال اليوم' : fmtTime(e.startAt)}<small>{all ? etLabel(e) : fmtTime(e.endAt) + ' · ' + etLabel(e)}</small></div>
+                <div className="tm">{all ? 'طوال اليوم' : fmtTime(e.startAt)}<small>{all ? etLabel(e) : <><bdi dir="ltr">{fmtTime(e.endAt)}</bdi> · {etLabel(e)}</>}</small></div>
                 <div>
                   <div className="ti">{e.recurrence ? <><FIcon n="repeat" size={12} /> </> : ''}{e.title}</div>
                   <div className="mt">
@@ -303,7 +304,7 @@ function Calendar() {
     <AppShell active="calendar" title="التقويم والمواعيد" sub="اجتماعاتك وتسليماتك وإجازات الفريق" me={me}>
       {error && <div className="notice">{error}</div>}
       <div className="cal-top">
-        <div className="seg"><button aria-label="السابق" onClick={() => step(-1)}>›</button><button onClick={() => setSel(today)}>اليوم</button><button aria-label="التالي" onClick={() => step(1)}>‹</button></div>
+        <div className="seg"><button aria-label="السابق" title="السابق" onClick={() => step(-1)}>›</button><button title="الانتقال إلى اليوم" onClick={() => setSel(today)}>اليوم</button><button aria-label="التالي" title="التالي" onClick={() => step(1)}>‹</button></div>
         <h2>{title}</h2>
         <span className="grow" style={{ flex: 1 }} />
         <div className="seg" role="group" aria-label="العرض">
@@ -473,7 +474,7 @@ function EventForm({ me, event: ex, date: presetDate, time: presetTime, onClose,
           <label className="field"><span>اسم النوع</span><input value={f.customType} maxLength={40} placeholder="مثال: ورشة عمل، تدريب، مقابلة توظيف" onChange={set('customType')} /></label>
         )}
         <div className="row2">
-          <label className="field"><span>التاريخ</span><input type="date" value={f.date} required onChange={set('date')} /></label>
+          <label className="field"><span>التاريخ</span><DateInput value={f.date} required onChange={set('date')} /></label>
           <label className="field"><span>المكان / رابط الاجتماع</span><input value={f.location} maxLength={140} placeholder="قاعة 2 أو رابط Meet" onChange={set('location')} /></label>
         </div>
         <div className="row2">
@@ -484,7 +485,7 @@ function EventForm({ me, event: ex, date: presetDate, time: presetTime, onClose,
         <div className="row2">
           <label className="field"><span>التكرار</span>
             <select value={f.recurrence} onChange={set('recurrence')}>{Object.entries(EV_RECUR).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
-          <label className="field"><span>ينتهي التكرار بتاريخ (اختياري)</span><input type="date" value={f.recurUntil} onChange={set('recurUntil')} /></label>
+          <label className="field"><span>ينتهي التكرار بتاريخ (اختياري)</span><DateInput value={f.recurUntil} onChange={set('recurUntil')} /></label>
         </div>
         {f.recurrence === 'HOURLY' && (
           <label className="field"><span>يتكرر كل كم ساعة؟ (تحدده أنت)</span>
@@ -509,7 +510,7 @@ function EventForm({ me, event: ex, date: presetDate, time: presetTime, onClose,
             ))}
           </div>
         </div>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>حفظ</button>

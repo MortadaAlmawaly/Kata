@@ -75,7 +75,7 @@ export default function LoginPage() {
               </span>
             </label>
             <button className="btn full" type="submit" disabled={busy}>{reg ? 'إنشاء الشركة' : 'دخول'}</button>
-            <p className="err" role="alert">{err}</p>
+            <p className="err" role={err ? 'alert' : undefined}>{err}</p>
           </form>
           <p className="muted small">الحسابات تُنشأ من قِبل مديرك. التسجيل بالأعلى لمن يُنشئ شركته لأول مرة.</p>
         </main>

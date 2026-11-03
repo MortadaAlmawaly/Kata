@@ -159,7 +159,7 @@ export default function TeamPage() {
       {profileId && byId.get(profileId) && (
         <Profile u={byId.get(profileId)} me={me} byId={byId} reports={(byMgr.get(profileId) || []).filter(x => x.active)}
           canAdd={canAddUnder(byId.get(profileId))} isAdmin={isAdmin}
-          onOpen={setProfileId} onClose={() => setProfileId(null)} onToast={toast}
+          onOpen={setProfileId} onClose={() => setProfileId(null)} onToast={toast} onChanged={load}
           onEdit={u => { setProfileId(null); setForm({ user: u }); }}
           onAdd={u => { setProfileId(null); setForm({ user: null, managerId: u.id }); }}
           onSecret={s => { setProfileId(null); setSecret(s); }} />
@@ -178,7 +178,7 @@ export default function TeamPage() {
   );
 }
 
-function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdit, onAdd, onSecret, onToast }) {
+function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdit, onAdd, onSecret, onToast, onChanged }) {
   const [tasks, setTasks] = useState([]);
   const [goals, setGoals] = useState([]);
   const [access, setAccess] = useState(null);
@@ -209,6 +209,10 @@ function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdi
           {u.canManage && <button type="button" className="btn ghost" onClick={() => ask({ title: 'إعادة تعيين كلمة المرور',
             text: 'سيتم إنهاء جلسات المستخدم وإنشاء كلمة مرور مؤقتة جديدة.', ok: 'متابعة', danger: false,
             onOk: async () => { const r = await api('POST', `/api/users/${u.id}/reset-password`, {}); onSecret({ title: 'كلمة المرور المؤقتة', value: r.tempPassword }); } })}>كلمة مرور</button>}
+          {u.canManage && u.id !== me.user.id && <button type="button" className="btn ghost" onClick={() => ask({ title: u.active ? 'تعطيل الحساب' : 'تفعيل الحساب',
+            text: u.active ? `لن يستطيع ${u.name} الدخول بعد التعطيل، وتبقى بياناته محفوظة ويمكنك إعادة تفعيله لاحقاً.` : `سيتمكّن ${u.name} من الدخول مرة أخرى.`,
+            ok: u.active ? 'تعطيل' : 'تفعيل', danger: !!u.active,
+            onOk: async () => { try { await api('PATCH', '/api/users/' + u.id, { active: !u.active }); onToast(u.active ? 'تم تعطيل الحساب' : 'تم تفعيل الحساب'); onClose(); if (onChanged) onChanged(); } catch (e) { onToast(e.message, 'err'); } } })}>{u.active ? 'تعطيل الحساب' : 'تفعيل الحساب'}</button>}
           {u.canManage && isAdmin && <button type="button" className="btn ghost" onClick={openAccess}>الصلاحيات</button>}
           <button type="button" className="btn ghost" onClick={onClose}>إغلاق</button>
         </>
@@ -218,7 +222,7 @@ function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdi
         <div>
           <div className="chips"><span className="badge role">{ROLE[u.role]}</span>{!u.active && <span className="badge role">معطّل</span>}{u.id === me.user.id && <span className="badge role">أنت</span>}</div>
           <h3 style={{ margin: '4px 0' }}>{u.name}</h3>
-          <div className="muted small">{u.title || ROLE[u.role]}{u.department ? ' · ' + u.department : ''}</div>
+          {(u.title || u.department) && <div className="muted small">{[u.title && u.title !== ROLE[u.role] ? u.title : '', u.department].filter(Boolean).join(' · ')}</div>}
         </div>
       </div>
       <div className="facts">
@@ -297,7 +301,7 @@ function AccessModal({ d, u, onClose, onToast }) {
     <Modal title={'صلاحيات ' + u.name} onClose={onClose}>
       <form onSubmit={submit}>
         <PermPicker catalog={d.catalog} extra={extra} denied={denied} setExtra={setExtra} setDenied={setDenied} />
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn">حفظ</button>
@@ -367,7 +371,7 @@ function UserForm({ me, users, user: u, presetMgr, myLevel, isAdmin, onClose, on
         {u && <label className="field"><span>الحالة</span>
           <select value={String(f.active)} onChange={e => setF({ ...f, active: e.target.value === 'true' })}>
             <option value="true">فعّال</option><option value="false">معطّل</option></select></label>}
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>حفظ</button>

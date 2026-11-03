@@ -8,6 +8,7 @@ import AppShell, { useMe } from '../../components/AppShell';
 import PageTabs, { REPORT_TABS } from '../../components/PageTabs';
 import { Avatar } from '../../components/ui';
 import { useToast } from '../../components/hooks';
+import DateInput from '../../components/DateInput';
 
 export default function ReportsPage() {
   const { me, error } = useMe();
@@ -50,8 +51,8 @@ export default function ReportsPage() {
       <PageTabs items={REPORT_TABS} active="reports" />
       {error && <div className="notice">{error}</div>}
       <div className="toolbar">
-        <label className="muted small">من <input className="input" type="date" style={{ width: 'auto' }} value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /></label>
-        <label className="muted small">إلى <input className="input" type="date" style={{ width: 'auto' }} value={draft.to} onChange={e => setDraft({ ...draft, to: e.target.value })} /></label>
+        <label className="muted small">من <DateInput className="input" style={{ width: 'auto' }} value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /></label>
+        <label className="muted small">إلى <DateInput className="input" style={{ width: 'auto' }} value={draft.to} onChange={e => setDraft({ ...draft, to: e.target.value })} /></label>
         <button className="btn ghost" onClick={apply}>عرض</button>
         <span className="grow" />
         <button className="btn" onClick={csv} disabled={!r}>تصدير CSV</button>

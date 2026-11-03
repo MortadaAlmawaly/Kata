@@ -9,6 +9,7 @@ import { Avatar, Icon, Modal } from '../../components/ui';
 import { useConfirm, useToast } from '../../components/hooks';
 import LeaveRequestForm from '../../components/LeaveRequestForm';
 import HrExport from '../../components/HrExport';
+import DateInput from '../../components/DateInput';
 
 const LSTATUS = { PENDING: 'قيد الموافقة', APPROVED: 'معتمد', REJECTED: 'مرفوض', CANCELLED: 'ملغي' };
 const ATT = { PRESENT: 'حاضر', LEFT: 'غادر', LEAVE: 'إجازة', ABSENT: 'لم يسجّل' };
@@ -88,6 +89,7 @@ export default function AttendancePage() {
               <div>
                 <b>{today.checkIn ? 'حضور ' + hm(today.checkIn) : 'لم تسجّل حضورك بعد'}</b>
                 {today.lateMin ? <span className="badge REJECTED" style={{ marginInlineStart: 6 }}>تأخير {today.lateMin} د</span> : null}
+                {today.afterHours ? <span className="badge" style={{ marginInlineStart: 6 }}>خارج ساعات الدوام</span> : null}
                 {today.checkOut && (
                   <><br /><span className="muted">خروج {hm(today.checkOut)}{today.overtimeMin ? ` · إضافي ${today.overtimeMin} د` : ''}{today.earlyMin ? ` · خروج مبكر ${today.earlyMin} د` : ''}</span></>
                 )}
@@ -123,15 +125,16 @@ export default function AttendancePage() {
         <>
           <h2 className="section-title">طلبات إجازتي</h2>
           <div className="table-wrap"><table>
-            <thead><tr><th>النوع</th><th>الفترة</th><th>الحالة</th><th>الموافق</th><th /></tr></thead>
+            <thead><tr><th>العنوان</th><th>النوع</th><th>الفترة</th><th>الحالة</th><th>الموافق</th><th /></tr></thead>
             <tbody>
               {leaves.map(r => (
                 <tr key={r.id}>
+                  <td>{r.title || '—'}</td>
                   <td>{(typesList.find(t => t.key === (r.leaveType || 'annual')) || {}).name || 'إجازة'}</td>
                   <td>{r.startDate} ← {r.endDate}</td>
                   <td><span className={`badge ${r.status}`}>{LSTATUS[r.status] || r.status}</span></td>
                   <td>{r.currentApprover ? r.currentApprover.name : '—'}</td>
-                  <td>{r.status === 'PENDING' && <button type="button" className="btn sm ghost" onClick={() => ask({ title: 'إلغاء الطلب', text: 'سيتم إلغاء طلب الإجازة.', ok: 'إلغاء الطلب', onOk: async () => { try { await api('POST', `/api/requests/${r.id}/cancel`, {}); toast('تم الإلغاء'); loadAll(); } catch (e) { toast(e.message, 'err'); } } })}>إلغاء</button>}</td>
+                  <td>{r.status === 'PENDING' && <button type="button" className="btn sm ghost" onClick={() => ask({ title: 'إلغاء الطلب', text: 'سيتم إلغاء طلب الإجازة. يمكنك حذفه بعدها من القائمة.', ok: 'تأكيد الإلغاء', onOk: async () => { try { await api('POST', `/api/requests/${r.id}/cancel`, {}); toast('تم الإلغاء'); loadAll(); } catch (e) { toast(e.message, 'err'); } } })}>إلغاء الطلب</button>}{['CANCELLED', 'REJECTED'].includes(r.status) && <button type="button" className="btn sm ghost" onClick={() => ask({ title: 'حذف الطلب', text: 'سيُحذف الطلب من قائمتك نهائياً.', ok: 'حذف', onOk: async () => { try { await api('DELETE', `/api/requests/${r.id}`); toast('تم الحذف'); loadAll(); } catch (e) { toast(e.message, 'err'); } } })}>حذف</button>}</td>
                 </tr>
               ))}
             </tbody>
@@ -200,7 +203,7 @@ export default function AttendancePage() {
               {log.map(r => (
                 <tr key={r.date}>
                   <td>{dayLabel(r.date)}</td><td>{hm(r.checkIn)}</td><td>{r.checkOut ? hm(r.checkOut) : '—'}</td><td>{hoursOf(r)}</td>
-                  <td>{r.lateMin ? <span className="badge REJECTED">{r.lateMin} د</span> : <span className="muted">—</span>}</td>
+                  <td>{r.lateMin ? <span className="badge REJECTED">{r.lateMin} د</span> : r.afterHours ? <span className="badge">خارج الدوام</span> : <span className="muted">—</span>}</td>
                   <td>{r.earlyMin ? <span className="badge TODO">{r.earlyMin} د</span> : <span className="muted">—</span>}</td>
                   <td>{r.overtimeMin ? <span className="badge IN_PROGRESS">{r.overtimeMin} د</span> : <span className="muted">—</span>}</td>
                   {canEdit && (
@@ -251,14 +254,14 @@ function EditModal({ e, today, onClose, onSaved }) {
         <p className="muted" style={{ marginBottom: 10 }}>الموظف: <b>{e.name}</b></p>
         <div className="row2">
           <label className="field"><span>التاريخ</span>
-            <input type="date" value={date} max={today} readOnly={!isNew} required onChange={x => setDate(x.target.value)} /></label>
+            <DateInput value={date} max={today} readOnly={!isNew} required onChange={x => setDate(x.target.value)} /></label>
         </div>
         <div className="row2">
           <label className="field"><span>وقت الحضور</span><input type="time" value={inT} required onChange={x => setInT(x.target.value)} /></label>
           <label className="field"><span>وقت الخروج (اختياري)</span><input type="time" value={outT} onChange={x => setOutT(x.target.value)} /></label>
         </div>
         <p className="muted small">يُسجَّل التعديل بسجل التدقيق ويصل الموظف إشعار به.</p>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>حفظ</button>

@@ -34,7 +34,7 @@ export function useConfirm() {
     <Modal title={st.title} onClose={() => setSt(null)}
       actions={(
         <>
-          <button type="button" className="btn ghost" onClick={() => setSt(null)}>إلغاء</button>
+          <button type="button" className="btn ghost" onClick={() => setSt(null)}>رجوع</button>
           <button type="button" className={`btn ${st.danger === false ? '' : 'danger'}`} disabled={busy}
             onClick={async () => { setBusy(true); try { await st.onOk(); setSt(null); } finally { setBusy(false); } }}>{st.ok || 'تأكيد'}</button>
         </>

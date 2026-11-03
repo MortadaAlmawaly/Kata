@@ -9,6 +9,7 @@ import { Avatar, Icon, MobileTabs, Modal } from '../../components/ui';
 import { Ring } from '../../components/charts';
 import { FilePicker, FilesBlock, uploadFiles } from '../../components/Files';
 import { ago, useConfirm, useToast } from '../../components/hooks';
+import DateInput from '../../components/DateInput';
 
 const PSTATUS_BADGE = { PLANNING: 'TODO', ACTIVE: 'IN_PROGRESS', ON_HOLD: 'PENDING', DONE: 'DONE' };
 
@@ -116,8 +117,8 @@ function ProjectForm({ me, project: p, onClose, onSaved, onError }) {
           <input value={f.key} maxLength={10} dir="ltr" style={{ textAlign: 'right', textTransform: 'uppercase' }} placeholder="يُقترح تلقائياً" onChange={set('key')} /></label>
         <label className="field"><span>الوصف</span><textarea value={f.description} maxLength={4000} onChange={set('description')} /></label>
         <div className="row2">
-          <label className="field"><span>البداية</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
-          <label className="field"><span>النهاية</span><input type="date" value={f.endDate} onChange={set('endDate')} /></label>
+          <label className="field"><span>البداية</span><DateInput value={f.startDate} onChange={set('startDate')} /></label>
+          <label className="field"><span>النهاية</span><DateInput value={f.endDate} onChange={set('endDate')} /></label>
           <label className="field"><span>الحالة</span>
             <select value={f.status} onChange={set('status')}>{Object.entries(PSTATUS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
           {!p && <label className="field"><span>المالك</span>
@@ -127,7 +128,7 @@ function ProjectForm({ me, project: p, onClose, onSaved, onError }) {
             </select></label>}
         </div>
         <FilePicker label="مرفقات (اختياري)" inputRef={files} />
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>حفظ</button>

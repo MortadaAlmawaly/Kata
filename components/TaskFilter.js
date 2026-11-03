@@ -27,7 +27,7 @@ export function buildFields(ctx, tasks, sprints) {
     { key: 'priority', label: ctx.fl('priority'), opts: Object.entries(ctx.priority).map(([k, l]) => ({ v: k, label: l })), get: t => [t.priority] },
     { key: 'project', label: ctx.fl('project'), none: 'بدون مساحة',
       opts: uniq(tasks.map(t => t.project), p => p.id).map(p => ({ v: String(p.id), label: p.name, sub: p.key })), get: t => (t.projectId ? [String(t.projectId)] : []) },
-    { key: 'sprint', label: ctx.fl('sprint'), none: 'Backlog (بلا سباق)',
+    { key: 'sprint', label: ctx.fl('sprint'), none: 'قائمة الانتظار (بلا سباق)',
       opts: sprints.filter(s => s.state !== 'CLOSED').map(s => ({ v: String(s.id), label: s.name + (s.state === 'ACTIVE' ? ' (جارٍ)' : '') })), get: t => (t.sprintId ? [String(t.sprintId)] : []) },
   ];
   /* الحقول المخصصة القابلة للاختيار */

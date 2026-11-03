@@ -5,7 +5,10 @@ import { api } from '../lib/api';
 import { pad } from '../lib/constants';
 import { Modal } from './ui';
 import { FilePicker, uploadFiles } from './Files';
+import DateInput from './DateInput';
 
+/* أول يوم عمل (أحد–خميس) بعد n أيام عمل من اليوم: للإشعار المسبق المطلوب بالسياسة */
+const workDaysAhead = n => { const d = new Date(); for (let k = 0; k < n;) { d.setDate(d.getDate() + 1); if (d.getDay() !== 5 && d.getDay() !== 6) k++; } return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 
 export default function LeaveRequestForm({ onClose, onSaved, onError }) {
@@ -45,8 +48,12 @@ export default function LeaveRequestForm({ onClose, onSaved, onError }) {
             {types.map(x => <option key={x.key} value={x.key}>{x.name}{x.remaining != null ? ` — المتبقي ${x.remaining} يوم` : ' — غير محدود'}</option>)}
           </select></label>
         <div className="row2">
-          <label className="field"><span>من</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
-          <label className="field"><span>إلى</span><input type="date" value={f.endDate} onChange={set('endDate')} /></label>
+          <label className="field"><span>من</span><DateInput value={f.startDate} onChange={set('startDate')} /></label>
+          <label className="field"><span>إلى</span><DateInput value={f.endDate} onChange={set('endDate')} /></label>
+        </div>
+        <div className="chips-row" style={{ margin: '-4px 0 8px' }}>
+          <button type="button" className="btn sm ghost" onClick={() => setF({ ...f, startDate: todayStr(), endDate: todayStr() })}>اليوم</button>
+          <button type="button" className="btn sm ghost" title="أقرب موعد يقبله إشعار الـ 3 أيام عمل" onClick={() => { const s = workDaysAhead(3); setF({ ...f, startDate: s, endDate: s }); }}>بعد 3 أيام عمل</button>
         </div>
         <p className="muted small">
           {days ? <>المدة: <b>{days}</b> يوم{over && <span style={{ color: 'var(--bad)' }}> — تتجاوز رصيدك المتبقي</span>}</> : <span style={{ color: 'var(--bad)' }}>الفترة غير صالحة</span>}
@@ -54,10 +61,10 @@ export default function LeaveRequestForm({ onClose, onSaved, onError }) {
         <label className="field"><span>العنوان (اختياري)</span><input value={f.title} maxLength={140} placeholder="مثال: إجازة عائلية" onChange={set('title')} /></label>
         <label className="field"><span>السبب / ملاحظات</span><textarea value={f.details} maxLength={4000} onChange={set('details')} /></label>
         <FilePicker label="مرفقات (تقرير طبي مثلاً)" inputRef={files} />
-        <p className="notice">يصل الطلب لرئيسك المباشر ويُبلَّغ بقراره.</p>
-        <p className="err" role="alert">{err}</p>
+        <p className="notice">يصل الطلب لرئيسك المباشر ويُبلَّغ بقراره. سياسة الشركة: إشعار مسبق 3 أيام عمل على الأقل (الإجازة المرضية مستثناة).</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
-          <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
+          <button type="button" className="btn ghost" onClick={onClose}>رجوع</button>
           <button type="submit" className="btn" disabled={busy}>تقديم الطلب</button>
         </div>
       </form>

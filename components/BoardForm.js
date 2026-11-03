@@ -345,7 +345,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
         </div>
 
         </div>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className={asPage ? 'bp-actions' : 'modal-actions'}>
           {!isNew && boards.length > 1 && <button type="button" className="btn danger" onClick={del}>حذف اللوحة</button>}
           <button type="button" className="btn ghost" onClick={() => leave(onClose)}>إلغاء</button>

@@ -2,6 +2,7 @@
 /* حقل مخصص واحد (نص/رقم/تاريخ/رابط/قائمة/شخص…) كمكوّن متحكَّم به. onChange(value) يُستدعى بالقيمة المطبَّعة. */
 import { useEffect, useState } from 'react';
 import { FIcon } from './Icon';
+import DateInput from './DateInput';
 
 const ARR = ['multiselect', 'tags', 'users'];
 
@@ -18,7 +19,7 @@ export default function CfInput({ d, value, users, onChange, commitOnBlur = fals
         onChange={e => { setV(e.target.value); if (!commitOnBlur) push(e.target.value === '' ? null : Number(e.target.value)); }}
         onBlur={() => { if (commitOnBlur) push(v === '' ? null : Number(v)); }} />;
     case 'date':
-      return <input className={`fin dt ${v ? '' : 'empty'}`} type="date" disabled={disabled} value={v}
+      return <DateInput className={`fin dt ${v ? '' : 'empty'}`} disabled={disabled} value={v}
         onChange={e => { setV(e.target.value); push(e.target.value || null); }} />;
     case 'url':
       return <input className="fin" type="url" dir="ltr" placeholder="https://…" disabled={disabled} value={v}

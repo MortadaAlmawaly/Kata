@@ -71,7 +71,8 @@ export function TabAccount({ me, reload, toast }) {
     setTheme(document.documentElement.dataset.theme || 'light');
     setStandalone(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
     setIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
-    const h = e => { e.preventDefault(); setDeferred(e); };
+    if (window.__pwaPrompt) setDeferred(window.__pwaPrompt);
+    const h = e => { e.preventDefault(); window.__pwaPrompt = e; setDeferred(e); };
     window.addEventListener('beforeinstallprompt', h);
     return () => window.removeEventListener('beforeinstallprompt', h);
   }, []);
@@ -99,7 +100,10 @@ export function TabAccount({ me, reload, toast }) {
         {!standalone ? (
           <>
             <p className="muted small">ثبّت كاتا على الشاشة الرئيسية ليفتح كتطبيق بملء الشاشة ويستقبل الإشعارات.</p>
-            {deferred && <button className="btn" style={{ marginTop: 12 }} onClick={async () => { deferred.prompt(); await deferred.userChoice; setDeferred(null); }}>تثبيت التطبيق</button>}
+            <button className="btn" type="button" style={{ marginTop: 12 }} onClick={async () => {
+              if (deferred) { deferred.prompt(); await deferred.userChoice; window.__pwaPrompt = null; setDeferred(null); }
+              else toast(ios ? 'على آيفون: Safari ← زر المشاركة ← إضافة إلى الشاشة الرئيسية' : 'من قائمة المتصفح ⋮ اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»', 'info');
+            }}>تثبيت التطبيق</button>
             <ol className="steps">
               {ios
                 ? <><li>افتح الموقع بمتصفح <b>Safari</b></li><li>اضغط زر المشاركة <b><FIcon n="share" size={14} /></b></li><li>اختر <b>إضافة إلى الشاشة الرئيسية</b></li></>

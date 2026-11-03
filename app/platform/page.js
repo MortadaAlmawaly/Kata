@@ -133,7 +133,7 @@ function NewOrgModal({ onClose, onDone }) {
           <label className="field"><span>الحد الأقصى للمستخدمين (اختياري)</span><input type="number" min="1" max="100000" placeholder="بلا حد" value={f.maxUsers} onChange={set('maxUsers')} /></label>
         </div>
         <p className="muted small">يُنشأ حساب المدير التنفيذي بصلاحية مسؤول النظام وكلمة مرور مؤقتة تظهر مرة واحدة، ويُطلب منه تغييرها عند أول دخول.</p>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>إنشاء الشركة</button>
@@ -163,7 +163,7 @@ function LimitModal({ org, act, onClose, onDone }) {
         <label className="field"><span>الحد الأقصى للمستخدمين (اتركه فارغاً لبلا حد)</span>
           <input type="number" min="1" max="100000" value={v} placeholder="مثال: 25" onChange={e => setV(e.target.value)} /></label>
         <p className="muted small">تقليص الحد لا يحذف أو يعطّل أحداً؛ يمنع الإضافة والدعوات الجديدة حتى ينزل العدد تحت الحد.</p>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>حفظ</button>

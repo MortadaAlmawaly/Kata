@@ -203,7 +203,7 @@ export function ForcePassword({ me, onDone }) {
         <label className="field"><span>المؤقتة</span><input type="password" required value={f.current} onChange={e => setF({ ...f, current: e.target.value })} /></label>
         <label className="field"><span>الجديدة ({me.org.settings.passwordMin} أحرف على الأقل)</span>
           <input type="password" required value={f.next} onChange={e => setF({ ...f, next: e.target.value })} /></label>
-        <p className="err" role="alert">{err}</p>
+        <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions"><button type="submit" className="btn">تغيير</button></div>
       </form>
     </Modal>
