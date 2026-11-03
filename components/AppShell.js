@@ -8,6 +8,7 @@ import { logoutWithPush } from '../lib/pushClient';
 import { applyLabels, GROUPS, ICONS, navVisible, PAGES, ROLE } from '../lib/constants';
 import { Avatar, Icon, LangButton, LogoSet, ThemeInit, toggleTheme } from './ui';
 import { Bell, ForcePassword, Palette, useBadges } from './ShellExtras';
+import { useConfirm } from './hooks';
 import TourHost from './Tour';
 import { FIcon } from './Icon';
 import { usePathname, useRouter } from 'next/navigation';
@@ -104,11 +105,25 @@ function ShellChrome({ active, title, sub, me, shown = true, children }) {
   const roleName = r => (labels.roles && labels.roles[r]) || ROLE[r] || r;
   const pageTitle = p => (labels.pages && labels.pages[p.id]) || (p.id === 'settings' && !perms.includes('admin') && ((me && me.level) || 1) < 2 ? 'حسابي' : p.title);
   const level = (me && me.level) || 1;
+  /* عنوان التاب: «اسم الصفحة — كاتا» + عدّاد الإشعارات */
+  const docTitle = (title ? title + ' — ' : '') + 'كاتا';
+  useEffect(() => {
+    if (!shown) return undefined;
+    const full = (badges.unread ? `(${badges.unread}) ` : '') + docTitle;
+    document.title = full;
+    const t = setTimeout(() => { document.title = full; }, 400);   // التحميل المباشر: Next يعيد عنوان الجذر بعد التهيئة
+    return () => clearTimeout(t);
+  }, [shown, docTitle, badges.unread]);
   const visible = PAGES.filter(p => navVisible(p, perms, level, !!(me && me.platformAdmin)));
+  /* حماية الفتح بالرابط المباشر: نفس شرط القائمة (مستوى/صلاحية) بغضّ النظر عن الإخفاء */
+  const curPage = PAGES.find(p => p.id === active);
+  const denied = !!(me && curPage && ((curPage.perm && !perms.includes(curPage.perm)) || (curPage.platform && !me.platformAdmin) || (curPage.minLevel && !perms.includes('admin') && level < curPage.minLevel)));
   /* صفحات مدموجة (التحليلات، السياسات، التدقيق…) تُضيء بند أمّها في القائمة */
   const navActive = (PAGES.find(p => p.id === active) || {}).navAlias || active;
 
-  async function logout() {
+  const [askOut, outNode] = useConfirm();
+  const logout = () => askOut({ title: 'تسجيل الخروج', text: 'هل تريد تسجيل الخروج من كاتا؟', ok: 'تسجيل الخروج', danger: false, onOk: doLogout });
+  async function doLogout() {
     await logoutWithPush(api);   // P1: يلغي اشتراك Push بهذا الجهاز ويبلّغ السيرفر يحذفه
     window.location.href = withBase('/login');
   }
@@ -206,7 +221,13 @@ function ShellChrome({ active, title, sub, me, shown = true, children }) {
             <button className="icon-btn" type="button" aria-label="تبديل المظهر" onClick={toggleTheme}><Icon name="moon" /></button>
             {me && <Bell badges={badges} />}
           </header>}
-          <div className="content" role={shown ? 'main' : undefined}>{children}</div>
+          <div className="content" role={shown ? 'main' : undefined}>{denied
+            ? <div className="card" style={{ maxWidth: 440, margin: '48px auto', textAlign: 'center' }}>
+              <h2 style={{ marginTop: 0 }}>لا تملك صلاحية لهذه الصفحة</h2>
+              <p className="muted">هذه الصفحة مخصّصة للمدراء. إن احتجتها اطلب الصلاحية من مدير الشركة.</p>
+              <a className="btn primary" href={withBase('/dashboard')}>العودة للوحة المتابعة</a>
+            </div>
+            : children}</div>
         </div>
       </div>
       {shown && <nav className="tabbar" aria-label="التنقل السريع">
@@ -224,6 +245,7 @@ function ShellChrome({ active, title, sub, me, shown = true, children }) {
       {palette && me && <Palette me={me} onClose={() => setPalette(false)} onLogout={logout} onTheme={toggleTheme} />}
       {mustChange && me && <ForcePassword me={me} onDone={() => setMustChange(false)} />}
       {badges.toastNode}
+      {outNode}
       {shown && me && <TourHost me={me} />}
     </>
   );

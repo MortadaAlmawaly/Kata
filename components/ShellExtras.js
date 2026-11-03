@@ -44,7 +44,6 @@ export function useBadges(me) {
     document.addEventListener('visibilitychange', vis);
     return () => { poller.stop(); document.removeEventListener('visibilitychange', vis); };
   }, [me, refresh]);
-  useEffect(() => { document.title = (state.unread ? `(${state.unread}) ` : '') + 'كاتا'; }, [state.unread]);
   return { ...state, setState, refresh, toastNode };
 }
 

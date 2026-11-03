@@ -69,8 +69,10 @@ export default function AnalyticsPage() {
     const last4 = d.weeks.slice(-4).reduce((s, w) => s + w.done, 0), prev4 = d.weeks.slice(-8, -4).reduce((s, w) => s + w.done, 0);
     const trend = prev4 ? Math.round(((last4 - prev4) / prev4) * 100) : null;
     const maxDept = Math.max(1, ...d.spendByDept.map(x => x.total));
+    const empty = !totalDone && !totalCreated && !d.weeks.some(w => w.attendance) && !d.spendByMonth.some(m => m.total) && !d.spendByDept.length && !d.leaveByType.length;
     body = (
       <>
+        {empty && <div className="notice">لا توجد بيانات كافية في هذه الفترة بعد. ستظهر الأرقام تلقائياً عند تسجيل المهام والحضور والمصروفات.</div>}
         <div className="grid kpis">
           <div className="card kpi"><span className="kpi-ico"><Icon name="tasks" /></span><div><small>مهام منجزة</small><b>{totalDone}</b><span className="sub">من {totalCreated} أُنشئت</span></div></div>
           <div className={`card kpi ${trend != null && trend < 0 ? 'warn' : 'ok'}`}><span className="kpi-ico"><Icon name="reports" /></span>

@@ -371,6 +371,7 @@
       return ok(tasks.filter(taskVisible(u, sc)).filter(t => (!q.type || (t.issueType || 'TASK') === q.type) && (!s || keyOfT(t).toLowerCase() === s || t.title.toLowerCase().includes(s))).slice(0, 15).map(taskBrief));
     }
     if (path === '/api/tasks' && method === 'POST') {
+      if (!String(body.title || '').trim()) return err(400, 'العنوان مطلوب');
       if (body.projectId && !spHas(u, body.projectId, 'create')) return err(403, 'صلاحيتك على هذه اللوحة لا تسمح بإنشاء مهام فيها');
       const aid = body.assigneeId || u.id;
       if (!sc.has(aid)) return err(403, 'تقدر تسند مهام لنفسك أو لمن تحتك فقط');
@@ -574,7 +575,10 @@
       }
       if (method === 'DELETE') {
         if (!manage) return err(403, 'الحذف لمن كلّف بالمهمة أو لرئيس المنفّذ');
-        tasks.splice(tasks.indexOf(t), 1); logA(u, 'task.delete', 'task', t.id, { title: t.title });
+        const gone = new Set([t.id]);   /* حذف متسلسل: المهام الفرعية لا تبقى يتيمة */
+        for (let grew = true; grew;) { grew = false; tasks.forEach(x => { if (x.parentId && gone.has(x.parentId) && !gone.has(x.id)) { gone.add(x.id); grew = true; } }); }
+        for (let i = tasks.length - 1; i >= 0; i--) if (gone.has(tasks[i].id)) tasks.splice(i, 1);
+        logA(u, 'task.delete', 'task', t.id, { title: t.title });
         return ok(null);
       }
     }
@@ -658,6 +662,8 @@
       return ok(list.slice().reverse().map(reqJSON));
     }
     if (path === '/api/requests' && method === 'POST') {
+      if (!String(body.title || '').trim()) return err(400, 'العنوان مطلوب');
+      if (body.type !== 'LEAVE' && !(Number(body.amount) > 0)) return err(400, 'المبلغ لازم أكبر من صفر');
       if (body.type === 'LEAVE') {
         const bal = leaveBal(u).find(b => b.key === (body.leaveType || 'annual'));
         const want = Math.round((new Date(body.endDate) - new Date(body.startDate)) / 864e5) + 1;
@@ -747,6 +753,8 @@
       return ok(evJSON(e, u.id));
     }
     if (path === '/api/events' && method === 'POST') {
+      if (!String(body.title || '').trim()) return err(400, 'العنوان مطلوب');
+      if (!body.startAt || !body.endAt || new Date(body.endAt) < new Date(body.startAt)) return err(400, 'وقت الانتهاء لازم يكون بعد البداية');
       if ((body.companyWide || body.type === 'HOLIDAY') && !can(u, 'events.company')) return err(403, 'ليست لديك صلاحية فعاليات الشركة');
       const ids = [u.id, ...(body.attendeeIds || [])];
       const conflicts = [...new Set(events.filter(e => !e.allDay && new Date(e.startAt) < new Date(body.endAt) && new Date(e.endAt) > new Date(body.startAt)).flatMap(e => e.attendees.filter(a => ids.includes(a.userId) && a.response !== 'DECLINED').map(a => byId(a.userId).name)))];
@@ -1232,21 +1240,25 @@
       if (!can(u, 'reports.view')) return err(403, 'ليست لديك صلاحية لهذا الإجراء');
       const n = +q.weeks || 12;
       const ids = [...sc].filter(i => byId(i).active);
-      const base = tasks.filter(t => sc.has(t.assigneeId)).length + 3;
+      /* أرقام فعلية من بيانات نطاق المستخدم (لا قيم تجريبية) */
+      const mine = tasks.filter(t => sc.has(t.assigneeId));
       const weeks = Array.from({ length: n }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (n - 1 - i) * 7 - ((d.getDay() + 6) % 7));
-        const done = Math.max(0, Math.round(base * 0.5 + ((i * 7 + 3) % 5) + i * 0.25));
-        const created = Math.max(0, Math.round(base * 0.6 + ((i * 5 + 1) % 4) + i * 0.15));
-        return { start: d.toISOString().slice(0, 10), created, done, late: Math.round(done * (0.15 + ((i * 3) % 4) / 20)), attendance: 0, attendanceRate: Math.min(100, 78 + ((i * 11) % 18)), lateDays: (i * 5) % 4 };
+        const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (n - 1 - i) * 7 - ((d.getDay() + 6) % 7));
+        const s = d.getTime(), e = s + 7 * 864e5, inW = x => { const v = x ? new Date(x).getTime() : NaN; return v >= s && v < e; };
+        const dn = mine.filter(t => t.status === 'DONE' && inW(t.completedAt));
+        const recs = attendance.filter(a => sc.has(a.userId) && inW(a.date + 'T12:00:00'));
+        const late = recs.filter(a => attMetrics(a, byId(a.userId)).lateMin > 0).length;
+        return { start: d.toISOString().slice(0, 10), created: mine.filter(t => inW(t.createdAt)).length, done: dn.length,
+          late: dn.filter(t => t.dueDate && new Date(t.completedAt) > new Date(t.dueDate + 'T23:59:59')).length, attendance: recs.length,
+          attendanceRate: ids.length ? Math.min(100, Math.round(recs.length / (ids.length * 5) * 100)) : 0, lateDays: late };
       });
       const deptSpend = {};
       requests.filter(r => r.status === 'APPROVED' && r.type !== 'LEAVE' && sc.has(r.requesterId)).forEach(r => { const d = byId(r.requesterId).department || 'بدون قسم'; deptSpend[d] = (deptSpend[d] || 0) + r.amount; });
-      if (!Object.keys(deptSpend).length) Object.assign(deptSpend, { 'المبيعات': 3250000, 'التسويق': 1800000, 'المالية': 640000 });
-      const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() - 5 + i); return { month: d.toISOString().slice(0, 7), total: 400000 + ((i * 7) % 5) * 380000 }; });
+      const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 5 + i); const k = d.toISOString().slice(0, 7);
+        return { month: k, total: requests.filter(r => r.status === 'APPROVED' && r.type !== 'LEAVE' && sc.has(r.requesterId) && String(r.createdAt).slice(0, 7) === k).reduce((s, r) => s + (r.amount || 0), 0) }; });
       const lv = {};
       requests.filter(r => r.type === 'LEAVE' && r.status === 'APPROVED' && sc.has(r.requesterId)).forEach(r => { const k = r.leaveType || 'annual'; lv[k] = (lv[k] || 0) + Math.round((new Date(r.endDate) - new Date(r.startDate)) / 864e5) + 1; });
       const nm = Object.fromEntries((org.settings.leaveTypes || []).map(t => [t.key, t.name]));
-      if (!Object.keys(lv).length) Object.assign(lv, { annual: 12, sick: 3 });
       return ok({ weeks, spendByDept: Object.entries(deptSpend).map(([department, total]) => ({ department, total })).sort((a, b) => b.total - a.total),
         spendByMonth: months, leaveByType: Object.entries(lv).map(([key, days]) => ({ key, name: nm[key] || key, days })), people: ids.length });
     }

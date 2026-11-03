@@ -2707,3 +2707,6 @@ html[data-intro="skip"] .intro-splash{display:none}
 .comment-box>.mn-wrap{flex:1;min-width:0}
 .comment-box .rq-tag{flex:0 0 auto;width:auto;max-width:160px}
 @media (max-width:560px){.comment-box{flex-wrap:wrap}.comment-box>.mn-wrap{flex:1 1 100%}.comment-box .rq-tag{flex:1 1 auto;max-width:none}}
+
+/* QA: ست بطاقات إحصاء → 3×2 بدل أن تنزل السادسة وحدها */
+@media (min-width:900px){.grid.kpis:has(>:nth-child(6):last-child){grid-template-columns:repeat(3,minmax(0,1fr))}}

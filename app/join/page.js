@@ -55,6 +55,18 @@ function JoinInner() {
               <input value={name} onChange={e => setName(e.target.value)} maxLength={60} autoComplete="name" required /></label>
             <label className="field"><span>اختر كلمة مرور ({inv.passwordMin} أحرف على الأقل)</span>
               <input type="password" value={pw} onChange={e => setPw(e.target.value)} autoComplete="new-password" maxLength={200} required /></label>
+            {pw && (() => {
+              const min = inv.passwordMin || 8;
+              const s = (pw.length >= min ? 1 : 0) + (/[a-zA-Z؀-ۿ]/.test(pw) && /\d/.test(pw) ? 1 : 0) + (pw.length >= 12 ? 1 : 0) + (/[^\w\s؀-ۿ]/.test(pw) ? 1 : 0);
+              const lv = pw.length < min ? 0 : Math.min(3, Math.max(1, s - 1));
+              const names = ['قصيرة', 'مقبولة', 'جيدة', 'قوية'], cols = ['var(--bad)', 'var(--warn, #d4a017)', 'var(--accent)', 'var(--ok)'];
+              return (
+                <div aria-live="polite" style={{ margin: '-4px 0 10px' }}>
+                  <div style={{ display: 'flex', gap: 4 }}>{[0, 1, 2].map(i => <i key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < lv ? cols[lv] : 'var(--line, rgba(128,128,128,.3))' }} />)}</div>
+                  <small className="muted">قوة كلمة المرور: {names[lv]}</small>
+                </div>
+              );
+            })()}
             <button className="btn full" type="submit" disabled={busy}>إنشاء الحساب والدخول</button>
             <p className="err" role="alert">{err}</p>
           </form>

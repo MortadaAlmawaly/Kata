@@ -376,7 +376,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                   {ed && <button type="button" className="menu-item" onClick={pickCover}>تغيير الغلاف</button>}
                   {ed && <button type="button" className="menu-item" onClick={() => { setMenu(''); onEdit(t); }}>تعديل كامل</button>}
                   {onConfigure && ctx.me.perms.includes('admin') && <button type="button" className="menu-item" onClick={() => { setMenu(''); onConfigure(); }}><FIcon n="gear" /> تخصيص اللوحة وتخطيط حقول المهمة</button>}
-                  {ed && <button type="button" className="menu-item danger" onClick={() => { setMenu(''); ask({ title: 'حذف المهمة', text: `سيتم حذف ${t.key} وتعليقاتها نهائياً.`, ok: 'حذف',
+                  {ed && <button type="button" className="menu-item danger" onClick={() => { setMenu(''); ask({ title: 'حذف المهمة', text: `سيتم حذف ${t.key} وتعليقاتها${t.children ? ` و${t.children} من مهامها الفرعية` : ''} نهائياً.`, ok: 'حذف',
                     onOk: async () => { await api('DELETE', '/api/tasks/' + id); onToast('تم الحذف'); onChanged(); onClose(); } }); }}>حذف المهمة</button>}
                 </div>
               )}

@@ -422,6 +422,7 @@ function EventForm({ me, event: ex, date: presetDate, time: presetTime, onClose,
     e.preventDefault();
     setErr('');
     try {
+      if (!f.title.trim()) throw new Error('اكتب عنوان الموعد');
       const s = new Date(`${f.date}T${f.allDay ? '00:00' : f.start || '00:00'}:00`);
       const en = new Date(`${f.date}T${f.allDay ? '23:59' : f.end || '00:00'}:00`);
       if (isNaN(s) || isNaN(en)) throw new Error('التاريخ أو الوقت غير صالح');
