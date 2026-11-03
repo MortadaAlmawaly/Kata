@@ -864,7 +864,7 @@ function CardMenu({ cm, ctx, spaces, onClose, move, toast, ask, open, reload }) 
       <Item onClick={() => open(t.id)}>تعديل الوسوم</Item>
       <Item onClick={() => { onClose(); move(t.id, { labels: flagged ? (t.labels || []).filter(l => l !== 'معوّق') : [...(t.labels || []), 'معوّق'] }, flagged ? 'أُزيل العلم' : 'أُضيف علم «معوّق»'); }}>{flagged ? 'إزالة العلم' : 'إضافة علم (معوّق)'}</Item>
       <div className="cm-sep" />
-      <Item danger onClick={() => { onClose(); ask({ title: 'حذف المهمة', text: `سيتم حذف ${t.key} وتعليقاتها نهائياً.`, ok: 'حذف', onOk: async () => { try { await api('DELETE', '/api/tasks/' + t.id); toast('تم الحذف'); reload(); } catch (e) { toast(e.message, 'err'); } } }); }}>حذف المهمة</Item>
+      <Item danger onClick={() => { onClose(); ask({ title: 'حذف المهمة', text: `سيتم حذف ${t.key} وتعليقاتها${t.children ? ` و${t.children} من مهامها الفرعية` : ''} نهائياً.`, ok: 'حذف', onOk: async () => { try { await api('DELETE', '/api/tasks/' + t.id); toast('تم الحذف'); reload(); } catch (e) { toast(e.message, 'err'); } } }); }}>حذف المهمة</Item>
     </div>, document.body);
 }
 

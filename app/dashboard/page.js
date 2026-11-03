@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
         <div className="grid two">
           <section className="card">
-            <h3>جدولي — الأسبوع القادم</h3>
+            <h3>جدولي — الأيام السبعة القادمة</h3>
             <Agenda days={buildAgenda(cal, t0, addDaysStr(t0, 7))} showDates />
             <a className="btn ghost sm" href="/calendar" style={{ marginTop: 10 }}>فتح التقويم</a>
           </section>

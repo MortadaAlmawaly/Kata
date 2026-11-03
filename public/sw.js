@@ -1,9 +1,9 @@
 /* Service Worker — يثبّت التطبيق على الهاتف ويستقبل الإشعارات.
    الكاش: هيكل الواجهة فقط (CSS/JS/أيقونات). بيانات /api لا تُخزَّن أبداً (خصوصية الشركات). */
-const VERSION = 'rb-v2';
+const VERSION = 'rb-v3';
 /* المسار الفرعي (مثل /Kata) يؤخذ من نطاق تسجيل العامل نفسه، فتعمل القائمة بأي مسار */
 const BASE = new URL(self.registration.scope).pathname.replace(/\/$/, '');
-const SHELL = ['/', '/app.css', '/manifest.webmanifest', '/icon-192.png'].map(p => BASE + p);
+const SHELL = ['/', '/app.css', '/manifest.webmanifest', '/icon-192.png', '/offline.html'].map(p => BASE + p);
 
 self.addEventListener('install', e => {
   /* كل ملف على حدة: فشل ملف واحد لا يُسقط التخزين كله */
@@ -22,7 +22,7 @@ self.addEventListener('fetch', e => {
     fetch(req).then(res => {
       if (res.ok && SHELL.includes(url.pathname)) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
       return res;
-    }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? caches.match(BASE + '/') : Response.error()))),
+    }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? (caches.match(BASE + '/offline.html')) : Response.error()))),
   );
 });
 

@@ -234,7 +234,11 @@ function RequestForm({ me, onClose, onSaved, onError }) {
 
   async function submit(e) {
     e.preventDefault();
-    setErr(''); setBusy(true);
+    setErr('');
+    if (!f.title.trim()) return setErr('اكتب عنوان الطلب');
+    if (!leave && !(Number(f.amount) > 0)) return setErr('اكتب المبلغ (أكبر من صفر)');
+    if (leave && !(f.startDate && f.endDate && f.endDate >= f.startDate)) return setErr('حدّد تاريخ بداية ونهاية صحيحين');
+    setBusy(true);
     try {
       const body = { type: f.type, title: f.title, details: f.details || null };
       if (leave) { body.startDate = f.startDate; body.endDate = f.endDate; body.leaveType = ltKey; } else body.amount = Number(f.amount);

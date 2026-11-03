@@ -72,6 +72,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
     e.preventDefault();
     setErr('');
     try {
+      if (!f.title.trim()) throw new Error('اكتب عنوان المهمة');
       const est = parseMin(f.estimate);
       if (Number.isNaN(est)) throw new Error('صيغة التقدير غير صحيحة (مثال: 2h 30m)');
       let parentId = null;

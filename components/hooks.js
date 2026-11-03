@@ -49,7 +49,13 @@ export function useConfirm() {
 export function ago(s) {
   const sec = Math.max(0, (Date.now() - new Date(s).getTime()) / 1000);
   if (sec < 60) return 'الآن';
-  if (sec < 3600) return `قبل ${Math.floor(sec / 60)} دقيقة`;
-  if (sec < 86400) return `قبل ${Math.floor(sec / 3600)} ساعة`;
-  return `قبل ${Math.floor(sec / 86400)} يوم`;
+  if (sec < 3600) return `قبل ${plural(Math.floor(sec / 60), 'دقيقة', 'دقيقتين', 'دقائق', 'دقيقة')}`;
+  if (sec < 86400) return `قبل ${plural(Math.floor(sec / 3600), 'ساعة', 'ساعتين', 'ساعات', 'ساعة')}`;
+  return `قبل ${plural(Math.floor(sec / 86400), 'يوم', 'يومين', 'أيام', 'يوماً')}`;
+}
+/* جمع عربي صحيح: 1 مفرد، 2 مثنّى، 3–10 جمع، 11+ مفرد منصوب */
+export function plural(n, one, two, few, many) {
+  if (n === 1) return one;
+  if (n === 2) return two;
+  return `${n} ${n >= 3 && n <= 10 ? few : many}`;
 }

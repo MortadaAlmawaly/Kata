@@ -281,6 +281,7 @@ export function TabIntegrations({ me, reload, toast, ask }) {
   const run = useRunner(toast);
   const admin = me.perms.includes('admin');
   const [ics, setIcs] = useState(null);
+  const [showIcs, setShowIcs] = useState(false);
   const [hooks, setHooks] = useState(null);
   const wa = (me.org.settings && me.org.settings.whatsapp) || {};
   const [w, setW] = useState({ phoneNumberId: wa.phoneNumberId || '', token: '', countryCode: wa.countryCode || '964', enabled: wa.enabled !== false });
@@ -300,8 +301,9 @@ export function TabIntegrations({ me, reload, toast, ask }) {
         <section className="card">
           <h3>اشتراك التقويم (Google / Apple / Outlook)</h3>
           <p className="muted small">أضف هذا الرابط لتطبيق التقويم ليعرض مواعيدك وتسليماتك تلقائياً (للقراءة فقط، ويتحدّث كل ساعة تقريباً).</p>
-          <div className="secret" style={{ fontSize: '.78rem', wordBreak: 'break-all' }}>{ics.url}</div>
+          <div className="secret" dir="ltr" style={{ fontSize: '.78rem', wordBreak: 'break-all' }}>{showIcs ? ics.url : ics.url.replace(/[^/]+(\.ics)$/, '••••••••••••$1')}</div>
           <div className="toolbar" style={{ margin: '10px 0 0' }}>
+            <button className="btn ghost" type="button" onClick={() => setShowIcs(s => !s)}>{showIcs ? 'إخفاء الرابط' : 'إظهار الرابط'}</button>
             <button className="btn" onClick={async () => { if (await copyText(ics.url)) toast('تم نسخ الرابط'); else toast('انسخه يدوياً', 'err'); }}>نسخ الرابط</button>
             <button className="btn ghost" onClick={() => ask({ title: 'رابط جديد', text: 'سيتوقف الرابط القديم عن العمل.', ok: 'تجديد', danger: false,
               onOk: async () => { await api('POST', '/api/integrations/ics/reset', {}); loadAll(); } })}>رابط جديد</button>

@@ -110,7 +110,7 @@ function NewReview({ me, onClose, onCreated, onError }) {
   const [err, setErr] = useState('');
   useEffect(() => {
     api('GET', '/api/users').then(us => {
-      const p = us.filter(u => u.id !== me.user.id && u.active !== false);
+      const p = us.filter(u => u.id !== me.user.id && u.active !== false && u.inScope !== false);   // من تحتك فقط، لا المدراء فوقك
       setPeople(p); if (p[0]) setEmp(String(p[0].id));
     }).catch(e => onError(e.message));
   }, [me.user.id]);   // eslint-disable-line react-hooks/exhaustive-deps
