@@ -170,11 +170,11 @@ export default function DashboardPage() {
             <h2 className="section-title">نظرة الشركة</h2>
             <div className="grid kpis">
               <Kpi label="الموظفون الفعّالون" val={Object.values(d.org.headcount).reduce((a, b) => a + b, 0)}
-                sub={Object.entries(d.org.headcount).sort((a, b) => LEVEL_ORDER[b[0]] - LEVEL_ORDER[a[0]]).map(([r, n]) => `${ROLE[r]} ${n}`).join(' · ')} />
-              <Kpi label="مهام مفتوحة بالشركة" val={d.org.tasks.open} sub={`${d.org.tasks.overdue} متأخرة`} cls={d.org.tasks.overdue ? 'warn' : ''} />
-              <Kpi label="نسبة الإنجاز (30 يوم)" val={d.org.tasks.completion == null ? '—' : d.org.tasks.completion + '%'} sub={`${d.org.tasks.done30} مكتملة`} />
+                sub={Object.entries(d.org.headcount).sort((a, b) => LEVEL_ORDER[b[0]] - LEVEL_ORDER[a[0]]).map(([r, n]) => `${ROLE[r]} ${n}`).join(' · ')} icon="team" />
+              <Kpi label="مهام مفتوحة بالشركة" val={d.org.tasks.open} sub={`${d.org.tasks.overdue} متأخرة`} cls={d.org.tasks.overdue ? 'warn' : ''} icon="tasks" />
+              <Kpi label="نسبة الإنجاز (30 يوم)" val={d.org.tasks.completion == null ? '—' : d.org.tasks.completion + '%'} sub={`${d.org.tasks.done30} مكتملة`} icon="chart" />
               <Kpi label="معتمد هذا الشهر" val={`${fmt(d.org.approvedThisMonth.amount)} ${me.org.currency}`}
-                sub={`{plural(d.org.approvedThisMonth.count, 'طلب', 'طلبان', 'طلبات', 'طلباً')} · ${d.org.pendingRequests} معلّق`} />
+                sub={`${plural(d.org.approvedThisMonth.count, 'طلب', 'طلبان', 'طلبات', 'طلباً')} · ${d.org.pendingRequests} معلّق`} icon="requests" />
             </div>
           </>
         )}

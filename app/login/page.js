@@ -60,10 +60,10 @@ export default function LoginPage() {
         <main className="box">
           <h1>{reg ? 'ابدأ شركتك' : 'تسجيل الدخول'}</h1>
           <p className="lead">{reg ? 'أنشئ شركتك وكن مديرها التنفيذي، ثم أضف فريقك' : 'ادخل بحساب شركتك'}</p>
-          <div className="tabs" role="tablist">
+          {!DEMO && <div className="tabs" role="tablist">
             <button type="button" className={!reg ? 'active' : ''} onClick={() => { setMode('login'); setErr(''); }}>دخول</button>
-            {!DEMO && <button type="button" className={reg ? 'active' : ''} onClick={() => { setMode('register'); setErr(''); }}>تسجيل شركة جديدة</button>}
-          </div>
+            <button type="button" className={reg ? 'active' : ''} onClick={() => { setMode('register'); setErr(''); }}>تسجيل شركة جديدة</button>
+          </div>}
           <form onSubmit={submit} noValidate>
             {reg && (
               <>

@@ -234,7 +234,7 @@ function ShellChrome({ active, title, sub, me, shown = true, children }) {
         {tabIds.map(id => PAGES.find(p => p.id === id)).filter(Boolean).map(p => (
           <a key={p.id} href={hrefOf(p)} className={p.id === navActive ? 'active' : ''}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS[p.icon]} /></svg>
-            <span>{pageTitle(p).split(' ')[0]}</span>
+            <span>{TAB_LABEL[p.id] || pageTitle(p).split(' ')[0]}</span>
             {p.id === 'requests' && badges.inbox > 0 && <i className="tb-count">{badges.inbox}</i>}
           </a>
         ))}
@@ -270,6 +270,9 @@ export function ShellProvider({ children }) {
 }
 
 /* ما تستعمله الصفحات: يسجّل العنوان والقسم والمستخدم للهيكل المشترك ويعرض محتوى الصفحة فقط */
+/* أسماء قصيرة مقصودة للخانات (بدل أول كلمة من العنوان: «لوحة» وهي ناقصة المعنى) */
+const TAB_LABEL = { dashboard: 'الرئيسية', calendar: 'التقويم', tasks: 'المهام', requests: 'الطلبات' };
+
 export default function AppShell({ active, title, sub, me, children }) {
   const ctx = useContext(ShellCtx);
   const pathname = usePathname();

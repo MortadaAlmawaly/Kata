@@ -17,9 +17,10 @@ export default function IntroSplash() {
     let seen = false;
     try { seen = !!sessionStorage.getItem(KEY) && !/[?&]intro=1/.test(window.location.search); } catch (_) { /* لا تخزين */ }
     if (seen) { setPhase('gone'); return undefined; }
+    try { sessionStorage.setItem(KEY, '1'); } catch (_) { /* تجاهل */ }   // تُحفظ فوراً: إعادة التحميل أو الانتقال قبل نهاية المقدمة ما يكررها
     const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const t1 = setTimeout(() => setPhase('out'), calm ? 500 : 2100);
-    const t2 = setTimeout(() => { setPhase('gone'); try { sessionStorage.setItem(KEY, '1'); } catch (_) { /* تجاهل */ } }, calm ? 800 : 2650);
+    const t1 = setTimeout(() => setPhase('out'), calm ? 400 : 1300);
+    const t2 = setTimeout(() => setPhase('gone'), calm ? 650 : 1800);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [off]);
   const skip = () => { setPhase('gone'); try { sessionStorage.setItem(KEY, '1'); } catch (_) { /* تجاهل */ } };

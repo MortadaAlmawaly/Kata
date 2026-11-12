@@ -21,7 +21,7 @@ function find(step) {
   }
   return null;
 }
-const stepsOf = t => t.steps.filter(s => !s.only || (s.only === 'mobile') === (window.innerWidth <= 860));
+const stepsOf = t => t.steps.filter(s => !s.only || (s.only === 'mobile') === (window.innerWidth <= 1023));
 const goTour = (id, step) => {
   const t = tourById(id); if (!t) return;
   const u = new URL(t.page, window.location.origin);
@@ -112,7 +112,7 @@ export default function TourHost({ me }) {
     let dead = false;
     const step = run.steps[run.i];
     (async () => {
-      const narrow = window.innerWidth <= 860;
+      const narrow = window.innerWidth <= 1023;
       const sideEl = document.getElementById('side');
       if (step.side && narrow && sideEl && !sideEl.classList.contains('open')) { document.querySelector('.menu-toggle')?.click(); side.current = true; await sleep(350); }
       else if (!step.side && side.current) { document.querySelector('.side-scrim')?.click(); side.current = false; await sleep(250); }
@@ -187,7 +187,7 @@ export default function TourHost({ me }) {
     }
     let seen = true; try { seen = !!localStorage.getItem(SEEN_KEY); } catch (_) { /* تجاهل */ }
     if (seen) return undefined;
-    const t = setTimeout(() => setWelcome(true), 1500);
+    const t = setTimeout(() => { setWelcome(true); try { localStorage.setItem(SEEN_KEY, '1'); } catch (_) { /* تجاهل */ } }, 3500);
     return () => clearTimeout(t);
   }, [me, start]);
   useEffect(() => {

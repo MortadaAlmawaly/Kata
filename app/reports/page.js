@@ -73,16 +73,16 @@ export default function ReportsPage() {
               : <p className="muted">لا توجد بيانات.</p>}
           </div>
           <div className="table-wrap">
-            <table>
+            <table className="cardify">
               <thead><tr><th>الاسم</th><th>القسم</th><th>منجزة</th><th>مفتوحة</th><th>متأخرة</th><th>متوسط الإنجاز (يوم)</th><th>بالموعد</th><th>طلبات</th><th>مصروف معتمد</th><th>إجازة</th><th>حضور</th></tr></thead>
               <tbody>
                 {rows.map(x => (
                   <tr key={x.name}>
-                    <td><span className="who"><Avatar name={x.name} size={24} />{x.name}</span> <small className="muted">{ROLE[x.role]}</small></td>
-                    <td>{x.department || '—'}</td><td>{x.tasksDone}</td><td>{x.tasksOpen}</td>
-                    <td>{x.tasksOverdue ? <span className="badge overdue">{x.tasksOverdue}</span> : 0}</td>
-                    <td>{x.avgDaysToDone ?? '—'}</td><td>{x.onTimeRate == null ? '—' : x.onTimeRate + '%'}</td>
-                    <td>{x.requests}</td><td>{fmt(x.approvedSpend)}</td><td>{x.leaveDays}</td><td>{x.attendanceDays}</td>
+                    <td data-label="الاسم"><span className="who"><Avatar name={x.name} size={24} />{x.name}</span> <small className="muted">{ROLE[x.role]}</small></td>
+                    <td data-label="القسم">{x.department || '—'}</td><td data-label="منجزة">{x.tasksDone}</td><td data-label="مفتوحة">{x.tasksOpen}</td>
+                    <td data-label="متأخرة">{x.tasksOverdue ? <span className="badge overdue">{x.tasksOverdue}</span> : 0}</td>
+                    <td data-label="متوسط الإنجاز (يوم)">{x.avgDaysToDone ?? '—'}</td><td data-label="بالموعد">{x.onTimeRate == null ? '—' : x.onTimeRate + '%'}</td>
+                    <td data-label="طلبات">{x.requests}</td><td data-label="مصروف معتمد">{fmt(x.approvedSpend)}</td><td data-label="إجازة">{x.leaveDays}</td><td data-label="حضور">{x.attendanceDays}</td>
                   </tr>
                 ))}
               </tbody>
