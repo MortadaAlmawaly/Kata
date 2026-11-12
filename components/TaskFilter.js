@@ -1,5 +1,6 @@
 'use client';
 /* فلترة المهام على طريقة Jira: لوحة «تصفية» بثلاثة أوضاع (أساسي / متقدّم / JQL) + فلاتر محفوظة + «تجميع». */
+import { plural } from './hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { STATUS } from './../lib/constants';
 import { Avatar, Icon } from './ui';
@@ -17,7 +18,7 @@ export function buildFields(ctx, tasks, sprints) {
   const parents = uniq(tasks.map(t => t.parent), p => p.id);
   const labels = [...new Set(tasks.flatMap(t => t.labels || []))].sort();
   const fields = [
-    { key: 'parent', label: ctx.fl('parent'), none: 'بدون أم / ملحمة',
+    { key: 'parent', label: ctx.fl('parent'), none: 'بدون أم / مهمة رئيسية',
       opts: parents.map(p => ({ v: String(p.id), label: p.title, sub: p.key })), get: t => (t.parentId ? [String(t.parentId)] : []) },
     { key: 'assignee', label: ctx.fl('assignee'), none: 'غير مُسنَد', me: true,
       opts: people.map(p => ({ v: String(p.id), label: p.name, avatar: p.name })), get: t => (t.assignee ? [String(t.assignee.id)] : []) },
@@ -27,7 +28,7 @@ export function buildFields(ctx, tasks, sprints) {
     { key: 'priority', label: ctx.fl('priority'), opts: Object.entries(ctx.priority).map(([k, l]) => ({ v: k, label: l })), get: t => [t.priority] },
     { key: 'project', label: ctx.fl('project'), none: 'بدون مساحة',
       opts: uniq(tasks.map(t => t.project), p => p.id).map(p => ({ v: String(p.id), label: p.name, sub: p.key })), get: t => (t.projectId ? [String(t.projectId)] : []) },
-    { key: 'sprint', label: ctx.fl('sprint'), none: 'قائمة الانتظار (بلا سباق)',
+    { key: 'sprint', label: ctx.fl('sprint'), none: 'قائمة الانتظار (بلا دورة)',
       opts: sprints.filter(s => s.state !== 'CLOSED').map(s => ({ v: String(s.id), label: s.name + (s.state === 'ACTIVE' ? ' (جارٍ)' : '') })), get: t => (t.sprintId ? [String(t.sprintId)] : []) },
   ];
   /* الحقول المخصصة القابلة للاختيار */
@@ -51,7 +52,7 @@ export const DEFAULT_PINNED = ['parent', 'assignee', 'status', 'type', 'labels']
 
 /* حقول نصية للمتقدّم وJQL */
 const TEXT_FIELDS = [
-  { key: 'summary', label: 'الملخّص', text: t => t.title },
+  { key: 'summary', label: 'العنوان', text: t => t.title },
   { key: 'key', label: 'الرقم', text: t => t.key },
   { key: 'description', label: 'الوصف', text: t => t.description || '' },
 ];
@@ -93,7 +94,7 @@ function advTest(filter, fieldMap, meId) {
 const ALIAS = {
   assignee: 'assignee', 'المنفذ': 'assignee', status: 'status', 'الحالة': 'status', priority: 'priority', 'الأولوية': 'priority',
   type: 'type', issuetype: 'type', worktype: 'type', 'النوع': 'type', label: 'labels', labels: 'labels', 'الوسوم': 'labels',
-  parent: 'parent', epic: 'parent', 'الملحمة': 'parent', sprint: 'sprint', 'السباق': 'sprint',
+  parent: 'parent', epic: 'parent', 'المهمة الرئيسية': 'parent', sprint: 'sprint', 'الدورة': 'sprint',
   summary: 'summary', title: 'summary', text: 'summary', 'العنوان': 'summary', key: 'key', id: 'key', description: 'description',
 };
 function splitAnd(s) {
@@ -179,7 +180,7 @@ export function activeCount(filter) {
 
 /* ───────── الواجهة ───────── */
 export const GROUPS = [
-  ['', 'بدون تجميع'], ['assignee', 'المنفّذ'], ['parent', 'الملحمة / الأم'], ['priority', 'الأولوية'], ['type', 'النوع'], ['labels', 'الوسم'], ['sprint', 'السباق'],
+  ['', 'بدون تجميع'], ['assignee', 'المنفّذ'], ['parent', 'المهمة الرئيسية / الأم'], ['priority', 'الأولوية'], ['type', 'النوع'], ['labels', 'الوسم'], ['sprint', 'الدورة'],
 ];
 
 export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter, error, group, setGroup, showGroup, tasks, boardKey, showQuick = true }) {
@@ -202,7 +203,7 @@ export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter
       if (dx) el.style.transform = 'translateX(' + dx + 'px)';
     });
   }, [open, gOpen]);
-  const key = 'rb-savedfilters-' + (boardKey || 0);
+  const key = 'kata-savedfilters-' + (boardKey || 0);
   const count = activeCount(filter);
 
   useEffect(() => { try { setSaved(JSON.parse(localStorage.getItem(key) || '[]')); } catch (_) { setSaved([]); } }, [key]);
@@ -374,7 +375,7 @@ export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter
                 <textarea className="input" rows={4} dir="ltr" spellCheck={false} placeholder={'assignee = currentUser() AND status IN ("TODO","REVIEW")'}
                   value={filter.jql} onChange={e => setFilter(f => ({ ...f, jql: e.target.value }))} />
                 {error ? <p className="err">{error}</p> : <p className="muted small">الحقول: assignee, status, priority, type, labels, parent, sprint, summary, key — العوامل: = != ~ IN NOT IN IS EMPTY — الربط: AND</p>}
-                <small className="muted">{tasks.length} مهمة في النطاق</small>
+                <small className="muted">{plural(tasks.length, 'مهمة', 'مهمتان', 'مهام', 'مهمة')} في النطاق</small>
               </div>
             )}
 

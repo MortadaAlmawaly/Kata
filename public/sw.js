@@ -1,9 +1,9 @@
 /* Service Worker — يثبّت التطبيق على الهاتف ويستقبل الإشعارات.
    الكاش: هيكل الواجهة فقط (CSS/JS/أيقونات). بيانات /api لا تُخزَّن أبداً (خصوصية الشركات). */
-const VERSION = 'rb-v3';
+const VERSION = 'kata-v4';
 /* المسار الفرعي (مثل /Kata) يؤخذ من نطاق تسجيل العامل نفسه، فتعمل القائمة بأي مسار */
 const BASE = new URL(self.registration.scope).pathname.replace(/\/$/, '');
-const SHELL = ['/', '/app.css', '/manifest.webmanifest', '/icon-192.png', '/offline.html'].map(p => BASE + p);
+const SHELL = ['/', '/login/', '/dashboard/', '/tasks/', '/calendar/', '/requests/', '/app.css', '/i18n-en.js', '/demo-mock.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/offline.html'].map(p => BASE + p);
 
 self.addEventListener('install', e => {
   /* كل ملف على حدة: فشل ملف واحد لا يُسقط التخزين كله */

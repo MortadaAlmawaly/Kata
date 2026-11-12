@@ -1,5 +1,6 @@
 'use client';
 /* الهيكل والفريق — ترحيل React لـ viewTeam/personProfile/userForm/accessModal. */
+import { withBase } from '@/lib/base';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import OrgFlow from '../../components/OrgFlow';
 import PermPicker from '../../components/PermPicker';
@@ -37,8 +38,8 @@ export default function TeamPage() {
   };
   useEffect(() => { if (me) api('GET', '/api/org/layout').then(l => setLayout({ pos: l.pos || {}, side: l.side || {}, colors: l.colors || {}, wire: l.wire || '' })).catch(() => {}); }, [me]);
 
-  useEffect(() => { try { const v = localStorage.getItem('rb-teamview'); if (['chart', 'cards', 'list'].includes(v)) setView(v); } catch (_) { /* لا تخزين */ } }, []);
-  const pickView = v => { setView(v); try { localStorage.setItem('rb-teamview', v); } catch (_) { /* تجاهل */ } };
+  useEffect(() => { try { const v = localStorage.getItem('kata-teamview'); if (['chart', 'cards', 'list'].includes(v)) setView(v); } catch (_) { /* لا تخزين */ } }, []);
+  const pickView = v => { setView(v); try { localStorage.setItem('kata-teamview', v); } catch (_) { /* تجاهل */ } };
 
   const load = useCallback(async () => {
     try { setUsers(await api('GET', '/api/users')); } catch (e) { if (e.message !== 'unauthorized') toast(e.message, 'err'); }
@@ -151,7 +152,7 @@ export default function TeamPage() {
           <button className={view === 'cards' ? 'active' : ''} title="بطاقات" onClick={() => pickView('cards')}><Icon name="projects" size={17} /></button>
           <button className={view === 'list' ? 'active' : ''} title="قائمة" onClick={() => pickView('list')}><Icon name="menu" size={17} /></button>
         </div>
-        {invite && <a className="btn ghost" href="/settings?tab=invites">دعوة بالرابط</a>}
+        {invite && <a className="btn ghost" href={withBase('/settings?tab=invites')}>دعوة بالرابط</a>}
         {manage && <button className="btn" onClick={() => setForm({ user: null })}><Icon name="plus" /> إضافة مستخدم</button>}
       </div>
       {body}
@@ -256,7 +257,7 @@ function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdi
               {open.slice(0, 5).map(t => {
                 const d = dueInfo(t);
                 return (
-                  <a className="li-row" key={t.id} href={`/tasks?open=${t.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                  <a className="li-row" key={t.id} href={withBase(`/tasks?open=${t.id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>
                     <div className="grow"><b>{t.title}</b></div>
                     {d && <span className={`due ${d.cls}`}>{d.text}</span>}<span className={`badge ${t.status}`}>{STATUS[t.status]}</span>
                   </a>
@@ -268,7 +269,7 @@ function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdi
             <>
               <h3 className="section-title">أهدافه</h3>
               {goals.slice(0, 4).map(g => (
-                <a className="li-row" key={g.id} href="/goals" style={{ color: 'inherit', textDecoration: 'none' }}>
+                <a className="li-row" key={g.id} href={withBase('/goals')} style={{ color: 'inherit', textDecoration: 'none' }}>
                   <Ring pct={g.progress} size={40} stroke={5} />
                   <div className="grow"><b>{g.title}</b><small className="muted">{g.period}</small></div>
                 </a>

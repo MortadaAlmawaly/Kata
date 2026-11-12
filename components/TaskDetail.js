@@ -76,8 +76,8 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
   const [folded, setFolded] = useState(() => new Set());
   const [side, setSide] = useState(false);
   const [showEmpty, setShowEmpty] = useState(false);
-  useEffect(() => { try { setSide(localStorage.getItem('rb-tdside') === '1'); } catch (_) { /* لا تخزين */ } }, []);
-  const toggleSide = () => setSide(s => { const n = !s; try { localStorage.setItem('rb-tdside', n ? '1' : '0'); } catch (_) { /* تجاهل */ } return n; });
+  useEffect(() => { try { setSide(localStorage.getItem('kata-tdside') === '1'); } catch (_) { /* لا تخزين */ } }, []);
+  const toggleSide = () => setSide(s => { const n = !s; try { localStorage.setItem('kata-tdside', n ? '1' : '0'); } catch (_) { /* تجاهل */ } return n; });
   const [menu, setMenu] = useState('');
   const [cover, setCover] = useState(null);
   const [coverPick, setCoverPick] = useState(null);
@@ -89,7 +89,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
   const [childTitle, setChildTitle] = useState('');
   const [childType, setChildType] = useState('');
   const [pins, setPins] = useState([]);
-  useEffect(() => { try { setPins(JSON.parse(localStorage.getItem('rb-pinned') || '[]')); } catch (_) { setPins([]); } }, []);
+  useEffect(() => { try { setPins(JSON.parse(localStorage.getItem('kata-pinned') || '[]')); } catch (_) { setPins([]); } }, []);
   const [linkType, setLinkType] = useState('BLOCKS');
   const [linkKey, setLinkKey] = useState('');
   const [wl, setWl] = useState({ time: '', date: todayStr(), note: '' });
@@ -178,7 +178,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
 
   async function uploadCover(file) {
     if (!file) return;
-    if (!/\.(png|jpe?g|webp)$/i.test(file.name)) { onToast('الغلاف صورة PNG أو JPG أو WEBP', 'err'); return; }
+    if (!/\.(png|jpe?g|webp)$/i.test(file.name)) { onToast('الغلاف لازم يكون صورة (بصيغ PNG أو JPG أو WEBP)', 'err'); return; }
     setCoverBusy(true);
     try {
       const r = await uploadFiles('task', id, [await shrinkImage(file)]);
@@ -269,7 +269,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                 { key: 'updated', node: <div className="fr"><label>{ctx.fl('updated')}</label><div className="fv"><span className="muted">{fmtDT(t.updatedAt)}</span></div></div> },
               ];
   /* حقول مثبّتة لكل مستخدم (Pinned fields) */
-  const togglePin = k => setPins(p => { const n = p.includes(k) ? p.filter(x => x !== k) : [...p, k]; try { localStorage.setItem('rb-pinned', JSON.stringify(n)); } catch (_) { /* تجاهل */ } return n; });
+  const togglePin = k => setPins(p => { const n = p.includes(k) ? p.filter(x => x !== k) : [...p, k]; try { localStorage.setItem('kata-pinned', JSON.stringify(n)); } catch (_) { /* تجاهل */ } return n; });
   const cfNode = d => (
     <div className={`fr ${d.type === 'longtext' || d.type === 'multiselect' ? 'top' : ''}`}>
       <label>{ctx.cfLabel(d)}</label>
@@ -413,7 +413,7 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
               )}
               <div className="td-titlebox">
                 {ed
-                  ? <input className="td-title" key={t.title} maxLength={120} defaultValue={t.title} aria-label="الملخّص"
+                  ? <input className="td-title" key={t.title} maxLength={120} defaultValue={t.title} aria-label="العنوان"
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
                     onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.title) patch({ title: v }, 'تم الحفظ'); }} />
                   : <h2 className="td-title ro">{t.title}</h2>}

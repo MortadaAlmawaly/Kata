@@ -11,8 +11,8 @@ import { TabAutomation, TabBoards, TabFields, TabInvites, TabIssueTypes, TabLabe
 const TASKCFG = [['types', 'أنواع المهام', TabIssueTypes], ['fields', 'حقول المهام', TabFields]];
 function TabTaskConfig(props) {
   const [sub, setSub] = useState('types');
-  useEffect(() => { try { const s = sessionStorage.getItem('rb-settask'); if (s && TASKCFG.some(x => x[0] === s)) setSub(s); } catch (_) { /* لا تخزين */ } }, []);
-  const pickSub = s => { setSub(s); try { sessionStorage.setItem('rb-settask', s); } catch (_) { /* تجاهل */ } };
+  useEffect(() => { try { const s = sessionStorage.getItem('kata-settask'); if (s && TASKCFG.some(x => x[0] === s)) setSub(s); } catch (_) { /* لا تخزين */ } }, []);
+  const pickSub = s => { setSub(s); try { sessionStorage.setItem('kata-settask', s); } catch (_) { /* تجاهل */ } };
   const Cur = (TASKCFG.find(x => x[0] === sub) || TASKCFG[0])[2];
   return (
     <>
@@ -34,12 +34,12 @@ export default function SettingsPage() {
   const [ask, confirmNode] = useConfirm();
 
   useEffect(() => {
-    const land = t => { if (LEGACY_TAB[t]) { try { sessionStorage.setItem('rb-settask', LEGACY_TAB[t]); } catch (_) { /* تجاهل */ } return 'taskcfg'; } return t; };
-    try { const t = sessionStorage.getItem('rb-settab'); if (t) setTab(land(t)); } catch (_) { /* لا تخزين */ }
+    const land = t => { if (LEGACY_TAB[t]) { try { sessionStorage.setItem('kata-settask', LEGACY_TAB[t]); } catch (_) { /* تجاهل */ } return 'taskcfg'; } return t; };
+    try { const t = sessionStorage.getItem('kata-settab'); if (t) setTab(land(t)); } catch (_) { /* لا تخزين */ }
     const q = new URLSearchParams(window.location.search).get('tab');
     if (q) setTab(land(q));
   }, []);
-  const pick = t => { setTab(t); try { sessionStorage.setItem('rb-settab', t); } catch (_) { /* تجاهل */ } };
+  const pick = t => { setTab(t); try { sessionStorage.setItem('kata-settab', t); } catch (_) { /* تجاهل */ } };
 
   const perms = (me && me.perms) || [];
   const admin = perms.includes('admin');

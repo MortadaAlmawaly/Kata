@@ -35,14 +35,14 @@
   const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const now = () => new Date().toISOString();
 
-  const org = { id: 1, name: 'شركة النخبة', currency: 'IQD', approvalLimits: { MANAGER: 500000, DIRECTOR: 5000000, GM: 50000000 } };
+  const org = { id: 1, name: 'شركة النخبة', currency: 'د.ع', approvalLimits: { MANAGER: 500000, DIRECTOR: 5000000, GM: 50000000 } };
   const U = (id, name, role, title, managerId) => ({ id, name, role, title, managerId, active: true, email: `user${id}@example.com`, mustChangePassword: false, lastLoginAt: now(), leaveEntitlement: 30 });
   const users = [
     U(1, 'مرتضى مقدام', 'CEO', 'المدير التنفيذي', null),
   ];
   const DEPT = { 1: 'الإدارة العليا' };
   users.forEach(u => { u.department = DEPT[u.id]; });
-  users[0].email = 'mrtdyalmawly3@gmail.com';
+  users[0].email = 'admin@kata.test';
   const byId = id => users.find(u => u.id === id);
   const kids = id => users.filter(u => u.managerId === id);
   function desc(id) { const out = new Set(); const st = [id]; while (st.length) for (const k of kids(st.pop())) { out.add(k.id); st.push(k.id); } return out; }
@@ -133,6 +133,8 @@
     }
   } catch (e) {}
   org.permissions = orgPerm;
+  { const u1 = users.find(x => x.id === 1); if (u1) { u1.email = 'admin@kata.test'; } }
+  if (org.currency === 'IQD') org.currency = 'د.ع';   /* العملة بالعربي بالواجهة */   /* حساب التجربة الرئيسي: بريد وهمي لا حقيقي */
   const savePV = () => { try { localStorage.setItem(PKEY, JSON.stringify({ ...arrays, org, orgPerm, extra, admins: [...admins], seq })); } catch (e) {} };
 
   const leaveBal = usr => (org.settings.leaveTypes || []).map(t => {
@@ -147,8 +149,9 @@
     const ci = new Date(rec.checkIn), co = rec.checkOut ? new Date(rec.checkOut) : null;
     const inM = ci.getHours() * 60 + ci.getMinutes(), outM = co ? co.getHours() * 60 + co.getMinutes() : null;
     const late = inM - st;
-    const afterHours = inM >= en;   /* حضور بعد نهاية الدوام: لا يُحسب تأخيراً بل يُعلَّم خارج الدوام */
-    return { afterHours, lateMin: !afterHours && late > (org.settings.graceMinutes ?? 10) ? late - (org.settings.graceMinutes ?? 10) : 0, earlyMin: outM != null && outM < en ? en - outM : 0, overtimeMin: outM != null && outM - en >= 15 ? outM - en : 0,
+    /* حضور خارج نافذة الدوام (قبل البداية بأكثر من ساعتين أو بعد النهاية): يُعلَّم «خارج الدوام» ولا يُحسب تأخيراً أو خروجاً مبكراً */
+    const afterHours = inM >= en || inM < st - 120;
+    return { afterHours, lateMin: !afterHours && late > (org.settings.graceMinutes ?? 10) ? late - (org.settings.graceMinutes ?? 10) : 0, earlyMin: !afterHours && outM != null && outM < en ? en - outM : 0, overtimeMin: outM != null && outM - en >= 15 ? outM - en : 0,
       workedMin: co ? Math.round((co - ci) / 60000) : null };
   };
   /* صلاحيات المساحات: users/roles → NONE|VIEW|MOVE|EDIT */
@@ -180,7 +183,7 @@
     sprintId: t.sprintId || null, sprint: sprintOf(t.sprintId),
     dueDate: t.dueDate, goalId: t.goalId, projectId: t.projectId || null,
     project: t.projectId ? (p => ({ id: p.id, name: p.name, key: projKey(p) }))(projects.find(x => x.id === t.projectId) || { id: t.projectId, name: '' }) : null,
-    assignee: person(t.assigneeId), creator: person(t.creatorId), createdAt: t.createdAt || now(), updatedAt: now(),
+    assignee: person(t.assigneeId), creator: person(t.creatorId), createdAt: t.createdAt || now(), updatedAt: t.updatedAt || t.createdAt || now(),
     completedAt: t.completedAt || null, comments: t.comments.length, children: tasks.filter(x => x.parentId === t.id).length,
     recurrence: t.recurrence || null,
     customFields: t.customFields || {}, coverFileId: t.coverFileId || null, coverUrl: t.coverFileId ? ((files.find(f => f.id === t.coverFileId) || {}).url || null) : null, timer: t.timerUserId ? { userId: t.timerUserId, startedAt: t.timerStartedAt } : null,
@@ -205,18 +208,56 @@
     return { open: open.length, overdue, urgent: open.filter(t => t.priority === 'URGENT').length, inReview: open.filter(t => t.status === 'REVIEW').length, done30: list.length - open.length, completion: list.length ? Math.round((list.length - open.length) / list.length * 100) : null };
   }
 
-  const DEMO_EMAIL = 'mrtdyalmawly3@gmail.com', DEMO_PASS = '12345678';
-  const ACCOUNTS = { 'mrtdyalmawly3@gmail.com': ['12345678', 1] };
-  /* كلمة المرور الحالية: المخزّنة (بعد التغيير أو القبول بدعوة) وإلا الافتراضية للحساب الرئيسي */
-  const curPw = u => u.pw || (ACCOUNTS[String(u.email).toLowerCase()] || [])[0] || '';
-  const authed = () => { try { return localStorage.getItem('pv-auth') === '1'; } catch (e) { return false; } };
-  function authRoute(method, path, body) {
+
+  /* كلمات المرور لا تُخزَّن نصاً: ملح + SHA-256 (وضع تجربة بلا خادم، الحماية الحقيقية تحتاج backend) */
+  function sha256(s){
+    s=unescape(encodeURIComponent(s));
+    var K=[],H=[1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225],i,j;
+    var p=[2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311];
+    for(i=0;i<64;i++)K[i]=(Math.pow(p[i],1/3)%1)*4294967296|0;
+    var b=[],l=s.length*8;
+    for(i=0;i<s.length;i++)b[i>>2]|=s.charCodeAt(i)<<(24-(i%4)*8);
+    b[l>>5]|=128<<(24-l%32);b[(((l+64)>>9)<<4)+15]=l;for(i=0;i<b.length;i++)b[i]=b[i]|0;
+    var r=function(x,n){return x>>>n|x<<(32-n)};
+    for(i=0;i<b.length;i+=16){
+      var w=b.slice(i,i+16),a=H.slice(),t;
+      for(j=16;j<64;j++){var s0=r(w[j-15],7)^r(w[j-15],18)^(w[j-15]>>>3),s1=r(w[j-2],17)^r(w[j-2],19)^(w[j-2]>>>10);w[j]=(w[j-16]+s0+w[j-7]+s1)|0}
+      for(j=0;j<64;j++){
+        var S1=r(a[4],6)^r(a[4],11)^r(a[4],25),ch=(a[4]&a[5])^(~a[4]&a[6]),t1=(a[7]+S1+ch+K[j]+w[j])|0,S0=r(a[0],2)^r(a[0],13)^r(a[0],22),mj=(a[0]&a[1])^(a[0]&a[2])^(a[1]&a[2]),t2=(S0+mj)|0;
+        a=[(t1+t2)|0,a[0],a[1],a[2],(a[3]+t1)|0,a[4],a[5],a[6]];
+      }
+      for(j=0;j<8;j++)H[j]=(H[j]+a[j])|0;
+    }
+    var o='';for(i=0;i<8;i++)o+=('00000000'+(H[i]>>>0).toString(16)).slice(-8);return o;
+  }
+  const hashPw = (em, p) => 'h1$' + sha256('kata|' + String(em).toLowerCase() + '|' + p);
+  const DEMO_EMAIL = 'admin@kata.test';
+  const ACCOUNTS = { 'admin@kata.test': ['h1$548a1fac3fc2c1f7eab7a1ccc29a05ea8bf3208ac033aae1d58f71a82b9e7221', 1] };
+  /* التحقق: الهاش المخزّن، أو نص قديم من نسخة سابقة (يُرقّى لهاش عند أول دخول) */
+  const pwOk = (u, p) => {
+    const em = String(u.email).toLowerCase(), h = hashPw(em, p);
+    if (u.pwh) return u.pwh === h;
+    if (u.pw) { if (u.pw === p) { u.pwh = h; delete u.pw; return true; } return false; }
+    const a = ACCOUNTS[em]; return !!a && a[0] === h;
+  };
+  const hasPw = u => !!(u.pwh || u.pw || ACCOUNTS[String(u.email).toLowerCase()]);
+  const setPw = (u, p) => { u.pwh = hashPw(u.email, p); delete u.pw; };
+  /* الجلسة: ختم زمني يجدَّد بالنشاط وتنتهي بعد 12 ساعة خمول */
+  const SESSION_MS = 12 * 3600e3;
+  const authed = () => {
+    try {
+      const v = localStorage.getItem('pv-auth'); if (!v) return false;
+      const ts = v === '1' ? Date.now() : +v;
+      if (!ts || Date.now() - ts > SESSION_MS) { localStorage.removeItem('pv-auth'); return false; }
+      localStorage.setItem('pv-auth', String(Date.now())); return true;
+    } catch (e) { return false; }
+  };  function authRoute(method, path, body) {
     if (path === '/api/auth/login' && method === 'POST') {
       const em = String(body.email || '').trim().toLowerCase();
       const lu = users.find(x => x.active && String(x.email).toLowerCase() === em);
-      if (lu && curPw(lu) && body.password === curPw(lu)) {
+      if (lu && hasPw(lu) && pwOk(lu, String(body.password || ''))) {
         meId = lu.id;
-        try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(lu.id)); } catch (e) {}
+        try { localStorage.setItem('pv-auth', String(Date.now())); localStorage.setItem('pv-user', String(lu.id)); } catch (e) {}
         return ok({ id: lu.id, name: lu.name, email: em, role: lu.role });
       }
       return err(401, 'البريد أو كلمة المرور غير صحيحة');
@@ -234,12 +275,12 @@
       if (method === 'POST' && path.endsWith('/accept')) {
         if (String(body.password || '').length < org.settings.passwordMin) return err(400, 'كلمة المرور لازم تكون ' + org.settings.passwordMin + ' أحرف على الأقل');
         let nu = users.find(x => x.email === inv.e);
-        if (nu && (nu.pw || nu.id === 1)) return err(409, 'هذا البريد مسجّل مسبقاً');
-        if (nu) { nu.name = String(body.name || nu.name).slice(0, 60); nu.pw = String(body.password); nu.invited = false; }
-        if (!nu) { nu = U(++seq, String(body.name || inv.n || inv.e).slice(0, 60), inv.r, inv.t || null, inv.m || 1); nu.email = inv.e; nu.department = inv.d || null; nu.pw = String(body.password); users.push(nu); }
+        if (nu && (hasPw(nu) || nu.id === 1)) return err(409, 'هذا البريد مسجّل مسبقاً');
+        if (nu) { nu.name = String(body.name || nu.name).slice(0, 60); setPw(nu, String(body.password)); nu.invited = false; }
+        if (!nu) { nu = U(++seq, String(body.name || inv.n || inv.e).slice(0, 60), inv.r, inv.t || null, inv.m || 1); nu.email = inv.e; nu.department = inv.d || null; setPw(nu, String(body.password)); users.push(nu); }
         const pi = invites.find(x => x.email === inv.e && x.status === 'PENDING'); if (pi) pi.status = 'ACCEPTED';
         savePV();
-        try { localStorage.setItem('pv-auth', '1'); localStorage.setItem('pv-user', String(nu.id)); } catch (e) {}
+        try { localStorage.setItem('pv-auth', String(Date.now())); localStorage.setItem('pv-user', String(nu.id)); } catch (e) {}
         return ok({ id: nu.id, name: nu.name, email: nu.email, role: nu.role }, 201);
       }
     }
@@ -265,9 +306,9 @@
       return ok(null);
     }
     if (path === '/api/me/password' && method === 'POST') {
-      if (body.current !== curPw(u)) return err(403, 'كلمة المرور الحالية غير صحيحة');
+      if (!pwOk(u, String(body.current || ''))) return err(403, 'كلمة المرور الحالية غير صحيحة');
       if (String(body.next || '').length < org.settings.passwordMin) return err(400, 'كلمة المرور لازم تكون ' + org.settings.passwordMin + ' أحرف على الأقل');
-      u.pw = String(body.next); u.mustChangePassword = false;
+      setPw(u, String(body.next)); u.mustChangePassword = false;
       return ok(null);
     }
     if (path === '/api/auth/logout') return ok(null);
@@ -309,7 +350,16 @@
       logA(u, 'user.update', 'user', t.id, body);
       return ok(null);
     }
-    if (path.match(/^\/api\/users\/\d+\/reset-password$/)) return ok({ tempPassword: 'Rt8vN2cWq5Yb' });
+    if ((m = path.match(/^\/api\/users\/(\d+)\/reset-password$/))) {
+      /* نفس شروط الإدارة الحقيقية: صلاحية إدارة المستخدمين + المستخدم ضمن نطاقك وبمستوى أدنى منك */
+      const t = byId(+m[1]);
+      const adm = can(u, 'admin');
+      if (!t || !(adm || sc.has(t.id))) return err(404, 'المستخدم غير موجود');
+      if (!(adm || can(u, 'users.manage')) || t.id === u.id || (!adm && LEVEL[t.role] >= LEVEL[u.role])) return err(403, 'ليست لديك صلاحية إعادة تعيين كلمة مرور هذا المستخدم');
+      const tmp = Array.from({ length: 12 }, () => 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 54)]).join('');
+      setPw(t, tmp); t.mustChangePassword = true; savePV(); logA(u, 'user.reset-password', 'user', t.id, {});
+      return ok({ tempPassword: tmp });
+    }
 
     if (path === '/api/dashboard') {
       const mine = tasks.filter(t => t.assigneeId === u.id);
@@ -440,7 +490,8 @@
     });
     if (path === '/api/boards' && method === 'POST') {
       if (!can(u, 'team.view')) return err(403, 'ليست لديك صلاحية لهذا الإجراء');
-      const b = { id: ++seq, name: body.name, position: boardsArr.length, autoColumns: false, columns: resolveCols(body.columns || []), filters: body.filters || {}, card: body.card || null, labels: body.labels || {}, visibility: body.visibility || 'ALL', members: body.visibility === 'MEMBERS' ? (body.members || []) : [], fields: body.fields || [], detail: body.detail || {}, createdBy: u.id };
+      if (!String(body.name || '').trim()) return err(400, 'اسم اللوحة مطلوب');
+      const b = { id: ++seq, name: String(body.name).trim(), position: boardsArr.length, autoColumns: false, columns: resolveCols(body.columns || []), filters: body.filters || {}, card: body.card || null, labels: body.labels || {}, visibility: body.visibility || 'ALL', members: body.visibility === 'MEMBERS' ? (body.members || []) : [], fields: body.fields || [], detail: body.detail || {}, createdBy: u.id };
       boardsArr.push(b); return ok({ id: b.id }, 201);
     }
     if ((m = path.match(/^\/api\/boards\/(\d+)$/))) {
@@ -536,6 +587,7 @@
           history: history.filter(h => h.taskId === t.id).slice(0, 80).map(h => ({ id: h.id, field: h.field, from: h.from, to: h.to, user: person(h.userId), createdAt: h.createdAt })) });
       }
       if (method === 'PATCH') {
+        t.updatedAt = now();   /* «حُدِّثت» تتغير بالتعديل الفعلي فقط، لا بمجرد فتح المهمة */
         const detail = ['title', 'description', 'priority', 'issueType', 'labels', 'storyPoints', 'estimateMin', 'startDate', 'dueDate', 'goalId', 'projectId', 'parentId', 'sprintId', 'assigneeId'].some(k => body[k] !== undefined);
         const detailEdit = ['title', 'description', 'priority', 'issueType', 'labels', 'storyPoints', 'estimateMin', 'startDate', 'dueDate', 'goalId', 'projectId', 'parentId', 'sprintId'].some(k => body[k] !== undefined) || body.customFields !== undefined;
         if (body.status !== undefined && body.status !== t.status && !spHas(u, t.projectId, 'move')) return err(403, 'صلاحيتك على هذه اللوحة لا تسمح بنقل المهام');
@@ -832,7 +884,8 @@
     }
     if (path === '/api/projects' && method === 'POST') {
       if (!can(u, 'projects.manage')) return err(403, 'ليست لديك صلاحية إنشاء المساحات');
-      const p = { id: ++seq, name: body.name, description: body.description || null, status: body.status || 'ACTIVE', ownerId: body.ownerId || u.id, startDate: body.startDate || null, endDate: body.endDate || null };
+      if (!String(body.name || '').trim()) return err(400, 'اسم المساحة مطلوب');
+      const p = { id: ++seq, name: String(body.name).trim(), description: body.description || null, status: body.status || 'ACTIVE', ownerId: body.ownerId || u.id, startDate: body.startDate || null, endDate: body.endDate || null };
       projects.push(p); logA(u, 'project.create', 'project', p.id, {});
       return ok({ id: p.id }, 201);
     }
@@ -923,7 +976,8 @@
       if (aud === 'CUSTOM' && !can(u, 'announcements.team') && !can(u, 'announcements.company')) return err(403, 'ليست لديك صلاحية النشر لأشخاص مختارين');
       const rcp = aud === 'CUSTOM' ? [...new Set(body.recipientIds || [])].filter(i => byId(i) && i !== u.id) : [];
       if (aud === 'CUSTOM' && !rcp.length) return err(400, 'اختر شخصاً واحداً على الأقل');
-      const a = { id: ++seq, title: body.title, body: body.body, audience: aud, pinned: !!body.pinned && can(u, 'announcements.company'), authorId: u.id, createdAt: now(), recipientIds: rcp };
+      if (!String(body.title || '').trim() || !String(body.body || '').trim()) return err(400, 'العنوان والنص مطلوبان');
+      const a = { id: ++seq, title: String(body.title).trim(), body: String(body.body).trim(), audience: aud, pinned: !!body.pinned && can(u, 'announcements.company'), authorId: u.id, createdAt: now(), recipientIds: rcp };
       announcements.push(a); logA(u, 'announcement.create', 'announcement', a.id, { audience: a.audience });
       const to = aud === 'COMPANY' ? users.map(x => x.id) : aud === 'CUSTOM' ? rcp : [...desc(u.id)];
       to.filter(i => i !== u.id).forEach(i => notifs.push({ id: ++seq, userId: i, type: 'ANNOUNCEMENT', actor: u.name, text: `تعميم جديد من ${u.name}: ${a.title}`, link: '#/announcements', read: false, createdAt: now() }));
@@ -949,6 +1003,7 @@
     if (path === '/api/attendance/check-out') {
       const r = attendance.find(a => a.userId === u.id && a.date === day(0) && !a.checkOut);
       if (!r) return err(409, 'لا يوجد حضور مفتوح لتسجيل الخروج');
+      if (Date.now() - new Date(r.checkIn).getTime() < 60000) return err(400, 'مرّت أقل من دقيقة على تسجيل الحضور. انتظر قليلاً قبل تسجيل الخروج.');
       r.checkOut = now(); return ok(null);
     }
     if (path === '/api/attendance/team') {
@@ -1125,7 +1180,7 @@
     }
     if ((m = path.match(/^\/api\/invitations\/(\d+)$/)) && method === 'DELETE') {
       const inv = invites.find(i => i.id === +m[1]); if (!inv) return err(404, 'الدعوة غير موجودة');
-      { const pu = users.find(x => x.id === inv.userId && x.invited && !x.pw); if (pu) users.splice(users.indexOf(pu), 1); }
+      { const pu = users.find(x => x.id === inv.userId && x.invited && !hasPw(x)); if (pu) users.splice(users.indexOf(pu), 1); }
       if (q.permanent === '1') { invites.splice(invites.indexOf(inv), 1); logA(u, 'invite.delete', 'invitation', inv.id, { email: inv.email }); return ok(null); }
       inv.status = 'REVOKED'; logA(u, 'invite.revoke', 'invitation', inv.id, { email: inv.email });
       return ok(null);

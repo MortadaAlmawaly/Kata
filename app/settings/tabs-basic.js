@@ -76,7 +76,7 @@ export function TabAccount({ me, reload, toast }) {
     window.addEventListener('beforeinstallprompt', h);
     return () => window.removeEventListener('beforeinstallprompt', h);
   }, []);
-  const pickTheme = t => { document.documentElement.dataset.theme = t; setTheme(t); try { localStorage.setItem('rb-theme', t); } catch (_) { /* تجاهل */ } };
+  const pickTheme = t => { document.documentElement.dataset.theme = t; setTheme(t); try { localStorage.setItem('kata-theme', t); } catch (_) { /* تجاهل */ } };
   return (
     <div className="grid two">
       <form className="card" onSubmit={async e => { e.preventDefault(); await run(() => api('PATCH', '/api/me', { name: p.name, phone: p.phone || null })); reload(); }}>
@@ -95,7 +95,7 @@ export function TabAccount({ me, reload, toast }) {
         <p className="muted small" style={{ marginTop: 8 }}>عند التغيير تُنهى جلساتك على الأجهزة الأخرى.</p>
         <button className="btn" style={{ marginTop: 14 }}>تغيير</button>
       </form>
-      <section className="card">
+      <section className="card pwa-card">
         <h3>تثبيت على الهاتف</h3>
         {!standalone ? (
           <>
@@ -225,7 +225,7 @@ export function TabApprovals({ me, reload, toast }) {
       reload();
     }}>
       <h3>حدود الموافقة على المبالغ ({o.currency})</h3>
-      <p className="muted small">الطلب الأكبر من حدّ الموافق يصعد تلقائياً للرئيس الأعلى منه. المدير التنفيذي بلا حد. الإجازات يعتمدها الرئيس المباشر.</p>
+      <p className="muted small">الطلب الأكبر من حدّ المعتمد يصعد تلقائياً للرئيس الأعلى منه. المدير التنفيذي بلا حد. الإجازات يعتمدها الرئيس المباشر.</p>
       {['MANAGER', 'DIRECTOR', 'GM'].map(r => (
         <label className="field" key={r}><span>{ROLE[r]} يوافق حتى</span>
           <input type="number" min="0" step="any" value={f[r]} onChange={e => setF({ ...f, [r]: e.target.value })} /></label>
@@ -273,7 +273,7 @@ export function TabSecurity({ me, reload, toast }) {
         <section className="card">
           <h3>سجل التدقيق</h3>
           <p className="muted small">كل العمليات الحساسة في النظام: من فعل ماذا ومتى (إنشاء مستخدمين، تغيير صلاحيات، اعتمادات…).</p>
-          <a className="btn ghost" style={{ marginTop: 12 }} href="/audit">فتح سجل التدقيق</a>
+          <a className="btn ghost" style={{ marginTop: 12 }} href={withBase('/audit')}>فتح سجل التدقيق</a>
         </section>
       )}
     </div>
@@ -309,7 +309,7 @@ export function TabIntegrations({ me, reload, toast, ask }) {
           <div className="toolbar" style={{ margin: '10px 0 0' }}>
             <button className="btn ghost" type="button" onClick={() => setShowIcs(s => !s)}>{showIcs ? 'إخفاء الرابط' : 'إظهار الرابط'}</button>
             <button className="btn" onClick={async () => { if (await copyText(ics.url)) toast('تم نسخ الرابط'); else toast('انسخه يدوياً', 'err'); }}>نسخ الرابط</button>
-            <button className="btn ghost" onClick={() => ask({ title: 'رابط جديد', text: 'سيتوقف الرابط القديم عن العمل.', ok: 'تجديد', danger: false,
+            <button className="btn ghost" style={{ marginInlineStart: 'auto', color: 'var(--bad)' }} onClick={() => ask({ title: 'رابط جديد', text: 'سيتوقف الرابط القديم عن العمل.', ok: 'تجديد', danger: false,
               onOk: async () => { await api('POST', '/api/integrations/ics/reset', {}); loadAll(); } })}>رابط جديد</button>
           </div>
           <ol className="steps"><li>Google: الإعدادات ← إضافة تقويم ← من عنوان URL</li><li>Apple: ملف ← اشتراك بتقويم جديد</li><li>Outlook: إضافة تقويم ← الاشتراك من الويب</li></ol>

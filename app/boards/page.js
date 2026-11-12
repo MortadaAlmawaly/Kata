@@ -26,7 +26,7 @@ export default function BoardPage() {
     const sp = board ? (board.filters || {}).projectId : (preset && (preset.filters || {}).projectId);
     const listBack = '/settings?tab=boards';
     const back = board ? '/tasks?board=' + board.id : listBack;
-    if (q.id && !board) body = <div className="notice">اللوحة غير موجودة أو لا تملك صلاحية تخصيصها. <a href="/tasks">رجوع للمهام</a></div>;
+    if (q.id && !board) body = <div className="notice">اللوحة غير موجودة أو لا تملك صلاحية تخصيصها. <a href={withBase('/tasks')}>رجوع للمهام</a></div>;
     else {
       body = (
         <>

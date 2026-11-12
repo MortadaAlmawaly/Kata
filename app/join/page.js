@@ -10,6 +10,7 @@ import { withBase } from '@/lib/base';
 
 function JoinInner() {
   const token = useSearchParams().get('token') || '';
+  useEffect(() => { document.title = 'الانضمام بدعوة — كاتا'; }, []);
   const [state, setState] = useState({ phase: 'loading' });
   const [name, setName] = useState('');
   const [pw, setPw] = useState('');

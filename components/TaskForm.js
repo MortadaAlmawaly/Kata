@@ -38,7 +38,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
   const [cf, setCf] = useState(() => ({ ...(t.customFields || {}) }));
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const [more, setMore] = useState(false);          // «كل الحقول» (النموذج الكامل)
+  const [more, setMore] = useState(false);          // «المزيد من الحقول» (النموذج الكامل)
   const [another, setAnother] = useState(false);   // «إنشاء مهمة أخرى»
   const files = useRef(null);
   const [cover, setCover] = useState(null);          // ملف صورة الغلاف
@@ -47,7 +47,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
     const f = e.target.files && e.target.files[0];
     if (coverUrl) URL.revokeObjectURL(coverUrl);
     if (!f) { setCover(null); setCoverUrl(''); return; }
-    if (!/\.(png|jpe?g|webp)$/i.test(f.name)) { setErr('الغلاف صورة PNG أو JPG أو WEBP'); e.target.value = ''; return; }
+    if (!/\.(png|jpe?g|webp)$/i.test(f.name)) { setErr('الغلاف لازم يكون صورة (بصيغ PNG أو JPG أو WEBP)'); e.target.value = ''; return; }
     if (f.size > 8 * 1024 * 1024) { setErr('حجم الغلاف أكبر من 8MB'); e.target.value = ''; return; }
     setErr(''); setCover(f); setCoverUrl(URL.createObjectURL(f));
   };
@@ -152,7 +152,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
               <small className="muted">الحالة الأولية عند الإنشاء</small></label>
           )}
         </div>
-        <label className="field"><span>الملخّص</span><input value={f.title} maxLength={120} required onChange={set('title')} /></label>
+        <label className="field"><span>العنوان</span><input value={f.title} maxLength={120} required onChange={set('title')} /></label>
         <label className="field"><span>الوصف</span><textarea rows={5} value={f.description} maxLength={10000} onChange={set('description')} /></label>
         <div className="row2">
           {ctx.users.length > 1 && (
@@ -175,12 +175,12 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
               <option value="">— بدون —</option>
               {R.projects.filter(p => p.status !== 'DONE' || p.id === t.projectId).map(p => <option key={p.id} value={p.id}>{p.key ? p.key + ' — ' : ''}{p.name}</option>)}
             </select></label>}
-          <label className="field qc-extra"><span>السباق</span>
+          <label className="field qc-extra"><span>الدورة</span>
             <select value={f.sprintId} onChange={set('sprintId')}>
               <option value="">قائمة الانتظار</option>
               {R.sprints.filter(s => s.state !== 'CLOSED').map(s => <option key={s.id} value={s.id}>{s.name}{s.state === 'ACTIVE' ? ' (جارٍ)' : ''}</option>)}
             </select></label>
-          <label className="field qc-extra"><span>الأم / الملحمة (اكتب الرقم مثل NKH-3)</span>
+          <label className="field qc-extra"><span>المهمة الرئيسية (اكتب الرقم مثل NKH-3)</span>
             <input list="dlEpics" value={f.parentKey} placeholder="NKH-3" dir="ltr" style={{ textAlign: 'right' }} onChange={set('parentKey')} /></label>
           <datalist id="dlEpics">{R.epics.map(e => <option key={e.key} value={e.key}>{e.title}</option>)}</datalist>
           <label className="field qc-extra"><span>مرتبطة بهدف</span>
@@ -222,11 +222,11 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
             <FileInputAr accept="image/png,image/jpeg,image/webp" onChange={pickCover} btn="اختيار صورة" />
             {cover && <button type="button" className="btn ghost sm" onClick={() => { setCover(null); if (coverUrl) URL.revokeObjectURL(coverUrl); setCoverUrl(''); }}>إزالة</button>}
           </div>
-          <small className="muted">صورة تظهر أعلى بطاقة المهمة على اللوحة (PNG / JPG / WEBP حتى 8MB)</small></div>
+          <small className="muted">صورة تظهر أعلى بطاقة المهمة على اللوحة (بصيغ PNG وJPG وWEBP، حتى 8 ميغابايت)</small></div>
         <FilePicker label="مرفقات (اختياري)" inputRef={files} />
         <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
-          {!ex && <button type="button" className="btn ghost" onClick={() => setMore(m => !m)}>{more ? 'حقول أقل' : 'كل الحقول'}</button>}
+          {!ex && <button type="button" className="btn ghost" onClick={() => setMore(m => !m)}>{more ? 'حقول أقل' : 'المزيد من الحقول'}</button>}
           {!ex && <label className="check" style={{ marginInlineEnd: 'auto' }}><input type="checkbox" checked={another} onChange={e => setAnother(e.target.checked)} /> إنشاء مهمة أخرى</label>}
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
           <button type="submit" className="btn" disabled={busy}>{ex ? 'حفظ' : 'إنشاء'}</button>

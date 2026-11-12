@@ -216,7 +216,7 @@ export default function TypeLayoutEditor({ types, fields, fieldLabels = {}, layo
             {coreAvail.map(k => palItem(k))}
             {cfAvail.length > 0 && <div className="ltx-gh">مخصّصة</div>}
             {cfAvail.map(k => palItem(k))}
-            {!avail.length && <p className="ltx-empty">كل الحقول مضافة.</p>}
+            {!avail.length && <p className="ltx-empty">المزيد من الحقول مضافة.</p>}
           </div>
         </aside>
       )}

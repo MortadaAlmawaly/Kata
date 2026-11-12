@@ -9,9 +9,9 @@
   --navy:#031A4D; --teal:#02CED2; --sky:#08A3ED; --mint:#69FFAF;
   --bg:#F4F6FA; --panel:#FFFFFF; --panel-2:#F0F3F9; --panel-3:#E7ECF4;
   --line:#E2E8F1; --line-2:#CDD6E4;
-  --text:#0B1B3A; --muted:#566783; --dim:#8794AD;
-  --accent:#0A7BC4; --accent-2:#08A3ED; --accent-text:#0A7BC4; --accent-ink:#FFFFFF; --accent-soft:color-mix(in srgb,var(--accent) 10%,transparent);
-  --ok:#0E9F6E; --warn:#C96A0A; --bad:#D6333E; --violet:#7C4DDB;
+  --text:#0B1B3A; --muted:#566783; --dim:#5B6A84;
+  --accent:#0A6DB5; --accent-2:#08A3ED; --accent-text:#0A6DB5; --accent-ink:#FFFFFF; --accent-soft:color-mix(in srgb,var(--accent) 10%,transparent);
+  --ok:#0A7F58; --warn:#B45D07; --bad:#C42B36; --violet:#7C4DDB;
   --shadow-sm:0 1px 2px rgba(11,27,58,.06);
   --shadow:0 1px 2px rgba(11,27,58,.05),0 8px 24px rgba(11,27,58,.06);
   --shadow-lg:0 24px 64px rgba(11,27,58,.22);
@@ -22,7 +22,7 @@
 :root[data-theme="dark"]{
   --bg:#1F1F21; --panel:#2B2C2F; --panel-2:#34353A; --panel-3:#3E3F45;
   --line:#3A3B40; --line-2:#4B4C52;
-  --text:#ECEDEF; --muted:#A8AAB0; --dim:#7C7E86;
+  --text:#ECEDEF; --muted:#A8AAB0; --dim:#9A9CA5;
   --accent:#34BDEB; --accent-2:#69FFAF; --accent-text:#34BDEB; --accent-ink:#031A4D;
   --ok:#3DD6A3; --warn:#F5B34A; --bad:#FF7A84; --violet:#A98BFF;
   --shadow-sm:0 1px 2px rgba(0,0,0,.35);
@@ -2740,3 +2740,28 @@ bdi.t,.ev-time,.ag-time{unicode-bidi:isolate;direction:ltr;display:inline-block}
 /* حقل التاريخ: الأرقام يميناً (بداية السطر بالعربي) والأيقونة يساراً دون تداخل */
 .date-in>input[type=text]{text-align:right;padding-inline:38px 12px}
 .date-pick{left:6px;right:auto;inset-inline-end:auto}
+
+/* QA4: تباين + أهداف اللمس + خطوط صغيرة + زينة الـhero لا تلتقط اللمس */
+.hero::after,.hero::before{pointer-events:none}
+.hero>*{position:relative;z-index:1}
+.field>span,.muted.small,small.muted,.fact small,.kv span{font-size:max(.75rem,12px)}
+@media (pointer:coarse),(max-width:760px){
+  .icon-btn,.seg button,.btn.sm,.tabbar a,.mtabs button,.dt-tab,.chips-row button{min-height:44px;min-width:44px}
+  .seg button{padding-inline:14px}
+  .btn.sm{padding-block:10px}
+  .date-pick{width:40px;height:40px}
+}
+/* الجداول على الموبايل → بطاقات (الجدول الذي يضع data-label بخلاياه) */
+@media (max-width:700px){
+  table.cardify,table.cardify tbody,table.cardify tr,table.cardify td{display:block;width:100%;min-width:0!important;max-width:100%;box-sizing:border-box}
+  table.cardify td{white-space:normal;overflow-wrap:anywhere}
+  table.cardify thead{display:none}
+  table.cardify tr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+  table.cardify td{border:0;padding:6px 0;display:flex;justify-content:space-between;gap:12px;align-items:center;text-align:start}
+  table.cardify td::before{content:attr(data-label);color:var(--muted);font-size:.75rem;flex:0 0 auto}
+  table.cardify td:empty{display:none}
+  .table-wrap:has(> table.cardify){overflow:visible;border:0;background:transparent;box-shadow:none}
+}
+
+/* QA4: بطاقة التثبيت أول شي على الموبايل */
+@media (max-width:760px){ .pwa-card{order:-1} }

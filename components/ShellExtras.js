@@ -24,7 +24,13 @@ export function useBadges(me) {
   const last = useRef(null);
   const refresh = useCallback(async () => {
     try {
-      const [n, s] = await Promise.all([api('GET', '/api/notifications'), api('GET', '/api/requests/summary')]);
+      const [n0, s, pol] = await Promise.all([api('GET', '/api/notifications'), api('GET', '/api/requests/summary'), api('GET', '/api/policies/summary').catch(() => ({ pending: 0 }))]);
+      /* السياسات المنتظرة إقرارك تظهر بالجرس أيضاً: نفس مصدر شريط لوحة المتابعة */
+      const pend = (pol && pol.pending) || 0;
+      const n = pend > 0
+        ? { ...n0, unread: n0.unread + 1, items: [{ id: -1, type: 'POLICY', actor: 'السياسات', read: false, link: '/policies', createdAt: new Date().toISOString(),
+          text: pend === 1 ? 'لديك سياسة واحدة تحتاج إقرارك' : pend === 2 ? 'لديك سياستان تحتاجان إقرارك' : `لديك ${pend} ${pend <= 10 ? 'سياسات' : 'سياسة'} تحتاج إقرارك` }, ...n0.items] }
+        : n0;
       const newest = n.items.filter(i => i.type === 'MENTION' && !i.read).reduce((m, i) => Math.max(m, i.id), 0);
       if (last.current !== null && newest > last.current) {
         const it = n.items.find(i => i.id === newest);
@@ -65,7 +71,7 @@ export function Bell({ badges }) {
     } catch (_) { /* تجاهل */ }
   }
   function readOne(n) {
-    api('POST', '/api/notifications/read', { ids: [n.id] }).catch(() => {});
+    if (n.id > 0) api('POST', '/api/notifications/read', { ids: [n.id] }).catch(() => {});
     if (!n.read) {
       setState(s => ({
         ...s, items: s.items.map(i => (i.id === n.id ? { ...i, read: true } : i)), unread: Math.max(0, s.unread - 1),

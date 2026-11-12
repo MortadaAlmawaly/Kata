@@ -1,6 +1,7 @@
 'use client';
 /* عروض المهام الإضافية داخل صفحة المهام: التقويم · المشاريع · الأهداف · التقارير.
    كلها خاصة بالمهام (تعمل على قائمة المهام المصفّاة نفسها)، وليست صفحات الموقع العامة. */
+import { plural } from './hooks';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { PRIORITY, STATUS } from '../lib/constants';
@@ -132,7 +133,7 @@ export function TaskProjects({ tasks, onOpen, onShowInBoard, onCreate }) {
           return (
             <article className={`card goal-card ${open === g.id ? 'tv-on' : ''}`} key={g.id} onClick={() => setOpen(open === g.id ? null : g.id)}>
               <div className="top"><Ring pct={pct} size={54} stroke={6} />
-                <div style={{ flex: 1, minWidth: 0 }}><h4>{g.name}</h4><div className="owner">{g.key && <b dir="ltr">{g.key}</b>} {g.list.length} مهمة</div></div></div>
+                <div style={{ flex: 1, minWidth: 0 }}><h4>{g.name}</h4><div className="owner">{g.key && <b dir="ltr">{g.key}</b>} {plural(g.list.length, 'مهمة', 'مهمتان', 'مهام', 'مهمة')}</div></div></div>
               <div className="proj-stats"><span>{done}/{g.list.length} منجزة</span>
                 {overdue ? <span className="badge overdue">{overdue} متأخرة</span> : <span>بدون تأخير</span>}</div>
               <div className="jf-avatars">{people.map(p => <Avatar key={p.id} name={p.name} size={26} />)}</div>
@@ -189,7 +190,7 @@ export function TaskGoals({ tasks, onOpen, onCreate }) {
             <div className="top">
               <Ring pct={g.progress} size={52} stroke={6} />
               <div style={{ flex: 1, minWidth: 0 }}><h4 style={{ margin: 0 }}>{g.title}</h4>
-                <div className="muted small">{g.owner.name} · {g.period} · {done}/{list.length} مهمة منجزة</div></div>
+                <div className="muted small">{g.owner.name} · {g.period} · {done}/{list.length} من المهام منجزة</div></div>
               {g.editable && <button className="btn ghost sm" onClick={() => onCreate(g.id)}>+ مهمة لهذا الهدف</button>}
             </div>
             {list.length > 0 && <Bar p={list.length ? Math.round(done / list.length * 100) : 0} />}
@@ -239,7 +240,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
     return { label: `${end.getMonth() + 1}/${end.getDate()}`, created: tasks.filter(t => inR(t.createdAt)).length, done: tasks.filter(t => inR(t.completedAt)).length };
   });
 
-  /* Burndown للسباق الجاري (نقاط القصة) */
+  /* مخطط الإنجاز للدورة الجاري (نقاط القصة) */
   const sprint = sprints.find(s => s.state === 'ACTIVE');
   let burn = null;
   if (sprint && sprint.startDate && sprint.endDate) {
@@ -263,7 +264,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
         <Kpi l="إجمالي المهام" v={fmt(total)} sub={`${open} مفتوحة`} />
         <Kpi l="منجزة" v={done.length} sub={total ? `${Math.round(done.length / total * 100)}% من الكل` : '—'} cls="ok" />
         <Kpi l="متأخرة" v={overdue.length} sub="تجاوزت التسليم" cls={overdue.length ? 'bad' : 'ok'} />
-        <Kpi l="متوسط زمن الإنجاز" v={avgCycle == null ? '—' : `${avgCycle} يوم`} sub="من الإنشاء للإكمال" />
+        <Kpi l="متوسط زمن الإنجاز" v={avgCycle == null ? '—' : plural(Math.round(avgCycle), 'يوم', 'يومين', 'أيام', 'يوماً')} sub="من الإنشاء للإكمال" />
       </div>
 
       <div className="grid two">
@@ -288,7 +289,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
       </div>
 
       <section className="card">
-        <h3>{burn ? `Burndown — ${burn.sprint.name}` : 'Burndown السباق الجاري'}</h3>
+        <h3>{burn ? `مخطط الإنجاز — ${burn.sprint.name}` : 'مخطط الإنجاز الدورة الجاري'}</h3>
         {burn ? (
           <>
             <ChartLine points={burn.labels} series={[
@@ -296,7 +297,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
               { name: 'الفعلي', values: burn.actual, color: 'var(--accent-text, var(--accent))', area: true }]} w={760} h={240} />
             <small className="muted">الإجمالي {burn.totalPts} نقطة (المهمة بلا نقاط تُحسب بنقطة واحدة).</small>
           </>
-        ) : <p className="muted">لا يوجد سباق جارٍ بتاريخي بداية ونهاية. أنشئ سباقاً وابدأه من تبويب قائمة الانتظار.</p>}
+        ) : <p className="muted">لا يوجد دورة جارٍ بتاريخي بداية ونهاية. أنشئ دورةاً وابدأه من تبويب قائمة الانتظار.</p>}
       </section>
 
       <section className="card">

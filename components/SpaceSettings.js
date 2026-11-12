@@ -138,8 +138,8 @@ export function SpacesHome({ me, toast }) {
               <h4>{s.name}</h4>
               <p className="muted small">{s.boards.length} لوحة · {s.fields.length} حقل مخصّص</p>
               <div className="sp-acts">
-                <a className="btn sm ghost" href={'/tasks?space=' + s.id}>فتح المهام</a>
-                {s.canManage && <a className="btn sm" href={'/spaces?id=' + s.id}>إعدادات المساحة</a>}
+                <a className="btn sm ghost" href={withBase('/tasks?space=' + s.id)}>فتح المهام</a>
+                {s.canManage && <a className="btn sm" href={withBase('/spaces?id=' + s.id)}>إعدادات المساحة</a>}
               </div>
             </div>
           </div>
@@ -180,15 +180,15 @@ export function SpaceDetail({ me, id, toast, ask, reloadMe }) {
   }, [id, toast]);
   useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if (space === null) return null;
-  if (space === false) return <div className="notice">المساحة غير موجودة. <a href="/spaces">كل المساحات</a></div>;
+  if (space === false) return <div className="notice">المساحة غير موجودة. <a href={withBase('/spaces')}>كل المساحات</a></div>;
 
   return (
     <>
       <div className="sp-head" style={{ background: bgCss(space.background) || 'var(--panel-2)' }}>
         <div><small>إعدادات المساحة</small><h2>{space.name} <span className="sp-key">{space.key}</span></h2></div>
         <span className="grow" />
-        <a className="btn sm ghost" href="/spaces">كل المساحات</a>
-        <a className="btn sm" href={'/tasks?space=' + space.id}>فتح المهام</a>
+        <a className="btn sm ghost" href={withBase('/spaces')}>كل المساحات</a>
+        <a className="btn sm" href={withBase('/tasks?space=' + space.id)}>فتح المهام</a>
       </div>
       <div className="toolbar"><MobileTabs label="قسم المساحة" tabs={TABS} value={tab} onPick={setTab} /><div className="seg wrap m-hide-sm">{TABS.map(([k, l]) => <button key={k} className={k === tab ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>)}</div></div>
       {tab === 'general' && <GeneralTab space={space} toast={toast} ask={ask} onSaved={load} />}
@@ -231,7 +231,7 @@ function BoardsTab({ space, boards, me, toast, ask, bform, setBform, reload, rel
       <div className="notice" style={{ margin: '0 0 12px' }}>لكل لوحة <b>أعمدتها (سير العمل)</b> وأسماؤها وألوانها وحدود العمل، وحقولها ومسمياتها وشكل بطاقتها. لوحات هذه المساحة تعرض مهام المساحة فقط.</div>
       <div className="toolbar" style={{ margin: '0 0 12px' }}>
         <h3 style={{ margin: 0 }}>لوحات «{space.name}» ({boards.length})</h3><span className="grow" />
-        <a className="btn" href={'/boards?new=1&space=' + space.id}>＋ لوحة جديدة</a>
+        <a className="btn" href={withBase('/boards?new=1&space=' + space.id)}>＋ لوحة جديدة</a>
       </div>
       <div className="table-wrap">
         <table>
@@ -242,7 +242,7 @@ function BoardsTab({ space, boards, me, toast, ask, bform, setBform, reload, rel
                 <td><b>{b.name}</b></td>
                 <td>{b.autoColumns ? 'حالات الشركة' : (b.columns || []).map(c => c.name || c.status).join(' ‹ ')}</td>
                 <td className="nowrap">
-                  <a className="btn sm" href={'/boards?id=' + b.id}>تخصيص اللوحة وسير العمل</a>{' '}
+                  <a className="btn sm" href={withBase('/boards?id=' + b.id)}>تخصيص اللوحة وسير العمل</a>{' '}
                   <button className="btn sm danger" onClick={() => remove(b)}>حذف</button>
                 </td>
               </tr>

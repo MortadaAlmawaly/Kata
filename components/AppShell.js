@@ -179,7 +179,7 @@ function ShellChrome({ active, title, sub, me, shown = true, children }) {
                             const ic = (b.detail && b.detail.icon) || {};
                             const on = active === 'tasks' && curBoard != null && String(curBoard) === String(b.id);
                             return (
-                              <a key={b.id} role="listitem" href={`/tasks?board=${b.id}`} className={on ? 'on' : ''} onClick={() => setOpen(false)}>
+                              <a key={b.id} role="listitem" href={withBase(`/tasks?board=${b.id}`)} className={on ? 'on' : ''} onClick={() => setOpen(false)}>
                                 <span className="jp-ico nav-bico" aria-hidden="true" style={{ background: ic.c || '#e5484d' }}><FIcon n={ic.k || 'layout'} size={11} /></span>
                                 <span className="nav-bn">{b.name}</span>
                               </a>

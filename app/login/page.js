@@ -1,6 +1,6 @@
 'use client';
 /* صفحة الدخول وتسجيل شركة جديدة — ترحيل React لـ public/login.html + login.js (نفس السلوك والـ API). */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { authCall } from '../../lib/api';
 import { LangButton, LogoSet, Modal, ThemeInit } from '../../components/ui';
 import './login.css';
@@ -14,7 +14,11 @@ const LEVELS = [
   ['1', 'الموظف — مهامه وأهدافه وطلباته'],
 ];
 
+/* النسخة التجريبية المعزولة: التسجيل مغلق، فنخفي تبويب «تسجيل شركة جديدة» */
+const DEMO = process.env.NEXT_PUBLIC_DEMO === '1';
+
 export default function LoginPage() {
+  useEffect(() => { document.title = 'تسجيل الدخول — كاتا'; }, []);
   const [mode, setMode] = useState('login');
   const [showPw, setShowPw] = useState(false);
   const [form, setForm] = useState({ company: '', name: '', email: '', password: '' });
@@ -26,7 +30,13 @@ export default function LoginPage() {
 
   async function submit(e) {
     e.preventDefault();
-    setErr(''); setBusy(true);
+    setErr('');
+    const em = form.email.trim();
+    if (!em) return setErr('اكتب البريد الإلكتروني');
+    if (!/^\S+@\S+\.\S+$/.test(em)) return setErr('صيغة البريد الإلكتروني غير صحيحة');
+    if (!form.password) return setErr('اكتب كلمة المرور');
+    if (reg && (!form.company.trim() || !form.name.trim())) return setErr('اكتب اسم الشركة واسمك');
+    setBusy(true);
     try {
       const body = reg
         ? { company: form.company, name: form.name, email: form.email, password: form.password }
@@ -52,7 +62,7 @@ export default function LoginPage() {
           <p className="lead">{reg ? 'أنشئ شركتك وكن مديرها التنفيذي، ثم أضف فريقك' : 'ادخل بحساب شركتك'}</p>
           <div className="tabs" role="tablist">
             <button type="button" className={!reg ? 'active' : ''} onClick={() => { setMode('login'); setErr(''); }}>دخول</button>
-            <button type="button" className={reg ? 'active' : ''} onClick={() => { setMode('register'); setErr(''); }}>تسجيل شركة جديدة</button>
+            {!DEMO && <button type="button" className={reg ? 'active' : ''} onClick={() => { setMode('register'); setErr(''); }}>تسجيل شركة جديدة</button>}
           </div>
           <form onSubmit={submit} noValidate>
             {reg && (
@@ -77,7 +87,7 @@ export default function LoginPage() {
             <button className="btn full" type="submit" disabled={busy}>{reg ? 'إنشاء الشركة' : 'دخول'}</button>
             <p className="err" role={err ? 'alert' : undefined}>{err}</p>
           </form>
-          <p className="muted small">الحسابات تُنشأ من قِبل مديرك. التسجيل بالأعلى لمن يُنشئ شركته لأول مرة.</p>
+          <p className="muted small">{DEMO ? 'الحسابات تُنشأ من قِبل مديرك.' : 'الحسابات تُنشأ من قِبل مديرك. التسجيل بالأعلى لمن يُنشئ شركته لأول مرة.'}</p>
         </main>
 
         <button type="button" className="levels-btn" onClick={() => setShowLevels(true)}>كيف تعمل مستويات الصلاحيات؟</button>

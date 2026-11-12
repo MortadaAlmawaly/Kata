@@ -1,5 +1,6 @@
 'use client';
 /* التحليلات — ترحيل React لـ viewAnalytics (views-biz.js) + تصدير PDF عبر الطباعة. */
+import { plural } from '@/components/hooks';
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { fmt, todayStr } from '../../lib/util';
@@ -116,7 +117,7 @@ export default function AnalyticsPage() {
       <div className="toolbar">
         <span className="grow muted">{d ? `اتجاهات أداء نطاقك (${d.people} شخصاً).` : ''}</span>
         <select className="input" style={{ width: 'auto' }} value={weeks} onChange={e => setWeeks(+e.target.value)}>
-          {[8, 12, 26].map(n => <option key={n} value={n}>آخر {n} أسبوع</option>)}
+          {[8, 12, 26].map(n => <option key={n} value={n}>آخر {plural(n, 'أسبوع', 'أسبوعين', 'أسابيع', 'أسبوعاً')}</option>)}
         </select>
         <button type="button" className="btn" onClick={pdf} disabled={!d}><Icon name="reports" /> تصدير PDF</button>
       </div>

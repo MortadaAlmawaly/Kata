@@ -29,8 +29,6 @@ export function StatusMenu({ ctx, status, onPick }) {
           <div className="st-head">الانتقال إلى</div>
           {targets.map(([k, l]) => (
             <button type="button" role="menuitem" className="st-item" key={k} onClick={() => { setOpen(false); onPick(k); }}>
-              <span className="st-lab">الانتقال إلى</span>
-              <FIcon n="arrow" size={16} />
               <span className="st-chip" style={{ '--sc': colorOf(ctx, k) }}>{l}</span>
             </button>
           ))}

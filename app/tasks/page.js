@@ -1,5 +1,6 @@
 'use client';
 /* المهام (لوحة / قائمة الانتظار / قائمة) — ترحيل viewTasks (tasks-pro.js). */
+import { plural } from '@/components/hooks';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bgCss, bgCssThemed } from '../../components/SpaceSettings';
 import { createPortal } from 'react-dom';
@@ -36,8 +37,8 @@ function Tasks() {
   const [group, setGroup] = useState('');
   /* إعدادات العرض الشخصية (مثل View settings في Jira): لا تغيّر إعدادات اللوحة لبقية الناس */
   const [vs, setVs] = useState({ fields: {}, density: '', quick: true, full: false });
-  useEffect(() => { try { const v = JSON.parse(localStorage.getItem('rb-viewset') || 'null'); if (v) setVs(s => ({ ...s, ...v, full: false })); } catch (_) { /* لا تخزين */ } }, []);
-  const updVs = patch => setVs(s => { const n = { ...s, ...patch }; try { localStorage.setItem('rb-viewset', JSON.stringify(n)); } catch (_) { /* تجاهل */ } return n; });
+  useEffect(() => { try { const v = JSON.parse(localStorage.getItem('kata-viewset') || 'null'); if (v) setVs(s => ({ ...s, ...v, full: false })); } catch (_) { /* لا تخزين */ } }, []);
+  const updVs = patch => setVs(s => { const n = { ...s, ...patch }; try { localStorage.setItem('kata-viewset', JSON.stringify(n)); } catch (_) { /* تجاهل */ } return n; });
   useEffect(() => { document.documentElement.classList.toggle('jira-full', !!vs.full); return () => document.documentElement.classList.remove('jira-full'); }, [vs.full]);
   const pendingSpace = useRef(null);
   const pendingBoard = useRef(null);
@@ -62,9 +63,9 @@ function Tasks() {
   const isCfg = !!(me && (me.perms.includes('admin') || me.perms.includes('boards.manage')));   // الأدمن والمدير التنفيذي فقط يتحكّمان بشكل المهام
 
   useEffect(() => {
-    try { const v = localStorage.getItem('rb-taskview'); if (['board', 'backlog', 'list', 'calendar', 'goals', 'reports', 'archive'].includes(v)) setView(v); } catch (_) { /* لا تخزين */ }
+    try { const v = localStorage.getItem('kata-taskview'); if (['board', 'backlog', 'list', 'goals', 'reports', 'archive'].includes(v)) setView(v); } catch (_) { /* لا تخزين */ }
   }, []);
-  const pickView = v => { setView(v); try { localStorage.setItem('rb-taskview', v); } catch (_) { /* تجاهل */ } };
+  const pickView = v => { setView(v); try { localStorage.setItem('kata-taskview', v); } catch (_) { /* تجاهل */ } };
   useEffect(() => { if (me && !canTeam && scope !== 'mine') setScope('mine'); }, [me, canTeam, scope]);
 
   const load = useCallback(async () => {
@@ -152,7 +153,7 @@ function Tasks() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
-  const foldKey = 'rb-colfold-' + (board ? board.id : 0);
+  const foldKey = 'kata-colfold-' + (board ? board.id : 0);
   useEffect(() => {
     try { setFolds(new Set(JSON.parse(localStorage.getItem(foldKey) || '[]'))); } catch (_) { setFolds(new Set()); }
   }, [foldKey]);
@@ -247,7 +248,7 @@ function Tasks() {
           return s ? <div className="cf-chip" key={d2.key} title={ctx.cfLabel(d2)}><b>{ctx.cfLabel(d2)}:</b> {s}</div> : null;
         })}
         {days != null && (
-          <div className={`dic ${days >= 5 ? 'old' : ''}`} title={`في هذا العمود منذ ${days} يوم`}>
+          <div className={`dic ${days >= 5 ? 'old' : ''}`} title={`في هذا العمود منذ ${plural(days, 'يوم', 'يومين', 'أيام', 'يوماً')}`}>
             {[1, 2, 3, 4, 5].map(i => <i key={i} className={i <= Math.max(1, days) ? 'on' : ''} />)}
           </div>
         )}
@@ -418,7 +419,7 @@ function Tasks() {
       const id = +e.dataTransfer.getData('text/plain');
       const t = A.find(x => x.id === id);
       if (!t || (t.sprintId || null) === to) return;
-      move(id, { sprintId: to }, to ? `نُقلت ${t.key} إلى السباق` : `أُعيدت ${t.key} إلى قائمة الانتظار`);
+      move(id, { sprintId: to }, to ? `نُقلت ${t.key} إلى الدورة` : `أُعيدت ${t.key} إلى قائمة الانتظار`);
     };
     const Row = ({ t }) => (
       <div className={`bl-row ${t.status === 'DONE' ? 'done' : ''}`} draggable={canMove} onClick={() => openDetail(t.id)}
@@ -436,8 +437,8 @@ function Tasks() {
     return (
       <>
         <div className="bl-bar">
-          {canTeam && <button className="btn ghost sm" onClick={() => setSprintForm({ sprint: null })}>+ إنشاء سباق</button>}
-          <span className="muted small">اسحب المهام بين السباقات وقائمة الانتظار لتخطيط العمل.</span>
+          {canTeam && <button className="btn ghost sm" onClick={() => setSprintForm({ sprint: null })}>+ إنشاء دورة</button>}
+          <span className="muted small">اسحب المهام بين الدورات وقائمة الانتظار لتخطيط العمل.</span>
         </div>
         {liveSprints.map(s => {
           const items = list.filter(t => t.sprintId === s.id);
@@ -452,14 +453,14 @@ function Tasks() {
                   {s.goal && <div className="muted small"><FIcon n="target" size={13} /> {s.goal}</div>}
                 </div>
                 <div className="bl-stats">
-                  <span className="n">{items.length} مهمة</span><span className="n">{pts} نقطة</span><span className="n">{doneN} منجزة</span>
+                  <span className="n">{plural(items.length, 'مهمة', 'مهمتان', 'مهام', 'مهمة')}</span><span className="n">{pts} نقطة</span><span className="n">{doneN} منجزة</span>
                   {canTeam && (
                     <>
-                      {s.state === 'PLANNED' && <button type="button" className="btn sm" onClick={() => setSprintAct({ kind: 'start', sprint: s })}>بدء السباق</button>}
-                      {s.state === 'ACTIVE' && <button type="button" className="btn sm ok" onClick={() => setSprintAct({ kind: 'done', sprint: s })}>إنهاء السباق</button>}
+                      {s.state === 'PLANNED' && <button type="button" className="btn sm" onClick={() => setSprintAct({ kind: 'start', sprint: s })}>بدء الدورة</button>}
+                      {s.state === 'ACTIVE' && <button type="button" className="btn sm ok" onClick={() => setSprintAct({ kind: 'done', sprint: s })}>إنهاء الدورة</button>}
                       <button type="button" className="btn sm ghost" onClick={() => setSprintForm({ sprint: s })}>تعديل</button>
-                      {s.state !== 'ACTIVE' && <button type="button" className="btn sm danger" onClick={() => ask({ title: 'حذف السباق', text: 'تعود مهامه إلى قائمة الانتظار.', ok: 'حذف',
-                        onOk: async () => { await api('DELETE', '/api/sprints/' + s.id); toast('تم حذف السباق'); load(); } })}>حذف</button>}
+                      {s.state !== 'ACTIVE' && <button type="button" className="btn sm danger" onClick={() => ask({ title: 'حذف الدورة', text: 'تعود مهامه إلى قائمة الانتظار.', ok: 'حذف',
+                        onOk: async () => { await api('DELETE', '/api/sprints/' + s.id); toast('تم حذف الدورة'); load(); } })}>حذف</button>}
                     </>
                   )}
                 </div>
@@ -474,7 +475,7 @@ function Tasks() {
         <section className="bl-box">
           <header className="bl-head">
             <div><b>قائمة الانتظار</b> <small className="muted">مهام غير مجدولة</small></div>
-            <div className="bl-stats"><span className="n">{backlog.length} مهمة</span><span className="n">{backlog.reduce((a, t) => a + (t.storyPoints || 0), 0)} نقطة</span></div>
+            <div className="bl-stats"><span className="n">{plural(backlog.length, 'مهمة', 'مهمتان', 'مهام', 'مهمة')}</span><span className="n">{backlog.reduce((a, t) => a + (t.storyPoints || 0), 0)} نقطة</span></div>
           </header>
           <div className="bl-list" {...dz(null)}>
             {backlog.map(t => <Row key={t.id} t={t} />)}
@@ -517,14 +518,13 @@ function Tasks() {
           <span className="muted small">{open} مفتوحة</span>
         </div>
         <MobileTabs label="عرض اللوحة" value={view} onPick={pickView}
-          tabs={[['board', 'اللوحة'], ['backlog', 'قائمة الانتظار'], ['list', 'قائمة'], ['calendar', 'التقويم'], ['goals', 'الأهداف'], ['reports', 'التقارير'], ['archive', 'الأرشيف']]} />
+          tabs={[['board', 'اللوحة'], ['backlog', 'قائمة الانتظار'], ['list', 'قائمة'], ['goals', 'الأهداف'], ['reports', 'تقدّم الدورة'], ['archive', 'الأرشيف']]} />
         <nav className="jp-tabs m-hide-sm" aria-label="أقسام اللوحة">
           <button type="button" className={view === 'board' ? 'on' : ''} onClick={() => pickView('board')}><Icon name="projects" size={15} /> اللوحة</button>
           <button type="button" className={view === 'backlog' ? 'on' : ''} onClick={() => pickView('backlog')}><Icon name="menu" size={15} /> قائمة الانتظار</button>
           <button type="button" className={view === 'list' ? 'on' : ''} onClick={() => pickView('list')}><Icon name="tasks" size={15} /> قائمة</button>
-          <button type="button" className={view === 'calendar' ? 'on' : ''} onClick={() => pickView('calendar')}><Icon name="calendar" size={15} /> التقويم</button>
           <button type="button" className={view === 'goals' ? 'on' : ''} onClick={() => pickView('goals')}><Icon name="goals" size={15} /> الأهداف</button>
-          <button type="button" className={view === 'reports' ? 'on' : ''} onClick={() => pickView('reports')}><Icon name="reports" size={15} /> التقارير</button>
+          <button type="button" className={view === 'reports' ? 'on' : ''} onClick={() => pickView('reports')}><Icon name="reports" size={15} /> تقدّم الدورة</button>
           <button type="button" className={view === 'archive' ? 'on' : ''} onClick={() => pickView('archive')}><FIcon n="folder" size={15} /> الأرشيف</button>
         </nav>
       </div>
@@ -532,7 +532,7 @@ function Tasks() {
       {canArchive && arch && arch.tasks.length > 0 && view !== 'archive' && (
         <div className="arch-banner" role="status">
           <span className="arch-ic" aria-hidden="true"><FIcon n="folder" size={18} /></span>
-          <div className="arch-tx"><b>{arch.tasks.length} مهمة منجزة منذ أكثر من {arch.days} يوماً</b><small>تنتظر موافقتك لنقلها إلى الأرشيف. تجدها لاحقاً بتبويب «الأرشيف» ويمكنك استرجاعها.</small></div>
+          <div className="arch-tx"><b>{plural(arch.tasks.length, 'مهمة منجزة', 'مهمتان منجزتان', 'مهام منجزة', 'مهمة منجزة')} منذ أكثر من {plural(arch.days, 'يوم', 'يومين', 'أيام', 'يوماً')}</b><small>تنتظر موافقتك لنقلها إلى الأرشيف. تجدها لاحقاً بتبويب «الأرشيف» ويمكنك استرجاعها.</small></div>
           <button type="button" className="btn sm" onClick={() => setArchOpen(true)}>مراجعة وأرشفة</button>
         </div>
       )}
@@ -673,10 +673,10 @@ function SprintForm({ sprint: s, onClose, onSaved }) {
     } catch (ex) { setErr(ex.message); }
   }
   return (
-    <Modal title={s ? 'تعديل السباق' : 'سباق جديد'} onClose={onClose}>
+    <Modal title={s ? 'تعديل الدورة' : 'دورة جديد'} onClose={onClose}>
       <form onSubmit={submit} noValidate>
-        <label className="field"><span>اسم السباق</span><input value={f.name} required maxLength={80} onChange={set('name')} /></label>
-        <label className="field"><span>هدف السباق (اختياري)</span><input value={f.goal} maxLength={255} onChange={set('goal')} /></label>
+        <label className="field"><span>اسم الدورة</span><input value={f.name} required maxLength={80} onChange={set('name')} /></label>
+        <label className="field"><span>هدف الدورة (اختياري)</span><input value={f.goal} maxLength={255} onChange={set('goal')} /></label>
         <div className="row2">
           <label className="field"><span>البداية</span><DateInput value={f.startDate} onChange={set('startDate')} /></label>
           <label className="field"><span>النهاية</span><DateInput value={f.endDate} onChange={set('endDate')} /></label>
@@ -701,12 +701,12 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
   async function submit(e) {
     e.preventDefault();
     try {
-      if (kind === 'start') { await api('PATCH', '/api/sprints/' + s.id, { action: 'start', startDate: start || null, endDate: end || null }); onDone('بدأ السباق'); }
-      else { await api('PATCH', '/api/sprints/' + s.id, { action: 'complete', moveTo: moveTo ? +moveTo : null }); onDone('أُنهي السباق'); }
+      if (kind === 'start') { await api('PATCH', '/api/sprints/' + s.id, { action: 'start', startDate: start || null, endDate: end || null }); onDone('بدأ الدورة'); }
+      else { await api('PATCH', '/api/sprints/' + s.id, { action: 'complete', moveTo: moveTo ? +moveTo : null }); onDone('أُنهي الدورة'); }
     } catch (ex) { setErr(ex.message); }
   }
   return (
-    <Modal title={(kind === 'start' ? 'بدء السباق — ' : 'إنهاء السباق — ') + s.name} onClose={onClose}>
+    <Modal title={(kind === 'start' ? 'بدء الدورة — ' : 'إنهاء الدورة — ') + s.name} onClose={onClose}>
       <form onSubmit={submit} noValidate>
         {kind === 'start' ? (
           <>
@@ -714,11 +714,11 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
               <label className="field"><span>البداية</span><DateInput value={start} onChange={e => setStart(e.target.value)} /></label>
               <label className="field"><span>النهاية</span><DateInput value={end} onChange={e => setEnd(e.target.value)} /></label>
             </div>
-            <p className="muted small">يوجد سباق جارٍ واحد فقط لكل مساحة.</p>
+            <p className="muted small">يوجد دورة جارٍ واحد فقط لكل مساحة.</p>
           </>
         ) : (
           <>
-            <p className="muted">المهام المنجزة تبقى بالسباق. أين تنقل المهام غير المنتهية؟</p>
+            <p className="muted">المهام المنجزة تبقى بالدورة. أين تنقل المهام غير المنتهية؟</p>
             <label className="field"><span>نقل غير المنتهية إلى</span>
               <select value={moveTo} onChange={e => setMoveTo(e.target.value)}>
                 <option value="">قائمة الانتظار</option>{live.filter(x => x.id !== s.id).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -728,7 +728,7 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
         <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
-          <button type="submit" className="btn">{kind === 'start' ? 'بدء' : 'إنهاء السباق'}</button>
+          <button type="submit" className="btn">{kind === 'start' ? 'بدء' : 'إنهاء الدورة'}</button>
         </div>
       </form>
     </Modal>
@@ -736,7 +736,7 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
 }
 
 /* إعدادات العرض الشخصية (مثل View settings في Jira) */
-const VS_FIELDS = [['cover', 'صورة الغلاف'], ['type', 'نوع المهمة'], ['key', 'الرقم'], ['epic', 'الملحمة'], ['priority', 'الأولوية'], ['assignee', 'المنفّذ'],
+const VS_FIELDS = [['cover', 'صورة الغلاف'], ['type', 'نوع المهمة'], ['key', 'الرقم'], ['epic', 'المهمة الرئيسية'], ['priority', 'الأولوية'], ['assignee', 'المنفّذ'],
   ['points', 'نقاط القصة'], ['due', 'تاريخ التسليم'], ['labels', 'الوسوم'], ['checklist', 'قائمة التحقق'], ['comments', 'التعليقات'], ['progress', 'التقدّم'], ['days', 'أيام في العمود']];
 function ViewSettings({ vs, upd, view }) {
   const [open, setOpen] = useState(false);
@@ -746,7 +746,7 @@ function ViewSettings({ vs, upd, view }) {
     document.addEventListener('mousedown', away);
     return () => document.removeEventListener('mousedown', away);
   }, []);
-  const side = (() => { try { return localStorage.getItem('rb-tdside') === '1'; } catch (_) { return false; } })();
+  const side = (() => { try { return localStorage.getItem('kata-tdside') === '1'; } catch (_) { return false; } })();
   const [sideNow, setSideNow] = useState(side);
   return (
     <div className="jf-wrap" ref={ref}>
@@ -756,7 +756,7 @@ function ViewSettings({ vs, upd, view }) {
           <div className="vs-sec">
             <b>خيارات تخصّك وحدك</b>
             <label className="switch-row"><span>فتح المهام في لوحة جانبية</span>
-              <input type="checkbox" checked={sideNow} onChange={e => { setSideNow(e.target.checked); try { localStorage.setItem('rb-tdside', e.target.checked ? '1' : '0'); } catch (_) { /* تجاهل */ } }} /></label>
+              <input type="checkbox" checked={sideNow} onChange={e => { setSideNow(e.target.checked); try { localStorage.setItem('kata-tdside', e.target.checked ? '1' : '0'); } catch (_) { /* تجاهل */ } }} /></label>
             <label className="switch-row"><span>إظهار الفلاتر السريعة كأزرار</span>
               <input type="checkbox" checked={vs.quick} onChange={e => upd({ quick: e.target.checked })} /></label>
             <label className="switch-row"><span>شاشة كاملة</span>
@@ -860,7 +860,7 @@ function CardMenu({ cm, ctx, spaces, onClose, move, toast, ask, open, reload }) 
       <Item onClick={() => copy(t.key, 'نُسخ ' + t.key)}>نسخ الرقم</Item>
       <div className="cm-sep" />
       <Item onClick={() => open(t.id)}>ربط مهمة</Item>
-      <Item onClick={() => open(t.id)}>تغيير الأم / الملحمة</Item>
+      <Item onClick={() => open(t.id)}>تغيير المهمة الرئيسية</Item>
       <Item onClick={() => open(t.id)}>اختيار غلاف</Item>
       <Item onClick={() => open(t.id)}>تعديل الوسوم</Item>
       <Item onClick={() => { onClose(); move(t.id, { labels: flagged ? (t.labels || []).filter(l => l !== 'معوّق') : [...(t.labels || []), 'معوّق'] }, flagged ? 'أُزيل العلم' : 'أُضيف علم «معوّق»'); }}>{flagged ? 'إزالة العلم' : 'إضافة علم (معوّق)'}</Item>

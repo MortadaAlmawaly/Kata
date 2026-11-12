@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         {/* يضبط الوضع الداكن قبل أول رسم لمنع وميض الأبيض */}
-        <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('rb-theme');document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}try{if(sessionStorage.getItem('kata-intro')&&!/[?&]intro=1/.test(location.search))document.documentElement.dataset.intro='skip'}catch(e){}" }} />
+        <script dangerouslySetInnerHTML={{ __html: "try{[localStorage,sessionStorage].forEach(function(s){for(var i=s.length-1;i>=0;i--){var k=s.key(i);if(k&&k.indexOf('rb-')===0){var n='kata-'+k.slice(3),v=s.getItem(k);if(s.getItem(n)===null)s.setItem(n,v);s.removeItem(k)}}})}catch(e){}try{var t=localStorage.getItem('kata-theme');document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}try{if(sessionStorage.getItem('kata-intro')&&!/[?&]intro=1/.test(location.search))document.documentElement.dataset.intro='skip'}catch(e){}" }} />
         {B && <script dangerouslySetInnerHTML={{ __html: BASE_SHIM }} />}
         {/* حدث التثبيت يُطلَق مرة وحدة عند التحميل: نحتفظ به ليعمل زر «تثبيت التطبيق» بالإعدادات لاحقاً */}
         <script dangerouslySetInnerHTML={{ __html: "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaPrompt=e})" }} />

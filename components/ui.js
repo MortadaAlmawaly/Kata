@@ -61,9 +61,24 @@ export function Modal({ title, onClose, children, actions, wide, cardClass = '',
       if (!w.__lockN) document.documentElement.classList.remove('scroll-lock');
     };
   }, [noLock]);
+  /* رسالة الخطأ تظهر قرب الحقل: عند ظهورها نمرّر لها فوراً بدل أن تبقى مخفية أسفل النافذة */
+  const cardRef = useRef(null);
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return undefined;
+    let last = '';
+    const mo = new MutationObserver(() => {
+      const e = el.querySelector('.err');
+      const tx = e ? e.textContent.trim() : '';
+      if (tx && tx !== last && e.scrollIntoView) e.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      last = tx;
+    });
+    mo.observe(el, { childList: true, subtree: true, characterData: true });
+    return () => mo.disconnect();
+  }, []);
   return (
     <div className={`modal ${center ? 'modal-center' : ''}`} onMouseDown={e => { if (e.target === e.currentTarget && onClose) onClose(); }}>
-      <div className={`modal-card ${wide ? 'wide' : ''} ${cardClass}`} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={cardRef} className={`modal-card ${wide ? 'wide' : ''} ${cardClass}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="modal-head">
           <h2>{title}</h2>
           <button type="button" className="icon-btn" aria-label="إغلاق" onClick={onClose}><FIcon n="x" size={16} /></button>
@@ -79,7 +94,7 @@ export function Modal({ title, onClose, children, actions, wide, cardClass = '',
 export function ThemeInit() {
   useEffect(() => {
     try {
-      const t = localStorage.getItem('rb-theme');
+      const t = localStorage.getItem('kata-theme');
       if (!document.documentElement.dataset.theme) document.documentElement.dataset.theme = t || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     } catch (_) { /* التخزين غير متاح */ }
   }, []);
@@ -89,19 +104,19 @@ export function ThemeInit() {
 export function toggleTheme() {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
-  try { localStorage.setItem('rb-theme', next); } catch (_) { /* تجاهل */ }
+  try { localStorage.setItem('kata-theme', next); } catch (_) { /* تجاهل */ }
 }
 
 /* زر اللغة: يعتمد على i18n-en.js (مترجم DOM) كما في الواجهة القديمة */
 export function LangButton({ className = 'icon-btn', style }) {
   /* الحالة تُقرأ بعد التحميل من التخزين: النص الذي يرسمه الخادم دائماً «EN» ولا يُصحَّح وحده بعد الترطيب */
   const [en, setEn] = useState(false);
-  useEffect(() => { try { setEn(localStorage.getItem('rb-lang') === 'en' || window.LANG === 'en'); } catch (_) { /* لا تخزين */ } }, []);
+  useEffect(() => { try { setEn(localStorage.getItem('kata-lang') === 'en' || window.LANG === 'en'); } catch (_) { /* لا تخزين */ } }, []);
   const click = () => {
     if (window.setLang) window.setLang(en ? 'ar' : 'en');
   };
   return (
-    <button type="button" className={className} id="langBtn" aria-label="Language" title="English / عربي" data-no-i18n
+    <button type="button" className={className} id="langBtn" aria-label="اللغة" title="English / عربي" data-no-i18n
       onClick={click} style={{ fontWeight: 800, fontSize: '.76rem', ...style }}>
       {en ? 'AR' : 'EN'}
     </button>

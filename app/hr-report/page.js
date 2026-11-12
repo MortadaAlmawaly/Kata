@@ -34,7 +34,7 @@ export default function HrReportPage() {
     return () => clearTimeout(t);
   }, [data]);
 
-  if (err) return <div className="hr-msg">{err}<br /><a href="/attendance">رجوع</a></div>;
+  if (err) return <div className="hr-msg">{err}<br /><a href={withBase('/attendance')}>رجوع</a></div>;
   if (!data) return <div className="hr-msg">جارٍ إعداد التقرير…</div>;
   const cur = data.org.currency;
   const [y, m] = data.month.split('-').map(Number);

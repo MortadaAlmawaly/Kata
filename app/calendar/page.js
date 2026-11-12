@@ -1,6 +1,7 @@
 'use client';
 /* التقويم — ترحيل React لـ viewCalendar/eventForm/eventDetail (views-pro.js، modules.js).
    ملاحظة: سحب/تمديد المواعيد داخل عرض الأسبوع لم يُرحَّل؛ السحب بين الأيام في عرض الشهر موجود. */
+import { plural } from '@/components/hooks';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FIcon } from '../../components/Icon';
 import { api } from '../../lib/api';
@@ -28,7 +29,7 @@ function relStart(e) {
   if (now >= s && now <= en) return 'جارٍ الآن';
   if (now > en) return 'انتهى';
   const mins = Math.round((s - now) / 60000);
-  if (mins < 60) return `يبدأ بعد ${mins} دقيقة`;
+  if (mins < 60) return `يبدأ بعد ${plural(mins, 'دقيقة', 'دقيقتين', 'دقائق', 'دقيقة')}`;
   if (mins < 1440) return `يبدأ بعد ${Math.round(mins / 60)} ساعة`;
   return `يبدأ بعد ${Math.round(mins / 1440)} يوم`;
 }
@@ -52,15 +53,15 @@ function Calendar() {
 
   useEffect(() => {
     try {
-      const v = localStorage.getItem('rb-calview');
+      const v = localStorage.getItem('kata-calview');
       setView(['month', 'week', 'agenda'].includes(v) ? v : (window.innerWidth < 700 ? 'agenda' : 'month'));
-      setHide(new Set(JSON.parse(localStorage.getItem('rb-calhide') || '[]')));
+      setHide(new Set(JSON.parse(localStorage.getItem('kata-calhide') || '[]')));
     } catch (_) { /* لا تخزين */ }
   }, []);
-  const pickView = v => { setView(v); try { localStorage.setItem('rb-calview', v); } catch (_) { /* تجاهل */ } };
+  const pickView = v => { setView(v); try { localStorage.setItem('kata-calview', v); } catch (_) { /* تجاهل */ } };
   const toggleHide = k => setHide(h => {
     const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k);
-    try { localStorage.setItem('rb-calhide', JSON.stringify([...n])); } catch (_) { /* تجاهل */ }
+    try { localStorage.setItem('kata-calhide', JSON.stringify([...n])); } catch (_) { /* تجاهل */ }
     return n;
   });
 
@@ -475,7 +476,7 @@ function EventForm({ me, event: ex, date: presetDate, time: presetTime, onClose,
         )}
         <div className="row2">
           <label className="field"><span>التاريخ</span><DateInput value={f.date} required onChange={set('date')} /></label>
-          <label className="field"><span>المكان / رابط الاجتماع</span><input value={f.location} maxLength={140} placeholder="قاعة 2 أو رابط Meet" onChange={set('location')} /></label>
+          <label className="field"><span>المكان / رابط الاجتماع</span><input value={f.location} maxLength={140} placeholder="مثال: قاعة 2 أو رابط الاجتماع" onChange={set('location')} /></label>
         </div>
         <div className="row2">
           <label className="field"><span>من</span><input type="time" value={f.start} onChange={set('start')} /></label>

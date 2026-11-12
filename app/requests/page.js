@@ -1,5 +1,6 @@
 'use client';
 /* الطلبات والموافقات — ترحيل React لـ viewRequests/requestDetail/requestForm/decideRequest. */
+import { plural } from '@/components/hooks';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import { fmtDT, ROLE, RTYPE } from '../../lib/constants';
@@ -62,17 +63,17 @@ export default function RequestsPage() {
       {list && !list.length && <div className="empty-box"><span className="ico"><Icon name="requests" /></span><p>لا توجد طلبات.</p></div>}
       {list && list.length > 0 && (
         <div className="table-wrap">
-          <table>
-            <thead><tr><th>الطلب</th><th>النوع</th><th>مقدّمه</th><th>المبلغ / الفترة</th><th>الحالة</th><th>عند</th><th /></tr></thead>
+          <table className="cardify">
+            <thead><tr><th>الطلب</th><th>النوع</th><th>مقدّمه</th><th>المبلغ / الفترة</th><th>الحالة</th><th>المعتمد</th><th /></tr></thead>
             <tbody>
               {list.map(r => (
                 <tr key={r.id} className="click" onClick={e => { if (!e.target.closest('button')) setDetailId(r.id); }}>
-                  <td><b>{r.title}</b><br /><small className="muted">{fmtDT(r.createdAt)}</small></td>
-                  <td>{RTYPE[r.type]}</td>
-                  <td><span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><Avatar name={r.requester.name} size={24} />{r.requester.name}</span></td>
-                  <td>{r.type === 'LEAVE' ? `${r.startDate} ← ${r.endDate}` : `${fmt(r.amount)} ${cur}`}</td>
-                  <td><span className={`badge ${r.status}`}>{RSTATUS[r.status]}</span></td>
-                  <td>{r.currentApprover ? r.currentApprover.name : <span className="muted">—</span>}</td>
+                  <td data-label="الطلب"><b>{r.title}</b><br /><small className="muted">{fmtDT(r.createdAt)}</small></td>
+                  <td data-label="النوع">{RTYPE[r.type]}</td>
+                  <td data-label="مقدّمه"><span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><Avatar name={r.requester.name} size={24} />{r.requester.name}</span></td>
+                  <td data-label="المبلغ / الفترة">{r.type === 'LEAVE' ? `من ${r.startDate} إلى ${r.endDate}` : `${fmt(r.amount)} ${cur}`}</td>
+                  <td data-label="الحالة"><span className={`badge ${r.status}`}>{RSTATUS[r.status]}</span></td>
+                  <td data-label="المعتمد">{r.currentApprover ? r.currentApprover.name : <span className="muted">—</span>}</td>
                   <td>
                     {box === 'inbox' && (
                       <>
@@ -262,7 +263,7 @@ function RequestForm({ me, onClose, onSaved, onError }) {
           {!leave && <label className="field"><span>المبلغ ({me.org.currency})</span><input type="number" min="0" step="any" value={f.amount} onChange={set('amount')} /></label>}
           {leave && <label className="field"><span>نوع الإجازة</span>
             <select value={ltKey} onChange={set('leaveType')}>
-              {types.map(x => <option key={x.key} value={x.key}>{x.name}{x.remaining != null ? ` — المتبقي ${x.remaining} يوم` : ' — غير محدود'}</option>)}
+              {types.map(x => <option key={x.key} value={x.key}>{x.name}{x.remaining != null ? `  — المتبقي ${plural(x.remaining, 'يوم', 'يومان', 'أيام', 'يوماً')}` : ' — غير محدود'}</option>)}
             </select></label>}
         </div>
         {leave && (

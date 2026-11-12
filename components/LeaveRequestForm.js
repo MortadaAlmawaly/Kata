@@ -1,5 +1,6 @@
 'use client';
 /* نموذج طلب إجازة (يُفتح من صفحة الحضور والإجازات): نوع الإجازة + الفترة + السبب + مرفقات */
+import { plural } from './hooks';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { pad } from '../lib/constants';
@@ -13,7 +14,7 @@ const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(
 
 export default function LeaveRequestForm({ onClose, onSaved, onError }) {
   const [bal, setBal] = useState({ types: [] });
-  const [f, setF] = useState({ title: '', details: '', startDate: todayStr(), endDate: todayStr(), leaveType: '' });
+  const [f, setF] = useState({ title: '', details: '', startDate: workDaysAhead(3), endDate: workDaysAhead(3), leaveType: '' });   // أقرب تاريخ تقبله قاعدة الإشعار المسبق
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const files = useRef(null);
@@ -45,7 +46,7 @@ export default function LeaveRequestForm({ onClose, onSaved, onError }) {
       <form onSubmit={submit} noValidate>
         <label className="field"><span>نوع الإجازة</span>
           <select value={ltKey} onChange={set('leaveType')}>
-            {types.map(x => <option key={x.key} value={x.key}>{x.name}{x.remaining != null ? ` — المتبقي ${x.remaining} يوم` : ' — غير محدود'}</option>)}
+            {types.map(x => <option key={x.key} value={x.key}>{x.name}{x.remaining != null ? `  — المتبقي ${plural(x.remaining, 'يوم', 'يومان', 'أيام', 'يوماً')}` : ' — غير محدود'}</option>)}
           </select></label>
         <div className="row2">
           <label className="field"><span>من</span><DateInput value={f.startDate} onChange={set('startDate')} /></label>

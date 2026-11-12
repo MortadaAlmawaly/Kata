@@ -27,7 +27,7 @@ export default function DateInput({ value = '', onChange, className = '', style,
   }
   return (
     <span className="date-in" style={style}>
-      <input type="text" inputMode="numeric" dir="ltr" placeholder="YYYY-MM-DD" maxLength={10} autoComplete="off"
+      <input type="text" inputMode="numeric" dir="ltr" placeholder="السنة-الشهر-اليوم" maxLength={10} autoComplete="off"
         className={className} value={txt} onChange={typed} onBlur={() => setTxt(value || '')}
         readOnly={readOnly} disabled={disabled} required={required} {...rest} />
       <button type="button" className="date-pick" tabIndex={-1} aria-label="اختيار التاريخ" disabled={disabled || readOnly} onClick={pick}>

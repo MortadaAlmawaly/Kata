@@ -188,7 +188,7 @@ export function TabFields({ me, reload, toast, ask }) {
         <div><button className="btn sm ghost">حفظ أسماء الأقسام</button></div>
       </form>
       <details className="fl-box">
-        <summary><b>مسميات حقول المهمة الأساسية</b> <span className="muted small">— غيّر «المنفّذ»، «الأولوية»، «السباق»… بما يناسب شركتك</span></summary>
+        <summary><b>مسميات حقول المهمة الأساسية</b> <span className="muted small">— غيّر «المنفّذ»، «الأولوية»، «الدورة»… بما يناسب شركتك</span></summary>
         <form style={{ marginTop: 10 }} onSubmit={async e => {
           e.preventDefault();
           const out = {};

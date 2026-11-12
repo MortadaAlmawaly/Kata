@@ -1,5 +1,7 @@
 'use client';
 /* لوحة المتابعة — ترحيل React لـ viewDashboard (app.js). */
+import { plural } from '@/components/hooks';
+import { withBase } from '@/lib/base';
 import { useCallback, useEffect, useState } from 'react';
 import { FIcon } from '../../components/Icon';
 import { api } from '../../lib/api';
@@ -29,7 +31,7 @@ function Agenda({ days, showDates }) {
         if (it.kind === 'event') {
           const e = it.e, all = e.allDay || e.type === 'HOLIDAY';
           return (
-            <a className="ag-item" key={i} href={`/calendar?event=${e.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+            <a className="ag-item" key={i} href={withBase(`/calendar?event=${e.id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>
               <span className="ag-time">{all ? 'طوال اليوم' : fmtTime(e.startAt) + ' – ' + fmtTime(e.endAt)}</span>
               <span className="ag-title">{e.title}{e.myResponse === 'PENDING' && <> <span className="badge PENDING">بانتظار ردّك</span></>}</span>
             </a>
@@ -37,7 +39,7 @@ function Agenda({ days, showDates }) {
         }
         if (it.kind === 'task') {
           return (
-            <a className="ag-item tk" key={i} href={`/tasks?open=${it.task.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+            <a className="ag-item tk" key={i} href={withBase(`/tasks?open=${it.task.id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>
               <span className="ag-time">تسليم</span><span className="ag-title"><FIcon n="pin" size={13} /> {it.task.title}</span>
             </a>
           );
@@ -90,7 +92,7 @@ export default function DashboardPage() {
     body = (
       <>
         {polSum && polSum.pending > 0 && (
-          <a className="notice" href="/policies" style={{ display: 'block', margin: '0 0 14px' }}>
+          <a className="notice" href={withBase('/policies')} style={{ display: 'block', margin: '0 0 14px' }}>
             {polSum.pending === 1 ? <>لديك <b>سياسة واحدة</b> تحتاج إقرارك</> : polSum.pending === 2 ? <>لديك <b>سياستان</b> تحتاجان إقرارك</> : <>لديك <b>{polSum.pending}</b> {polSum.pending <= 10 ? 'سياسات' : 'سياسة'} تحتاج إقرارك</>} — اضغط للاطّلاع.
           </a>
         )}
@@ -98,9 +100,9 @@ export default function DashboardPage() {
           <h2>{hello}، {me.user.name.split(' ')[0]}</h2>
           <p>{dayLabel(t0)} · {lead}</p>
           <div className="quick">
-            <a className="btn" href="/tasks?new=1"><Icon name="plus" /> مهمة جديدة</a>
-            <a className="btn" href="/calendar?new=1"><Icon name="calendar" /> موعد جديد</a>
-            <a className="btn" href="/requests?new=1"><Icon name="requests" /> طلب جديد</a>
+            <a className="btn" href={withBase('/tasks?new=1')}><Icon name="plus" /> مهمة جديدة</a>
+            <a className="btn" href={withBase('/calendar?new=1')}><Icon name="calendar" /> موعد جديد</a>
+            <a className="btn" href={withBase('/requests?new=1')}><Icon name="requests" /> طلب جديد</a>
             {!att.checkIn && <button type="button" onClick={() => act('/api/attendance/check-in')}><Icon name="attendance" /> تسجيل حضور</button>}
           </div>
         </section>
@@ -118,7 +120,7 @@ export default function DashboardPage() {
               <h3>ابدأ هنا</h3>
               <div className="start-list">
                 {steps.map(s => (
-                  <a key={s.href} className="start-item" href={s.href}>
+                  <a key={s.href} className="start-item" href={withBase(s.href)}>
                     <span className="kpi-ico"><Icon name={s.icon} /></span>
                     <span><b>{s.text}</b><small className="muted">{s.sub}</small></span>
                   </a>
@@ -131,7 +133,7 @@ export default function DashboardPage() {
         <div className="grid kpis">
           <Kpi label="مهامي المفتوحة" val={m.open} sub={m.urgent ? `${m.urgent} عاجلة` : 'بدون عاجل'} cls={m.urgent ? 'warn' : ''} icon="tasks" />
           <Kpi label="متأخرة" val={m.overdue} sub="تجاوزت تاريخ التسليم" cls={m.overdue ? 'bad' : 'ok'} icon="audit" />
-          <Kpi label="تقدّم أهدافي" val={m.goalProgress == null ? '—' : m.goalProgress + '%'} sub={`${m.goals} هدف جارٍ`} icon="goals" />
+          <Kpi label="تقدّم أهدافي" val={m.goalProgress == null ? '—' : m.goalProgress + '%'} sub={m.goals ? (m.goals === 1 ? 'هدف واحد جارٍ' : m.goals === 2 ? 'هدفان جاريان' : `${m.goals} ${m.goals <= 10 ? 'أهداف جارية' : 'هدفاً جارياً'}`) : 'ما عندك أهداف بعد — أضف هدفك الأول'} icon="goals" />
           <Kpi label="بانتظار موافقتي" val={m.inbox} sub={`${m.pendingRequests} من طلباتي معلّقة`} cls={m.inbox ? 'warn' : ''} icon="requests" />
           <Kpi label="رصيد إجازاتي" val={lb.remaining + ' يوم'} sub={`استخدمت ${lb.used} من ${lb.entitlement}`} icon="calendar" />
           {teamAtt && <Kpi label="حاضرون اليوم" val={`${present}/${teamAtt.people.length}`} sub={`${teamAtt.people.filter(p => p.status === 'LEAVE').length} بإجازة`} icon="attendance" />}
@@ -141,7 +143,7 @@ export default function DashboardPage() {
           <section className="card">
             <h3>جدولي — الأيام السبعة القادمة</h3>
             <Agenda days={buildAgenda(cal, t0, addDaysStr(t0, 7))} showDates />
-            <a className="btn ghost sm" href="/calendar" style={{ marginTop: 10 }}>فتح التقويم</a>
+            <a className="btn ghost sm" href={withBase('/calendar')} style={{ marginTop: 10 }}>فتح التقويم</a>
           </section>
           <section className="card">
             <h3>الحضور والتعاميم</h3>
@@ -155,7 +157,7 @@ export default function DashboardPage() {
                 : !att.checkOut ? <button className="btn sm ghost" onClick={() => act('/api/attendance/check-out')}>تسجيل خروج</button> : null}
             </div>
             {ann.slice(0, 4).map(a => (
-              <a className="ann-mini" key={a.id} href="/announcements" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
+              <a className="ann-mini" key={a.id} href={withBase('/announcements')} style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
                 {a.pinned ? <FIcon n="pin" size={13} /> : null} <b>{a.title}</b> <small className="muted">{a.author.name} · {fmtDT(a.createdAt).slice(0, 10)}</small>
               </a>
             ))}
@@ -172,7 +174,7 @@ export default function DashboardPage() {
               <Kpi label="مهام مفتوحة بالشركة" val={d.org.tasks.open} sub={`${d.org.tasks.overdue} متأخرة`} cls={d.org.tasks.overdue ? 'warn' : ''} />
               <Kpi label="نسبة الإنجاز (30 يوم)" val={d.org.tasks.completion == null ? '—' : d.org.tasks.completion + '%'} sub={`${d.org.tasks.done30} مكتملة`} />
               <Kpi label="معتمد هذا الشهر" val={`${fmt(d.org.approvedThisMonth.amount)} ${me.org.currency}`}
-                sub={`${d.org.approvedThisMonth.count} طلب · ${d.org.pendingRequests} معلّق`} />
+                sub={`{plural(d.org.approvedThisMonth.count, 'طلب', 'طلبان', 'طلبات', 'طلباً')} · ${d.org.pendingRequests} معلّق`} />
             </div>
           </>
         )}
@@ -253,7 +255,7 @@ function ApprovalsCard({ me, toast, onChanged }) {
           </div>
         ))}
       </div>
-      {list.length > 5 && <a className="btn ghost sm" style={{ marginTop: 10 }} href="/requests">عرض الكل ({list.length})</a>}
+      {list.length > 5 && <a className="btn ghost sm" style={{ marginTop: 10 }} href={withBase('/requests')}>عرض الكل ({list.length})</a>}
       {pick && (
         <Modal center title={(pick.kind === 'approve' ? 'الموافقة على: ' : 'رفض: ') + pick.r.title} onClose={() => setPick(null)}>
           <form onSubmit={submit} noValidate>

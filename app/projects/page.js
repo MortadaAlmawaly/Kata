@@ -1,5 +1,6 @@
 'use client';
 /* المشاريع — ترحيل React لـ viewProjects/projectForm/projectDetail (views-pro.js). */
+import { withBase } from '@/lib/base';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import { ROLE } from '../../lib/constants';
@@ -65,7 +66,7 @@ export default function ProjectsPage() {
               </div>
               {p.description && <p className="small muted" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>}
               <div className="proj-stats">
-                <span>{p.done}/{p.tasks} مهمة</span>
+                <span>{p.done}/{p.tasks} من المهام</span>
                 {p.overdue ? <span className="badge overdue">{p.overdue} متأخرة</span> : <span>بدون تأخير</span>}
                 {p.endDate && <span>حتى {p.endDate}</span>}
               </div>
@@ -93,9 +94,12 @@ function ProjectForm({ me, project: p, onClose, onSaved, onError }) {
   const set = k => e => setF({ ...f, [k]: e.target.value });
   async function submit(e) {
     e.preventDefault();
-    setErr(''); setBusy(true);
+    setErr('');
+    if (!f.name.trim()) return setErr('اكتب اسم المساحة');
+    if (f.startDate && f.endDate && f.endDate < f.startDate) return setErr('تاريخ النهاية قبل تاريخ البداية');
+    setBusy(true);
     try {
-      const body = { name: f.name, description: f.description || null, status: f.status, startDate: f.startDate || null, endDate: f.endDate || null,
+      const body = { name: f.name.trim(), description: f.description || null, status: f.status, startDate: f.startDate || null, endDate: f.endDate || null,
         ...(f.key.trim() ? { key: f.key.trim().toUpperCase() } : {}) };
       let id = p && p.id;
       if (p) await api('PATCH', '/api/projects/' + id, body);
@@ -196,7 +200,7 @@ function ProjectDetail({ id, me, onClose, onEdit, onChanged, onToast }) {
       {p.tasksList.map(t => {
         const d = dueInfo(t);
         return (
-          <a className="li-row" key={t.id} href={`/tasks?open=${t.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+          <a className="li-row" key={t.id} href={withBase(`/tasks?open=${t.id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>
             <div className="grow"><b>{t.title}</b><small className="muted">{t.assignee ? t.assignee.name : ''}</small></div>
             {d && <span className={`due ${d.cls}`}>{d.text}</span>}
             <span className={`badge ${t.status}`}>{STATUS[t.status]}</span>
@@ -204,7 +208,7 @@ function ProjectDetail({ id, me, onClose, onEdit, onChanged, onToast }) {
         );
       })}
       {!p.tasksList.length && <p className="muted small">لا توجد مهام بهذه المساحة بعد.</p>}
-      <a className="btn ghost sm" style={{ marginTop: 4 }} href={`/tasks?new=1&projectId=${id}`}>+ مهمة لهذه المساحة</a>
+      <a className="btn ghost sm" style={{ marginTop: 4 }} href={withBase(`/tasks?new=1&projectId=${id}`)}>+ مهمة لهذه المساحة</a>
 
       <FilesBlock entity="project" id={id} onError={m => onToast(m, 'err')} />
 

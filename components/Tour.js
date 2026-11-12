@@ -33,6 +33,7 @@ export default function TourHost({ me }) {
   const [hub, setHub] = useState(false);
   const [run, setRun] = useState(null);          // { id, steps, i }
   const [welcome, setWelcome] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);   // بطاقة الدعوة لا تغطي أي نافذة/فورم مفتوح
   const [box, setBox] = useState(null);
   const [tip, setTip] = useState({ top: 0, left: 0, w: 360 });
   const [done, setDone] = useState({});
@@ -189,6 +190,13 @@ export default function TourHost({ me }) {
     const t = setTimeout(() => setWelcome(true), 1500);
     return () => clearTimeout(t);
   }, [me, start]);
+  useEffect(() => {
+    const check = () => setModalOpen(!!document.querySelector('.modal'));
+    check();
+    const mo = new MutationObserver(check);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
   const markSeen = () => { try { localStorage.setItem(SEEN_KEY, '1'); } catch (_) { /* تجاهل */ } setWelcome(false); };
 
   const launch = id => {
@@ -203,7 +211,7 @@ export default function TourHost({ me }) {
 
   return (
     <>
-      {welcome && !run && (
+      {welcome && !run && !modalOpen && (
         <div className="tour-welcome" role="dialog" aria-label="جولة تعريفية">
           <b>أهلاً بك في كاتا</b>
           <p>هل تريد جولة سريعة (دقيقتان) تعرّفك على الموقع؟ تجدها لاحقاً من زر «؟» أعلى الصفحة.</p>

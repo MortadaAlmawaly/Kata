@@ -1,9 +1,11 @@
 'use client';
 /* الحضور والإجازات — ترحيل React لـ viewAttendance/attEditForm (modules.js):
    تسجيل حضور/خروج، رصيد الإجازات، حالة الفريق اليوم، سجل الشهر مع تعديل الحضور، وساعات دوام الشركة. */
+import { plural } from '@/components/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { pad, ROLE } from '../../lib/constants';
+import { fmtDur } from '../../lib/util';
 import AppShell, { useMe } from '../../components/AppShell';
 import { Avatar, Icon, Modal } from '../../components/ui';
 import { useConfirm, useToast } from '../../components/hooks';
@@ -88,10 +90,10 @@ export default function AttendancePage() {
             <div className="checkin big">
               <div>
                 <b>{today.checkIn ? 'حضور ' + hm(today.checkIn) : 'لم تسجّل حضورك بعد'}</b>
-                {today.lateMin ? <span className="badge REJECTED" style={{ marginInlineStart: 6 }}>تأخير {today.lateMin} د</span> : null}
+                {today.lateMin ? <span className="badge REJECTED" style={{ marginInlineStart: 6 }}>تأخير {fmtDur(today.lateMin)}</span> : null}
                 {today.afterHours ? <span className="badge" style={{ marginInlineStart: 6 }}>خارج ساعات الدوام</span> : null}
                 {today.checkOut && (
-                  <><br /><span className="muted">خروج {hm(today.checkOut)}{today.overtimeMin ? ` · إضافي ${today.overtimeMin} د` : ''}{today.earlyMin ? ` · خروج مبكر ${today.earlyMin} د` : ''}</span></>
+                  <><br /><span className="muted">خروج {hm(today.checkOut)}{today.overtimeMin ? ` · إضافي ${fmtDur(today.overtimeMin)}` : ''}{today.earlyMin ? ` · خروج مبكر ${fmtDur(today.earlyMin)}` : ''}</span></>
                 )}
                 {today.shift && <><br /><small className="muted">دوامك: {today.shift.start} – {today.shift.end}</small></>}
               </div>
@@ -124,14 +126,14 @@ export default function AttendancePage() {
       {leaves.length > 0 && (
         <>
           <h2 className="section-title">طلبات إجازتي</h2>
-          <div className="table-wrap"><table>
-            <thead><tr><th>العنوان</th><th>النوع</th><th>الفترة</th><th>الحالة</th><th>الموافق</th><th /></tr></thead>
+          <div className="table-wrap"><table className="cardify">
+            <thead><tr><th>العنوان</th><th>النوع</th><th>الفترة</th><th>الحالة</th><th>المعتمد</th><th /></tr></thead>
             <tbody>
               {leaves.map(r => (
                 <tr key={r.id}>
-                  <td>{r.title || '—'}</td>
+                  <td data-label="العنوان">{r.title || '—'}</td>
                   <td>{(typesList.find(t => t.key === (r.leaveType || 'annual')) || {}).name || 'إجازة'}</td>
-                  <td>{r.startDate} ← {r.endDate}</td>
+                  <td data-label="الفترة">من {r.startDate} إلى {r.endDate}</td>
                   <td><span className={`badge ${r.status}`}>{LSTATUS[r.status] || r.status}</span></td>
                   <td>{r.currentApprover ? r.currentApprover.name : '—'}</td>
                   <td>{r.status === 'PENDING' && <button type="button" className="btn sm ghost" onClick={() => ask({ title: 'إلغاء الطلب', text: 'سيتم إلغاء طلب الإجازة. يمكنك حذفه بعدها من القائمة.', ok: 'تأكيد الإلغاء', onOk: async () => { try { await api('POST', `/api/requests/${r.id}/cancel`, {}); toast('تم الإلغاء'); loadAll(); } catch (e) { toast(e.message, 'err'); } } })}>إلغاء الطلب</button>}{['CANCELLED', 'REJECTED'].includes(r.status) && <button type="button" className="btn sm ghost" onClick={() => ask({ title: 'حذف الطلب', text: 'سيُحذف الطلب من قائمتك نهائياً.', ok: 'حذف', onOk: async () => { try { await api('DELETE', `/api/requests/${r.id}`); toast('تم الحذف'); loadAll(); } catch (e) { toast(e.message, 'err'); } } })}>حذف</button>}</td>
@@ -156,7 +158,7 @@ export default function AttendancePage() {
                 {team.people.map(p => (
                   <tr key={p.id}>
                     <td><span className="who"><Avatar name={p.name} />{p.name}</span> <small className="muted">{ROLE[p.role]}</small></td>
-                    <td><span className={`badge ${badgeFor(p.status)}`}>{ATT[p.status]}</span>{p.lateMin ? <> <span className="badge REJECTED">تأخير {p.lateMin} د</span></> : null}</td>
+                    <td><span className={`badge ${badgeFor(p.status)}`}>{ATT[p.status]}</span>{p.lateMin ? <> <span className="badge REJECTED">تأخير {fmtDur(p.lateMin)}</span></> : null}</td>
                     <td>{p.checkIn ? hm(p.checkIn) : '—'}</td>
                     <td>{p.checkOut ? hm(p.checkOut) : '—'}</td>
                     <td><button type="button" className="btn sm ghost"
@@ -187,7 +189,7 @@ export default function AttendancePage() {
             {people.map(p => <option key={p.id} value={p.id}>{p.name} — {ROLE[p.role]}{p.id === me.user.id ? ' (أنا)' : ''}</option>)}
           </select>
         )}
-        <span className="grow" /><span className="muted small">{log.length} يوم حضور</span>
+        <span className="grow" /><span className="muted small">{plural(log.length, 'يوم حضور', 'يوما حضور', 'أيام حضور', 'يوم حضور')}</span>
         {canEdit && <button type="button" className="btn sm" onClick={() => setEdit({ userId: viewUid, name: viewName, date: '', inT: '', outT: '' })}>+ إضافة سجل يوم</button>}
       </div>
       {log.length ? (
@@ -203,9 +205,9 @@ export default function AttendancePage() {
               {log.map(r => (
                 <tr key={r.date}>
                   <td>{dayLabel(r.date)}</td><td>{hm(r.checkIn)}</td><td>{r.checkOut ? hm(r.checkOut) : '—'}</td><td>{hoursOf(r)}</td>
-                  <td>{r.lateMin ? <span className="badge REJECTED">{r.lateMin} د</span> : r.afterHours ? <span className="badge">خارج الدوام</span> : <span className="muted">—</span>}</td>
-                  <td>{r.earlyMin ? <span className="badge TODO">{r.earlyMin} د</span> : <span className="muted">—</span>}</td>
-                  <td>{r.overtimeMin ? <span className="badge IN_PROGRESS">{r.overtimeMin} د</span> : <span className="muted">—</span>}</td>
+                  <td>{r.lateMin ? <span className="badge REJECTED">{fmtDur(r.lateMin)}</span> : r.afterHours ? <span className="badge">خارج الدوام</span> : <span className="muted">—</span>}</td>
+                  <td>{r.earlyMin ? <span className="badge TODO">{fmtDur(r.earlyMin)}</span> : <span className="muted">—</span>}</td>
+                  <td>{r.overtimeMin ? <span className="badge IN_PROGRESS">{fmtDur(r.overtimeMin)}</span> : <span className="muted">—</span>}</td>
                   {canEdit && (
                     <td className="nowrap">
                       <button type="button" className="btn sm ghost" onClick={() => setEdit({ userId: viewUid, name: viewName, date: r.date, inT: hm(r.checkIn), outT: r.checkOut ? hm(r.checkOut) : '' })}>تعديل</button>{' '}
