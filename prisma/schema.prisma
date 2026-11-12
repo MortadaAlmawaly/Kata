@@ -61,6 +61,7 @@ model Organization {
   sprints       Sprint[]
   boards        TaskBoard[]
   announcements Announcement[]
+  supportMessages SupportMessage[]
 }
 
 model User {
@@ -119,6 +120,7 @@ model User {
   reviewsAsReviewer Review[] @relation("ReviewReviewer")
   policyAcks      PolicyAck[]
   policiesAuthored Policy[]
+  supportMessages SupportMessage[]
 
   @@index([orgId, managerId])
   @@index([orgId, role])
@@ -703,4 +705,21 @@ model Webhook {
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@index([orgId, active])
+}
+
+// رسائل الدعم: يرسلها مدير الشركة من «تواصل مع الدعم»، ويقرؤها مالك المنصة بالداشبورد ويغيّر حالتها (NEW | DONE)
+model SupportMessage {
+  id        Int      @id @default(autoincrement())
+  orgId     Int
+  userId    Int
+  subject   String   @db.VarChar(140)
+  body      String   @db.Text
+  status    String   @default("NEW") @db.VarChar(8)
+  createdAt DateTime @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([orgId, createdAt])
 }

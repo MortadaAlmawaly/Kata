@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FIcon } from './Icon';
 import { api } from '../lib/api';
 
-export const FILE_MAX = 8 * 1024 * 1024;
+/* سقف المتصفح فقط؛ الحد الفعلي لكل شركة يفرضه الخادم (settings.uploadLimits، الافتراضي 8MB) */
+export const FILE_MAX = 10 * 1024 * 1024;
 export const FILE_RE = /\.(pdf|png|jpe?g|webp)$/i;
 export const FILE_ACCEPT = '.pdf,image/png,image/jpeg,image/webp';
 export const fmtSize = n => (n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
@@ -25,7 +26,7 @@ export async function uploadFiles(entity, id, files) {
   const ids = [];
   let ok = 0;
   for (const f of list) {
-    if (f.size > FILE_MAX) { failed.push(`${f.name} (أكبر من 8MB)`); continue; }
+    if (f.size > FILE_MAX) { failed.push(`${f.name} (أكبر من 10MB)`); continue; }
     if (!FILE_RE.test(f.name)) { failed.push(`${f.name} (نوع غير مدعوم)`); continue; }
     try { const r = await api('POST', '/api/attachments', { entity, id, name: f.name, data: await readB64(f) }); ok++; if (r && r.id) ids.push(r.id); }
     catch (e) { failed.push(`${f.name} (${e.message})`); }
@@ -50,7 +51,7 @@ export function FilePicker({ label = 'مرفقات (PDF أو صور)', inputRef 
   return (
     <div className="field file-field"><span>{label}</span>
       <FileInputAr multiple accept={FILE_ACCEPT} inputRef={inputRef} btn="اختيار ملفات" />
-      <small className="muted">PDF أو PNG أو JPG أو WEBP — حتى 8MB للملف</small></div>
+      <small className="muted">ملفات PDF أو صور (PNG وJPG وWEBP) — حسب الحد المسموح لشركتك (الافتراضي 8 ميغابايت للملف)</small></div>
   );
 }
 
