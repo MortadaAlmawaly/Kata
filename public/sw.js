@@ -1,9 +1,12 @@
 /* Service Worker — يثبّت التطبيق على الهاتف ويستقبل الإشعارات.
    الكاش: هيكل الواجهة فقط (CSS/JS/أيقونات). بيانات /api لا تُخزَّن أبداً (خصوصية الشركات). */
-const VERSION = 'kata-v4';
+const VERSION = 'kata-v5';
 /* المسار الفرعي (مثل /Kata) يؤخذ من نطاق تسجيل العامل نفسه، فتعمل القائمة بأي مسار */
 const BASE = new URL(self.registration.scope).pathname.replace(/\/$/, '');
-const SHELL = ['/', '/login/', '/dashboard/', '/tasks/', '/calendar/', '/requests/', '/app.css', '/i18n-en.js', '/demo-mock.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/offline.html'].map(p => BASE + p);
+const SHELL = ['/', '/login/', '/dashboard/', '/tasks/', '/calendar/', '/requests/', '/app.css', '/i18n-en.js', '/demo-mock.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/offline.html',
+  '/fonts/Tajawal-Regular.ttf', '/fonts/Tajawal-Medium.ttf', '/fonts/Tajawal-Bold.ttf', '/fonts/Tajawal-ExtraBold.ttf', '/brand/mark.svg', '/brand/logo-ar.svg', '/brand/logo-ar-dark.svg', '/brand/logo-en.svg', '/brand/logo-en-dark.svg'].map(p => BASE + p);
+/* ملفات البناء (_next/static) أسماؤها تتغيّر مع كل بناء فنخزّنها وقت التشغيل: كاش أولاً لأن اسم الملف مرتبط بمحتواه */
+const isAsset = p => p.startsWith(BASE + '/_next/static/') || p.startsWith(BASE + '/fonts/') || p.startsWith(BASE + '/brand/');
 
 self.addEventListener('install', e => {
   /* كل ملف على حدة: فشل ملف واحد لا يُسقط التخزين كله */
@@ -17,15 +20,21 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith(BASE + '/api/')) return;
-  /* الشبكة أولاً (حتى تصل التحديثات)، والكاش عند انقطاع الاتصال */
+  if (isAsset(url.pathname)) {
+    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
+      return res;
+    })));
+    return;
+  }
+  /* الصفحات والباقي: الشبكة أولاً (حتى تصل التحديثات)، والكاش عند انقطاع الاتصال */
   e.respondWith(
     fetch(req).then(res => {
-      if (res.ok && SHELL.includes(url.pathname)) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
+      if (res.ok && (SHELL.includes(url.pathname) || req.mode === 'navigate')) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
       return res;
-    }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? (caches.match(BASE + '/offline.html')) : Response.error()))),
+    }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || (req.mode === 'navigate' ? caches.match(BASE + '/offline.html') : Response.error()))),
   );
 });
-
 /* إشعار Push: يظهر حتى لو التطبيق مسكّر */
 self.addEventListener('push', e => {
   let d = {};

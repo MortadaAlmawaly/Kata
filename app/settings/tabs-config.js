@@ -587,15 +587,15 @@ export function TabInvites({ me, toast, ask }) {
       </form>
       {list.length ? (
         <div className="table-wrap">
-          <table>
-            <thead><tr><th>البريد</th><th>الدور</th><th>الحالة</th><th>تنتهي</th><th /></tr></thead>
+          <table className="cardify">
+            <thead><tr><th>البريد</th><th>الدور</th><th>الحالة</th><th>تنتهي</th><th>إجراءات</th></tr></thead>
             <tbody>
               {list.map(i => (
                 <tr key={i.id}>
-                  <td dir="ltr" style={{ textAlign: 'right' }}>{i.email}</td><td>{ROLE[i.role]}</td>
-                  <td><span className={`badge ${i.status === 'ACCEPTED' ? 'DONE' : i.status === 'PENDING' ? 'PENDING' : 'REJECTED'}`}>{INV_STATUS[i.status]}</span></td>
-                  <td>{fmtDT(i.expiresAt).slice(0, 10)}</td>
-                  <td className="nowrap">
+                  <td data-label="البريد" dir="ltr" style={{ textAlign: 'right' }}>{i.email}</td><td data-label="الدور">{ROLE[i.role]}</td>
+                  <td data-label="الحالة"><span className={`badge ${i.status === 'ACCEPTED' ? 'DONE' : i.status === 'PENDING' ? 'PENDING' : 'REJECTED'}`}>{INV_STATUS[i.status]}</span></td>
+                  <td data-label="تنتهي">{fmtDT(i.expiresAt).slice(0, 10)}</td>
+                  <td className="nowrap" data-label="إجراءات">
                     {i.status !== 'ACCEPTED' && <button className="btn sm ghost" onClick={async () => {
                       try { const r = await api('POST', `/api/invitations/${i.id}/renew`, {}); setLink({ link: r.link, email: i.email }); load(); } catch (ex) { toast(ex.message, 'err'); }
                     }}>تجديد الرابط</button>}{' '}

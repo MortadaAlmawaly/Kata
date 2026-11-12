@@ -238,9 +238,7 @@ function ShellChrome({ active, title, sub, me, shown = true, children }) {
             {p.id === 'requests' && badges.inbox > 0 && <i className="tb-count">{badges.inbox}</i>}
           </a>
         ))}
-        <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg><span>المزيد</span>
-        </button>
+        {me ? <Bell badges={badges} tabbar /> : null}
       </nav>}
       {palette && me && <Palette me={me} onClose={() => setPalette(false)} onLogout={logout} onTheme={toggleTheme} />}
       {mustChange && me && <ForcePassword me={me} onDone={() => setMustChange(false)} />}

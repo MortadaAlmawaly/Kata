@@ -235,8 +235,10 @@ export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter
     const base = [];
     if (cur.none) base.push({ v: NONE, label: cur.none });
     if (cur.me) base.push({ v: '__me', label: 'المستخدم الحالي (أنا)', avatar: ctx.me.user.name });
-    return [...base, ...cur.opts];
-  }, [cur, ctx.me.user.name]);
+    /* خيار «أنا» موجود فوق: لا نكرّر اسم المستخدم الحالي ضمن القائمة */
+    const meId = String(ctx.me.user.id);
+    return [...base, ...(cur.me ? cur.opts.filter(o => String(o.v) !== meId) : cur.opts)];
+  }, [cur, ctx.me.user.name, ctx.me.user.id]);
   const shown = options.filter(o => !q.trim() || (o.label + ' ' + (o.sub || '')).toLowerCase().includes(q.trim().toLowerCase()));
   const selected = (cur && filter.basic[cur.key]) || [];
 
@@ -346,7 +348,7 @@ export default function TaskFilterBar({ ctx, fields, fieldMap, filter, setFilter
                 {filter.adv.map(r => {
                   const f = fieldMap.get(r.field);
                   const isText = !!TEXT_FIELDS.find(x => x.key === r.field);
-                  const opts = f ? [...(f.none ? [{ v: NONE, label: f.none }] : []), ...(f.me ? [{ v: '__me', label: 'المستخدم الحالي (أنا)' }] : []), ...f.opts] : [];
+                  const opts = f ? [...(f.none ? [{ v: NONE, label: f.none }] : []), ...(f.me ? [{ v: '__me', label: 'المستخدم الحالي (أنا)' }] : []), ...(f.me ? f.opts.filter(o => String(o.v) !== String(ctx.me.user.id)) : f.opts)] : [];
                   const upd = patch => setFilter(x => ({ ...x, adv: x.adv.map(y => (y.id === r.id ? { ...y, ...patch } : y)) }));
                   return (
                     <div className="jf-row" key={r.id}>

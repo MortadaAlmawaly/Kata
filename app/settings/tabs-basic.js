@@ -1,5 +1,6 @@
 'use client';
 /* تبويبات الإعدادات الأساسية: حسابي · الإشعارات · الشركة · الموافقات · الأمان · التكاملات (ترحيل settings.js + views-biz.js). */
+import TimeInput from '../../components/TimeInput';
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { copyText } from '../../lib/clipboard';
@@ -117,6 +118,13 @@ export function TabAccount({ me, reload, toast }) {
         <div className="seg"><button className={theme === 'light' ? 'active' : ''} onClick={() => pickTheme('light')}>فاتح</button>
           <button className={theme === 'dark' ? 'active' : ''} onClick={() => pickTheme('dark')}>داكن</button></div>
       </section>
+      <section className="card">
+        <h3>الخصوصية والشروط</h3>
+        <p className="muted small">اعرف ما نجمعه من بياناتك ولماذا، وكيف تطلب حذف حسابك.</p>
+        <p style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
+          <a href={withBase('/privacy')}>سياسة الخصوصية</a><a href={withBase('/terms')}>الشروط والأحكام</a><a href={withBase('/account-deletion')}>حذف الحساب</a>
+        </p>
+      </section>
     </div>
   );
 }
@@ -195,8 +203,8 @@ export function TabCompany({ me, reload, toast, ask }) {
           ))}
         </div></div>
       <div className="row2">
-        <label className="field"><span>بداية الدوام</span><input type="time" value={f.workStart} onChange={set('workStart')} /></label>
-        <label className="field"><span>نهاية الدوام</span><input type="time" value={f.workEnd} onChange={set('workEnd')} /></label>
+        <label className="field"><span>بداية الدوام</span><TimeInput value={f.workStart} onChange={set('workStart')} /></label>
+        <label className="field"><span>نهاية الدوام</span><TimeInput value={f.workEnd} onChange={set('workEnd')} /></label>
         <label className="field"><span>سماحية التأخير (دقائق)</span><input type="number" min="0" max="120" value={f.graceMinutes} onChange={set('graceMinutes')} /></label>
         <label className="field"><span>رصيد الإجازة السنوي الافتراضي (أيام)</span><input type="number" min="0" max="365" value={f.leaveDefault} onChange={set('leaveDefault')} /></label>
       </div>

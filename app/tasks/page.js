@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { FIcon } from '../../components/Icon';
 import { api } from '../../lib/api';
 import { hueOf, STATUS } from '../../lib/constants';
+import { fmtDate } from '../../lib/util';
 import { addDaysStr, dueInfo, todayStr } from '../../lib/util';
 import { copyText } from '../../lib/clipboard';
 import { cfShort, COLOR_PRI, COLOR_TYPE, makeCtx, PRI_ICON, PRI_ORDER } from '../../lib/tasks';
@@ -233,7 +234,7 @@ function Tasks() {
               </span>}
             </div>)}
         {bshow('labels') && t.labels && t.labels.length > 0 && <div className="lbls">{t.labels.map(l => <span className="lbl" key={l} style={{ '--lh': hueOf(l) }}>{l}</span>)}</div>}
-        {bshow('due') && d && <div className={`kdue ${d.cls}`} title={d.text}>{new Date(t.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}{d.cls === 'late' && <FIcon n="warn" size={14} />}{d.cls === 'soon' && <span className="kdue-t">· {d.text}</span>}</div>}
+        {bshow('due') && d && <div className={`kdue ${d.cls}`} title={d.text}>{fmtDate(t.dueDate)}{d.cls === 'late' && <FIcon n="warn" size={14} />}{d.cls === 'soon' && <span className="kdue-t">· {d.text}</span>}</div>}
         <div className="meta kbot">
           {bshow('type') && <TypeIcon k={t.issueType} ctx={ctx} />} {bshow('key') && <small className="muted key">{t.key}</small>}
           {bshow('points') && t.storyPoints != null && <span className="sp" title={ctx.fl('points')}>{t.storyPoints}</span>}
@@ -459,7 +460,7 @@ function Tasks() {
                       {s.state === 'PLANNED' && <button type="button" className="btn sm" onClick={() => setSprintAct({ kind: 'start', sprint: s })}>بدء الدورة</button>}
                       {s.state === 'ACTIVE' && <button type="button" className="btn sm ok" onClick={() => setSprintAct({ kind: 'done', sprint: s })}>إنهاء الدورة</button>}
                       <button type="button" className="btn sm ghost" onClick={() => setSprintForm({ sprint: s })}>تعديل</button>
-                      {s.state !== 'ACTIVE' && <button type="button" className="btn sm danger" onClick={() => ask({ title: 'حذف الدورة', text: 'تعود مهامه إلى قائمة الانتظار.', ok: 'حذف',
+                      {s.state !== 'ACTIVE' && <button type="button" className="btn sm danger" onClick={() => ask({ title: 'حذف الدورة', text: 'تعود مهامها إلى قائمة الانتظار.', ok: 'حذف',
                         onOk: async () => { await api('DELETE', '/api/sprints/' + s.id); toast('تم حذف الدورة'); load(); } })}>حذف</button>}
                     </>
                   )}
@@ -673,7 +674,7 @@ function SprintForm({ sprint: s, onClose, onSaved }) {
     } catch (ex) { setErr(ex.message); }
   }
   return (
-    <Modal title={s ? 'تعديل الدورة' : 'دورة جديد'} onClose={onClose}>
+    <Modal title={s ? 'تعديل الدورة' : 'دورة جديدة'} onClose={onClose}>
       <form onSubmit={submit} noValidate>
         <label className="field"><span>اسم الدورة</span><input value={f.name} required maxLength={80} onChange={set('name')} /></label>
         <label className="field"><span>هدف الدورة (اختياري)</span><input value={f.goal} maxLength={255} onChange={set('goal')} /></label>
@@ -714,7 +715,7 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
               <label className="field"><span>البداية</span><DateInput value={start} onChange={e => setStart(e.target.value)} /></label>
               <label className="field"><span>النهاية</span><DateInput value={end} onChange={e => setEnd(e.target.value)} /></label>
             </div>
-            <p className="muted small">يوجد دورة جارٍ واحد فقط لكل مساحة.</p>
+            <p className="muted small">توجد دورة جارية واحدة فقط لكل مساحة.</p>
           </>
         ) : (
           <>

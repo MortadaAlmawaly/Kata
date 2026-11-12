@@ -1,6 +1,7 @@
 'use client';
 /* الحضور والإجازات — ترحيل React لـ viewAttendance/attEditForm (modules.js):
    تسجيل حضور/خروج، رصيد الإجازات، حالة الفريق اليوم، سجل الشهر مع تعديل الحضور، وساعات دوام الشركة. */
+import TimeInput from '../../components/TimeInput';
 import { plural } from '@/components/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
@@ -259,8 +260,8 @@ function EditModal({ e, today, onClose, onSaved }) {
             <DateInput value={date} max={today} readOnly={!isNew} required onChange={x => setDate(x.target.value)} /></label>
         </div>
         <div className="row2">
-          <label className="field"><span>وقت الحضور</span><input type="time" value={inT} required onChange={x => setInT(x.target.value)} /></label>
-          <label className="field"><span>وقت الخروج (اختياري)</span><input type="time" value={outT} onChange={x => setOutT(x.target.value)} /></label>
+          <label className="field"><span>وقت الحضور</span><TimeInput value={inT} required onChange={x => setInT(x.target.value)} /></label>
+          <label className="field"><span>وقت الخروج (اختياري)</span><TimeInput value={outT} onChange={x => setOutT(x.target.value)} /></label>
         </div>
         <p className="muted small">يُسجَّل التعديل بسجل التدقيق ويصل الموظف إشعار به.</p>
         <p className="err" role={err ? 'alert' : undefined}>{err}</p>
@@ -286,8 +287,8 @@ function HoursCard({ settings, onSaved, onError }) {
     <section className="card" style={{ marginTop: 18 }}>
       <h3>ساعات دوام الشركة</h3>
       <form className="row2" style={{ alignItems: 'end' }} onSubmit={submit}>
-        <label className="field"><span>بداية الدوام</span><input type="time" required value={f.workStart} onChange={e => setF({ ...f, workStart: e.target.value })} /></label>
-        <label className="field"><span>نهاية الدوام</span><input type="time" required value={f.workEnd} onChange={e => setF({ ...f, workEnd: e.target.value })} /></label>
+        <label className="field"><span>بداية الدوام</span><TimeInput required value={f.workStart} onChange={e => setF({ ...f, workStart: e.target.value })} /></label>
+        <label className="field"><span>نهاية الدوام</span><TimeInput required value={f.workEnd} onChange={e => setF({ ...f, workEnd: e.target.value })} /></label>
         <label className="field"><span>سماح التأخير (دقائق)</span><input type="number" min="0" max="120" value={f.graceMinutes} onChange={e => setF({ ...f, graceMinutes: e.target.value })} /></label>
         <div><button className="btn">حفظ ساعات الدوام</button></div>
       </form>

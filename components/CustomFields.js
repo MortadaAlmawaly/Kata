@@ -1,5 +1,6 @@
 'use client';
 /* حقل مخصص واحد (نص/رقم/تاريخ/رابط/قائمة/شخص…) كمكوّن متحكَّم به. onChange(value) يُستدعى بالقيمة المطبَّعة. */
+import TimeInput from './TimeInput';
 import { useEffect, useState } from 'react';
 import { FIcon } from './Icon';
 import DateInput from './DateInput';
@@ -40,7 +41,7 @@ export default function CfInput({ d, value, users, onChange, commitOnBlur = fals
       return <input className={`fin dt ${v ? '' : 'empty'}`} type="datetime-local" disabled={disabled} value={v}
         onChange={e => { setV(e.target.value); push(e.target.value || null); }} />;
     case 'time':
-      return <input className={`fin dt ${v ? '' : 'empty'}`} type="time" disabled={disabled} value={v}
+      return <TimeInput className={`fin dt ${v ? '' : 'empty'}`} disabled={disabled} value={v}
         onChange={e => { setV(e.target.value); push(e.target.value || null); }} />;
     case 'email':
     case 'phone':

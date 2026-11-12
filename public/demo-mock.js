@@ -72,7 +72,7 @@
   Object.assign(projects[0], { key: 'SUB', background: 'linear-gradient(135deg,#1E3C72,#2A5298)', settings: { fields: [], perms: { users: {}, roles: {} } } });
   Object.assign(projects[1], { key: 'CMP', background: 'linear-gradient(135deg,#232526,#414345)', settings: { fields: [], perms: { users: {}, roles: {} } } });
   Object.assign(projects[2], { key: 'FIN', background: 'linear-gradient(135deg,#134E5E,#2d3a40)', settings: { fields: [], perms: { users: {}, roles: {} } } });
-  Object.assign(projects[3], { background: 'linear-gradient(135deg,#2b2c2f,#3d3f45)', settings: { fields: [], perms: { users: {}, roles: {} } } });
+  Object.assign(projects[3], { background: null, settings: { fields: [], perms: { users: {}, roles: {} } } });
   tasks.forEach(t => { t.projectId = ({ 1: 1, 2: 1, 5: 1, 7: 2 })[t.id] || 4; });
   const announcements = [
     { id: 1, title: 'مواعيد الدوام خلال الشهر القادم', body: 'سيكون الدوام من 8:30 إلى 3:30 ابتداءً من الأسبوع القادم.\nيرجى الالتزام بتسجيل الحضور يومياً.', audience: 'COMPANY', pinned: true, authorId: 1, createdAt: now() },
@@ -87,7 +87,17 @@
   try { meId = +localStorage.getItem('pv-user') || 1; } catch (e) {}
   const me = () => byId(meId) || users[0];
   const err = (status, error) => ({ status, body: { error } });
-  const inviteLink = (inv, inviter) => location.origin + BASE + '/join?token=demo-' + inv.id + '-' + btoa(unescape(encodeURIComponent(JSON.stringify({ e: inv.email, n: inv.name, r: inv.role, t: inv.title, d: inv.department, m: inv.managerId, i: inviter, x: new Date(inv.expiresAt).getTime() })))).replace(/\+/g, '-').replace(/\//g, '_');
+  /* رمز الدعوة عشوائي لا يحمل أي بيانات: التفاصيل تُحفظ بمتصفح المدير فقط (وضع تجربة بلا خادم، فالدعوة الجديدة تعمل من نفس المتصفح). الروابط القديمة بصيغة base64 تبقى مقبولة. */
+  const INV_KEY = 'pv-inv-tokens';
+  const invMap = () => { try { return JSON.parse(localStorage.getItem(INV_KEY)) || {}; } catch (e) { return {}; } };
+  const inviteLink = (inv, inviter) => {
+    const tok = 'k' + Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+    const m = invMap(); const now = Date.now();
+    Object.keys(m).forEach(k => { if (m[k].x && m[k].x < now) delete m[k]; });   /* تنظيف المنتهي */
+    m[tok] = { e: inv.email, n: inv.name, r: inv.role, t: inv.title, d: inv.department, m: inv.managerId, i: inviter, x: new Date(inv.expiresAt).getTime() };
+    try { localStorage.setItem(INV_KEY, JSON.stringify(m)); } catch (e) {}
+    return location.origin + BASE + '/join?token=' + tok;
+  };
   const ok = (body, status = 200) => ({ status: body === null ? 204 : status, body });
   const orgPerm = {};            // تعديلات المسؤول على الحد الأدنى للدور
   const denied = {};
@@ -96,6 +106,7 @@
   const minOf = p => orgPerm[p] ?? MIN[p] ?? 99;
   const can = (u, p) => (p === 'admin' ? admins.has(u.id) : ((LEVEL[u.role] >= minOf(p) || (extra[u.id] || []).includes(p)) && !(denied[u.id] || []).includes(p)));
   org.permissions = orgPerm;
+  { const gp = projects.find(x => x.id === 4 || x.name === 'المهام العامة'); if (gp && gp.background === 'linear-gradient(135deg,#2b2c2f,#3d3f45)') gp.background = null; }   /* الخلفية الرمادية الافتراضية كانت تظهر كغلالة على صفحة المهام */
   org.settings = { timezone: 'Asia/Baghdad', weekStart: 0, workDays: [0, 1, 2, 3, 4], workStart: '08:30', workEnd: '15:30', leaveDefault: 30, passwordMin: 8, sessionDays: 14, inviteDays: 7, requireApprovalNote: false, graceMinutes: 10, labels: {},
     leaveTypes: [{ key: 'annual', name: 'سنوية', days: null, paid: true }, { key: 'sick', name: 'مرضية', days: 15, paid: true }, { key: 'unpaid', name: 'بدون راتب', days: null, paid: false }] };
   const notifs = [];
@@ -133,6 +144,7 @@
     }
   } catch (e) {}
   org.permissions = orgPerm;
+  { const gp = projects.find(x => x.id === 4 || x.name === 'المهام العامة'); if (gp && gp.background === 'linear-gradient(135deg,#2b2c2f,#3d3f45)') gp.background = null; }   /* الخلفية الرمادية الافتراضية كانت تظهر كغلالة على صفحة المهام */
   { const u1 = users.find(x => x.id === 1); if (u1) { u1.email = 'admin@kata.test'; } }
   if (org.currency === 'IQD') org.currency = 'د.ع';   /* العملة بالعربي بالواجهة */   /* حساب التجربة الرئيسي: بريد وهمي لا حقيقي */
   const savePV = () => { try { localStorage.setItem(PKEY, JSON.stringify({ ...arrays, org, orgPerm, extra, admins: [...admins], seq })); } catch (e) {} };
@@ -232,15 +244,14 @@
   }
   const hashPw = (em, p) => 'h1$' + sha256('kata|' + String(em).toLowerCase() + '|' + p);
   const DEMO_EMAIL = 'admin@kata.test';
-  const ACCOUNTS = { 'admin@kata.test': ['h1$548a1fac3fc2c1f7eab7a1ccc29a05ea8bf3208ac033aae1d58f71a82b9e7221', 1] };
   /* التحقق: الهاش المخزّن، أو نص قديم من نسخة سابقة (يُرقّى لهاش عند أول دخول) */
   const pwOk = (u, p) => {
     const em = String(u.email).toLowerCase(), h = hashPw(em, p);
     if (u.pwh) return u.pwh === h;
     if (u.pw) { if (u.pw === p) { u.pwh = h; delete u.pw; return true; } return false; }
-    const a = ACCOUNTS[em]; return !!a && a[0] === h;
+    return false;
   };
-  const hasPw = u => !!(u.pwh || u.pw || ACCOUNTS[String(u.email).toLowerCase()]);
+  const hasPw = u => !!(u.pwh || u.pw);
   const setPw = (u, p) => { u.pwh = hashPw(u.email, p); delete u.pw; };
   /* الجلسة: ختم زمني يجدَّد بالنشاط وتنتهي بعد 12 ساعة خمول */
   const SESSION_MS = 12 * 3600e3;
@@ -255,6 +266,12 @@
     if (path === '/api/auth/login' && method === 'POST') {
       const em = String(body.email || '').trim().toLowerCase();
       const lu = users.find(x => x.active && String(x.email).toLowerCase() === em);
+      /* لا أسرار داخل الملف العام: كلمة مرور حساب التجربة الرئيسي تُنشأ عند أول دخول وتُحفظ (كهاش) بمتصفحك فقط */
+      if (lu && lu.id === 1 && !hasPw(lu)) {
+        const first = String(body.password || '');
+        if (first.length < org.settings.passwordMin) return err(400, 'هذا أول دخول بهذا المتصفح: اختر كلمة مرور لا تقل عن ' + org.settings.passwordMin + ' أحرف (تُحفظ بمتصفحك فقط)');
+        setPw(lu, first); savePV();
+      }
       if (lu && hasPw(lu) && pwOk(lu, String(body.password || ''))) {
         meId = lu.id;
         try { localStorage.setItem('pv-auth', String(Date.now())); localStorage.setItem('pv-user', String(lu.id)); } catch (e) {}
@@ -267,7 +284,8 @@
     if (path.startsWith('/api/auth/invite/')) {
       /* رابط الدعوة يحمل بياناته داخل الرمز نفسه، فيعمل من أي متصفح أو جهاز (وضع التجربة بدون خادم) */
       const tk = decodeURIComponent(path.split('/')[4] || '');
-      let inv; try { inv = JSON.parse(decodeURIComponent(escape(atob(tk.replace(/^demo-\d+-/, '').replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { inv = null; }
+      let inv = invMap()[tk] || null;
+      if (!inv && /^demo-/.test(tk)) { try { inv = JSON.parse(decodeURIComponent(escape(atob(tk.replace(/^demo-\d+-/, '').replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { inv = null; } }
       if (!inv || !inv.e) return err(404, 'رابط الدعوة غير صالح أو منتهي');
       if (inv.x && inv.x < Date.now()) return err(410, 'انتهت صلاحية الدعوة');
       { const li = invites.find(x => x.email === inv.e); if (li && li.status === 'REVOKED') return err(410, 'تم إلغاء هذه الدعوة'); }
@@ -682,7 +700,8 @@
     if (path === '/api/goals' && method === 'POST') {
       const oid = body.ownerId || u.id;
       if (!sc.has(oid)) return err(403, 'تقدر تضع أهداف لنفسك أو لمن تحتك فقط');
-      const g = { id: ++seq, ownerId: oid, parentId: body.parentId || null, title: body.title, description: null, period: body.period, status: 'ACTIVE', keyResults: (body.keyResults || []).map(k => ({ id: ++seq, title: k.title, target: k.target, current: 0, unit: k.unit || null })) };
+      if (!String(body.title || '').trim()) return err(400, 'العنوان مطلوب');
+      const g = { id: ++seq, ownerId: oid, parentId: body.parentId || null, title: String(body.title).trim(), description: null, period: body.period, status: 'ACTIVE', keyResults: (body.keyResults || []).map(k => ({ id: ++seq, title: k.title, target: k.target, current: 0, unit: k.unit || null })) };
       goals.push(g); logA(u, 'goal.create', 'goal', g.id, { ownerId: oid });
       return ok({ id: g.id }, 201);
     }
@@ -699,7 +718,7 @@
       return ok({ id: seq }, 201);
     }
     if ((m = path.match(/^\/api\/key-results\/(\d+)$/)) && method === 'PATCH') {
-      for (const g of goals) { const k = g.keyResults.find(x => x.id === +m[1]); if (k) { if (!sc.has(g.ownerId)) return err(404, 'النتيجة غير موجودة'); Object.assign(k, body); return ok(null); } }
+      for (const g of goals) { const k = g.keyResults.find(x => x.id === +m[1]); if (k) { if (!sc.has(g.ownerId)) return err(404, 'النتيجة غير موجودة'); Object.assign(k, body); if (Number(k.current) > Number(k.target)) k.current = Number(k.target); if (Number(k.current) < 0) k.current = 0; return ok(null); } }
       return err(404, 'النتيجة غير موجودة');
     }
 
@@ -1037,9 +1056,17 @@
     if (path === '/api/reports/performance') {
       if (!can(u, 'reports.view')) return err(403, 'ليست لديك صلاحية لهذا الإجراء');
       return ok({ from: q.from, to: q.to, rows: [...sc].filter(id => byId(id).active).map((id, i) => {
-        const x = byId(id), my = tasks.filter(t => t.assigneeId === id), done = my.filter(t => t.status === 'DONE'), open = my.filter(t => t.status !== 'DONE');
-        const reqs = requests.filter(r => r.requesterId === id);
-        return { id, name: x.name, role: x.role, title: x.title, department: x.department, tasksDone: done.length + (i % 3), tasksOpen: open.length, tasksOverdue: open.filter(t => t.dueDate && t.dueDate < day(0)).length, avgDaysToDone: done.length ? 2.5 + i * 0.4 : null, onTimeRate: done.length ? 70 + i * 4 : null, requests: reqs.length, approvedSpend: reqs.filter(r => r.status === 'APPROVED' && r.type !== 'LEAVE').reduce((s, r) => s + r.amount, 0), leaveDays: reqs.filter(r => r.status === 'APPROVED' && r.type === 'LEAVE').length * 5, attendanceDays: attendance.filter(a => a.userId === id).length };
+        /* أرقام فعلية ضمن الفترة المختارة (نفس تعريف صفحة التحليلات): المنجزة = حالة DONE وتاريخ إكمال داخل الفترة */
+        const from = q.from || '0000-00-00', to = q.to || '9999-99-99';
+        const inR = s => { const d = s ? String(s).slice(0, 10) : ''; return !!d && d >= from && d <= to; };
+        const x = byId(id), my = tasks.filter(t => t.assigneeId === id);
+        const done = my.filter(t => t.status === 'DONE' && inR(t.completedAt)), open = my.filter(t => t.status !== 'DONE');
+        const reqs = requests.filter(r => r.requesterId === id && inR(r.createdAt));
+        const withDue = done.filter(t => t.dueDate);
+        const onTime = withDue.filter(t => String(t.completedAt).slice(0, 10) <= t.dueDate).length;
+        const cyc = done.filter(t => t.createdAt).map(t => (new Date(t.completedAt) - new Date(t.createdAt)) / 864e5);
+        const leaveDays = reqs.filter(r => r.status === 'APPROVED' && r.type === 'LEAVE' && r.startDate && r.endDate).reduce((s, r) => s + Math.round((new Date(r.endDate) - new Date(r.startDate)) / 864e5) + 1, 0);
+        return { id, name: x.name, role: x.role, title: x.title, department: x.department, tasksDone: done.length, tasksOpen: open.length, tasksOverdue: open.filter(t => t.dueDate && t.dueDate < day(0)).length, avgDaysToDone: cyc.length ? Math.round(cyc.reduce((a, b) => a + b, 0) / cyc.length * 10) / 10 : null, onTimeRate: withDue.length ? Math.round(onTime / withDue.length * 100) : null, requests: reqs.length, approvedSpend: reqs.filter(r => r.status === 'APPROVED' && r.type !== 'LEAVE').reduce((s, r) => s + (r.amount || 0), 0), leaveDays, attendanceDays: attendance.filter(a => a.userId === id && inR(a.date)).length };
       }) });
     }
     /* ── الموارد البشرية: تقرير الحضور والإجازات والرواتب ── */
@@ -1361,6 +1388,7 @@
     if (path === '/api/integrations/whatsapp/test') return ok({ ok: true });
 
     if (path === '/api/audit') return ok(can(u, 'audit.view') ? audit : []);
+    if (path === '/api/client-error') return ok(null);   /* بلاغات أخطاء الواجهة: بالنسخة التجريبية تُتجاهل */
 
     return err(404, 'غير موجود');
   }

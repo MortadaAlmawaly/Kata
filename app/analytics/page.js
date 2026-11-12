@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
       <PageTabs items={REPORT_TABS} active="analytics" />
       {error && <div className="notice">{error}</div>}
       <div className="toolbar">
-        <span className="grow muted">{d ? `اتجاهات أداء نطاقك (${d.people} شخصاً).` : ''}</span>
+        <span className="grow muted">{d ? `اتجاهات أداء نطاقك (${plural(d.people, 'شخص', 'شخصان', 'أشخاص', 'شخصاً')}).` : ''}</span>
         <select className="input" style={{ width: 'auto' }} value={weeks} onChange={e => setWeeks(+e.target.value)}>
           {[8, 12, 26].map(n => <option key={n} value={n}>آخر {plural(n, 'أسبوع', 'أسبوعين', 'أسابيع', 'أسبوعاً')}</option>)}
         </select>

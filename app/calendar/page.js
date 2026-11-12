@@ -1,6 +1,7 @@
 'use client';
 /* التقويم — ترحيل React لـ viewCalendar/eventForm/eventDetail (views-pro.js، modules.js).
    ملاحظة: سحب/تمديد المواعيد داخل عرض الأسبوع لم يُرحَّل؛ السحب بين الأيام في عرض الشهر موجود. */
+import TimeInput from '../../components/TimeInput';
 import { plural } from '@/components/hooks';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FIcon } from '../../components/Icon';
@@ -479,8 +480,8 @@ function EventForm({ me, event: ex, date: presetDate, time: presetTime, onClose,
           <label className="field"><span>المكان / رابط الاجتماع</span><input value={f.location} maxLength={140} placeholder="مثال: قاعة 2 أو رابط الاجتماع" onChange={set('location')} /></label>
         </div>
         <div className="row2">
-          <label className="field"><span>من</span><input type="time" value={f.start} onChange={set('start')} /></label>
-          <label className="field"><span>إلى</span><input type="time" value={f.end} onChange={set('end')} /></label>
+          <label className="field"><span>من</span><TimeInput value={f.start} onChange={set('start')} /></label>
+          <label className="field"><span>إلى</span><TimeInput value={f.end} onChange={set('end')} /></label>
         </div>
         <label className="check"><input type="checkbox" checked={f.allDay} onChange={e => setF({ ...f, allDay: e.target.checked })} /> طوال اليوم</label>
         <div className="row2">

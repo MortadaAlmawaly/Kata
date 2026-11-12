@@ -3,6 +3,7 @@
    يكتب المستخدم الأرقام فقط (تُنسَّق تلقائياً) أو يختار من التقويم. نفس واجهة <input>: value وonChange(e.target.value). */
 import { useEffect, useRef, useState } from 'react';
 import { FIcon } from './Icon';
+import { fmtDate } from '../lib/util';
 
 const OK = /^\d{4}-\d{2}-\d{2}$/;
 const AR_DIGITS = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
@@ -26,8 +27,9 @@ export default function DateInput({ value = '', onChange, className = '', style,
     try { if (n.showPicker) n.showPicker(); else n.click(); } catch (_) { n.click(); }
   }
   return (
+    <>
     <span className="date-in" style={style}>
-      <input type="text" inputMode="numeric" dir="ltr" placeholder="السنة-الشهر-اليوم" maxLength={10} autoComplete="off"
+      <input type="text" inputMode="numeric" dir="ltr" placeholder="سنة-شهر-يوم" maxLength={10} autoComplete="off"
         className={className} value={txt} onChange={typed} onBlur={() => setTxt(value || '')}
         readOnly={readOnly} disabled={disabled} required={required} {...rest} />
       <button type="button" className="date-pick" tabIndex={-1} aria-label="اختيار التاريخ" disabled={disabled || readOnly} onClick={pick}>
@@ -36,5 +38,7 @@ export default function DateInput({ value = '', onChange, className = '', style,
       <input ref={nat} type="date" className="date-nat" tabIndex={-1} aria-hidden="true" value={value || ''} min={min} max={max}
         onChange={e => { setTxt(e.target.value); emit(e.target.value); }} />
     </span>
+    {value ? <small className="date-ar">{fmtDate(value)}</small> : null}
+    </>
   );
 }

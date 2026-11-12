@@ -5,6 +5,7 @@ import { plural } from './hooks';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { PRIORITY, STATUS } from '../lib/constants';
+import { fmtDate } from '../lib/util';
 import { addDaysStr, dayLabel, fmt, MONTHS, parseYMD, todayStr, WEEKDAYS, ymd } from '../lib/util';
 import { Avatar, Icon } from './ui';
 import { Bar, ChartBars, ChartLine, Ring } from './charts';
@@ -156,7 +157,7 @@ export function TaskProjects({ tasks, onOpen, onShowInBoard, onCreate }) {
                 <tr key={t.id} className={`click ${isOver(t) ? 'overdue' : ''}`} onClick={() => onOpen(t.id)}>
                   <td className="nowrap"><small className="muted key">{t.key}</small></td><td><b>{t.title}</b></td>
                   <td>{t.assignee ? <span className="who"><Avatar name={t.assignee.name} size={22} />{t.assignee.name}</span> : '—'}</td>
-                  <td>{t.dueDate || <span className="muted">—</span>}</td>
+                  <td>{t.dueDate ? fmtDate(t.dueDate) : <span className="muted">—</span>}</td>
                   <td><span className={`badge ${t.status}`}>{STATUS[t.status] || t.status}</span></td>
                 </tr>
               ))}
@@ -297,7 +298,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
               { name: 'الفعلي', values: burn.actual, color: 'var(--accent-text, var(--accent))', area: true }]} w={760} h={240} />
             <small className="muted">الإجمالي {burn.totalPts} نقطة (المهمة بلا نقاط تُحسب بنقطة واحدة).</small>
           </>
-        ) : <p className="muted">لا يوجد دورة جارٍ بتاريخي بداية ونهاية. أنشئ دورةاً وابدأه من تبويب قائمة الانتظار.</p>}
+        ) : <p className="muted">لا توجد دورة جارية بتاريخَي بداية ونهاية. أنشئ دورة جديدة وابدأها من تبويب قائمة الانتظار.</p>}
       </section>
 
       <section className="card">

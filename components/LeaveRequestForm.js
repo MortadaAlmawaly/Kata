@@ -29,7 +29,7 @@ export default function LeaveRequestForm({ onClose, onSaved, onError }) {
   async function submit(e) {
     e.preventDefault();
     setErr('');
-    if (!days) { setErr('الفترة غير صالحة'); return; }
+    if (!days) return;   // الرسالة الواضحة تظهر أصلاً تحت التواريخ (مرة وحدة بدل تكرارها)
     setBusy(true);
     try {
       const title = f.title.trim() || `طلب إجازة ${(t && t.name) || ''}`.trim();
@@ -57,7 +57,8 @@ export default function LeaveRequestForm({ onClose, onSaved, onError }) {
           <button type="button" className="btn sm ghost" title="أقرب موعد يقبله إشعار الـ 3 أيام عمل" onClick={() => { const s = workDaysAhead(3); setF({ ...f, startDate: s, endDate: s }); }}>بعد 3 أيام عمل</button>
         </div>
         <p className="muted small">
-          {days ? <>المدة: <b>{days}</b> يوم{over && <span style={{ color: 'var(--bad)' }}> — تتجاوز رصيدك المتبقي</span>}</> : <span style={{ color: 'var(--bad)' }}>الفترة غير صالحة</span>}
+          {days ? <>المدة: <b>{plural(days, 'يوم', 'يومان', 'أيام', 'يوماً')}</b>{over && <span style={{ color: 'var(--bad)' }}> — تتجاوز رصيدك المتبقي</span>}</> : <span style={{ color: 'var(--bad)' }}>{!f.startDate || !f.endDate ? 'اختر تاريخ البداية والنهاية' : 'تاريخ النهاية قبل تاريخ البداية'}</span>}
+          {days > 0 && ltKey !== 'sick' && f.startDate < workDaysAhead(3) && <span style={{ color: 'var(--warn)', display: 'block' }}>تنبيه: سياسة الإجازات تشترط إشعاراً مسبقاً 3 أيام عمل، فأقرب تاريخ مقبول {workDaysAhead(3)} (المرضية مستثناة).</span>}
         </p>
         <label className="field"><span>العنوان (اختياري)</span><input value={f.title} maxLength={140} placeholder="مثال: إجازة عائلية" onChange={set('title')} /></label>
         <label className="field"><span>السبب / ملاحظات</span><textarea value={f.details} maxLength={4000} onChange={set('details')} /></label>

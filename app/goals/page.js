@@ -201,12 +201,13 @@ function GoalForm({ me, goals, onClose, onSaved, onError }) {
   async function submit(e) {
     e.preventDefault();
     setErr('');
+    if (!f.title.trim()) { setErr('اكتب عنوان الهدف'); return; }
     const keyResults = krs.map(k => ({ title: k.t, target: Number(k.v) })).filter(k => k.title && k.title.trim());
     if (keyResults.find(k => !(k.target > 0))) { setErr('حدّد مستهدفاً رقمياً أكبر من صفر لكل نتيجة'); return; }
     setBusy(true);
     try {
       const gr = await api('POST', '/api/goals', {
-        title: f.title, period: f.period, keyResults,
+        title: f.title.trim(), period: f.period, keyResults,
         ownerId: f.ownerId ? +f.ownerId : undefined, parentId: f.parentId ? +f.parentId : null,
       });
       if (files.current && files.current.files.length) {
@@ -268,7 +269,9 @@ function GoalDetail({ id, goals, onOpen, onClose, onChanged, onToast }) {
   const linked = tasks.filter(t => t.goalId === g.id);
   const h = goalHealth(g), exp = expectedPct(g.period);
   const run = fn => async () => { try { await fn(); } catch (e) { onToast(e.message, 'err'); } };
-  const saveKr = async (krId, val) => run(async () => { await api('PATCH', '/api/key-results/' + krId, { current: Math.max(0, Number(val) || 0) }); onChanged(); })();
+  /* القيمة بين صفر والمستهدف: لا تتجاوز 100% */
+  const capKr = (v, target) => Math.min(Number(target) || 0, Math.max(0, Number(v) || 0));
+  const saveKr = async (krId, val, target) => run(async () => { const cur = capKr(val, target); if (Number(val) > Number(target)) onToast('القيمة بحدّها الأعلى: المستهدف ' + fmt(target), 'info'); await api('PATCH', '/api/key-results/' + krId, { current: cur }); onChanged(); })();
   const setStatus = status => run(async () => { await api('PATCH', '/api/goals/' + id, { status }); if (status === 'ACHIEVED') onToast('مبروك! تحقق الهدف'); onChanged(); })();
 
   return (
@@ -310,10 +313,10 @@ function GoalDetail({ id, goals, onOpen, onClose, onChanged, onToast }) {
             <Bar p={krPct(k)} />
             {g.editable ? (
               <div className="stepper">
-                <button type="button" aria-label="إنقاص" onClick={() => saveKr(k.id, k.current - step)}>−</button>
-                <input type="number" min="0" step="any" defaultValue={k.current} key={k.current}
-                  onBlur={e => { if (Number(e.target.value) !== k.current) saveKr(k.id, e.target.value); }} />
-                <button type="button" aria-label="زيادة" onClick={() => saveKr(k.id, k.current + step)}>+</button>
+                <button type="button" aria-label="إنقاص" onClick={() => saveKr(k.id, k.current - step, k.target)}>−</button>
+                <input type="number" min="0" max={k.target} step="any" defaultValue={k.current} key={k.current}
+                  onBlur={e => { if (Number(e.target.value) !== k.current) saveKr(k.id, e.target.value, k.target); }} />
+                <button type="button" aria-label="زيادة" onClick={() => saveKr(k.id, k.current + step, k.target)}>+</button>
                 <span className="of">من {fmt(k.target)} {k.unit || ''}</span>
               </div>
             ) : <div className="muted small" style={{ marginTop: 8 }}>{fmt(k.current)} من {fmt(k.target)} {k.unit || ''}</div>}

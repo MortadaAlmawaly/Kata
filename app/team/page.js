@@ -1,5 +1,6 @@
 'use client';
 /* الهيكل والفريق — ترحيل React لـ viewTeam/personProfile/userForm/accessModal. */
+import TimeInput from '../../components/TimeInput';
 import { withBase } from '@/lib/base';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import OrgFlow from '../../components/OrgFlow';
@@ -209,7 +210,7 @@ function Profile({ u, me, byId, reports, canAdd, isAdmin, onOpen, onClose, onEdi
           {u.canManage && <button type="button" className="btn ghost" onClick={() => onEdit(u)}>تعديل</button>}
           {u.canManage && <button type="button" className="btn ghost" onClick={() => ask({ title: 'إعادة تعيين كلمة المرور',
             text: 'سيتم إنهاء جلسات المستخدم وإنشاء كلمة مرور مؤقتة جديدة.', ok: 'متابعة', danger: false,
-            onOk: async () => { const r = await api('POST', `/api/users/${u.id}/reset-password`, {}); onSecret({ title: 'كلمة المرور المؤقتة', value: r.tempPassword }); } })}>كلمة مرور</button>}
+            onOk: async () => { const r = await api('POST', `/api/users/${u.id}/reset-password`, {}); onSecret({ title: 'كلمة المرور المؤقتة', value: r.tempPassword }); } })}>إعادة تعيين كلمة المرور</button>}
           {u.canManage && u.id !== me.user.id && <button type="button" className="btn ghost" onClick={() => ask({ title: u.active ? 'تعطيل الحساب' : 'تفعيل الحساب',
             text: u.active ? `لن يستطيع ${u.name} الدخول بعد التعطيل، وتبقى بياناته محفوظة ويمكنك إعادة تفعيله لاحقاً.` : `سيتمكّن ${u.name} من الدخول مرة أخرى.`,
             ok: u.active ? 'تعطيل' : 'تفعيل', danger: !!u.active,
@@ -366,8 +367,8 @@ function UserForm({ me, users, user: u, presetMgr, myLevel, isAdmin, onClose, on
         <div className="row2">
           <label className="field"><span>رصيد الإجازة السنوي (أيام)</span><input type="number" min="0" max="365" step="1" value={f.leave} onChange={set('leave')} /></label>
           <span />
-          <label className="field"><span>بداية الدوام (فارغ = دوام الشركة)</span><input type="time" value={f.shiftStart} onChange={set('shiftStart')} /></label>
-          <label className="field"><span>نهاية الدوام</span><input type="time" value={f.shiftEnd} onChange={set('shiftEnd')} /></label>
+          <label className="field"><span>بداية الدوام (فارغ = دوام الشركة)</span><TimeInput value={f.shiftStart} onChange={set('shiftStart')} /></label>
+          <label className="field"><span>نهاية الدوام</span><TimeInput value={f.shiftEnd} onChange={set('shiftEnd')} /></label>
         </div>
         {u && <label className="field"><span>الحالة</span>
           <select value={String(f.active)} onChange={e => setF({ ...f, active: e.target.value === 'true' })}>

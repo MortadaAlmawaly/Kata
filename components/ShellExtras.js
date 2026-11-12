@@ -53,7 +53,8 @@ export function useBadges(me) {
   return { ...state, setState, refresh, toastNode };
 }
 
-export function Bell({ badges }) {
+/* tabbar=true: نسخة الشريط السفلي بالهاتف (أيقونة + «الإشعارات» + عدّاد) تفتح القائمة فوق الشريط؛ النسخة العلوية تُخفى على الهاتف بـCSS */
+export function Bell({ badges, tabbar = false }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('all');
   const ref = useRef(null);
@@ -81,11 +82,12 @@ export function Bell({ badges }) {
     setOpen(false);
   }
   return (
-    <div style={{ position: 'relative' }} ref={ref}>
-      <button className={`icon-btn ${unreadMentions ? 'has-mention' : ''}`} type="button" aria-label="الإشعارات" onClick={e => { e.stopPropagation(); setOpen(!open); }}>
+    <div style={tabbar ? undefined : { position: 'relative' }} className={tabbar ? 'bell-tab' : 'bell-top'} ref={ref}>
+      <button className={tabbar ? `tab-bell ${unreadMentions ? 'has-mention' : ''}` : `icon-btn ${unreadMentions ? 'has-mention' : ''}`} type="button" aria-label="الإشعارات" aria-expanded={open} onClick={e => { e.stopPropagation(); setOpen(!open); }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8z" /><path d="M10.3 20a2 2 0 0 0 3.4 0" /></svg>
-        {unread > 0 && <span className="dot">{unread > 99 ? '99+' : unread}</span>}
-        {unreadMentions > 0 && <span className="at">@</span>}
+        {tabbar && <span>الإشعارات</span>}
+        {unread > 0 && (tabbar ? <i className="tb-count">{unread > 99 ? '99+' : unread}</i> : <span className="dot">{unread > 99 ? '99+' : unread}</span>)}
+        {!tabbar && unreadMentions > 0 && <span className="at">@</span>}
       </button>
       {open && (
         <div className="dropdown" onClick={e => e.stopPropagation()}>

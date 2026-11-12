@@ -2765,3 +2765,40 @@ bdi.t,.ev-time,.ag-time{unicode-bidi:isolate;direction:ltr;display:inline-block}
 
 /* QA4: بطاقة التثبيت أول شي على الموبايل */
 @media (max-width:760px){ .pwa-card{order:-1} }
+
+/* QA5: أهداف لمس 44px بصفحة الدخول (EN/AR، إظهار كلمة المرور، المستويات) */
+.pw-toggle,.levels-btn,.login-page .tabs button,#langBtn{min-height:44px;min-width:44px}
+.pw-toggle{padding-inline:12px}
+
+/* تاريخ بصيغة عربية تحت حقل التاريخ */
+.date-ar{display:block;font-size:.75rem;color:var(--muted);margin-top:4px}
+
+/* صفحات قانونية */
+.legal-page{min-height:100vh;background:var(--bg)}
+.legal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.legal-body{max-width:760px;margin:0 auto;padding:28px 20px 56px;line-height:1.9}
+.legal-body h1{margin:6px 0 4px}
+.legal-body h2{margin:26px 0 6px;font-size:1.1rem}
+.legal-body ul,.legal-body ol{padding-inline-start:22px}
+.legal-links{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);font-size:.85rem}
+.login-legal{margin-top:10px;font-size:.78rem;text-align:center}
+.login-legal a{color:var(--accent-text)}
+
+/* حقل التاريخ: عرض أدنى يتّسع لـ 10 خانات + الأيقونة، فلا يُقصّ النص ولا تتداخل الأيقونة معه */
+.date-in{min-width:12.5rem;width:100%}
+.toolbar .date-in,.row2 .date-in{width:auto;min-width:12.5rem}
+.date-in>input[type=text]{width:100%;min-width:0;padding-inline:44px 12px;font-size:.92rem;letter-spacing:.2px}
+.date-in>input[type=text]::placeholder{font-size:.8rem;opacity:.7}
+.date-pick{left:8px}
+@media (max-width:760px){ .date-in{min-width:0} .toolbar .date-in{min-width:11rem} }
+
+/* QA6: زر الإشعارات يحلّ محل «المزيد» بالشريط السفلي بالهاتف، والجرس العلوي يُخفى (القائمة الكاملة بزر ☰ أعلى) */
+@media (max-width:860px){
+  .topbar .bell-top{display:none}
+  .tabbar .bell-tab{display:grid;position:static}
+  .tabbar .tab-bell{width:100%;background:transparent;border:0;cursor:pointer}
+  .tabbar .tab-bell.has-mention svg{color:var(--accent-text,var(--accent))}
+  .tabbar .tab-bell .tb-count{inset-inline-start:calc(50% + 4px)}
+  .bell-tab .dropdown{position:absolute;top:auto;bottom:calc(100% + 8px);inset-inline:10px;width:auto;max-height:min(62vh,440px);overflow-y:auto}
+}
+@media (min-width:861px){ .tabbar .bell-tab{display:none} }

@@ -183,7 +183,7 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
           <label className="field qc-extra"><span>المهمة الرئيسية (اكتب الرقم مثل NKH-3)</span>
             <input list="dlEpics" value={f.parentKey} placeholder="NKH-3" dir="ltr" style={{ textAlign: 'right' }} onChange={set('parentKey')} /></label>
           <datalist id="dlEpics">{R.epics.map(e => <option key={e.key} value={e.key}>{e.title}</option>)}</datalist>
-          <label className="field qc-extra"><span>مرتبطة بهدف</span>
+          <label className="field"><span>مرتبطة بهدف</span>
             <select value={f.goalId} onChange={set('goalId')}>
               <option value="">— بدون —</option>{R.goals.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
             </select></label>

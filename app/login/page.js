@@ -87,8 +87,11 @@ export default function LoginPage() {
             <button className="btn full" type="submit" disabled={busy}>{reg ? 'إنشاء الشركة' : 'دخول'}</button>
             <p className="err" role={err ? 'alert' : undefined}>{err}</p>
           </form>
-          <p className="muted small">{DEMO ? 'الحسابات تُنشأ من قِبل مديرك.' : 'الحسابات تُنشأ من قِبل مديرك. التسجيل بالأعلى لمن يُنشئ شركته لأول مرة.'}</p>
+          <p className="muted small">{DEMO ? 'نسخة تجريبية تعمل داخل متصفحك فقط. أول دخول: بريد التجربة admin@kata.test وأي كلمة مرور تختارها (8 أحرف فأكثر) وتُحفظ بمتصفحك. الحسابات الأخرى تُنشأ بدعوة من المدير.' : 'الحسابات تُنشأ من قِبل مديرك. التسجيل بالأعلى لمن يُنشئ شركته لأول مرة.'}</p>
         </main>
+        <p className="login-legal">
+          <a href={withBase('/privacy')}>سياسة الخصوصية</a> · <a href={withBase('/terms')}>الشروط والأحكام</a> · <a href={withBase('/account-deletion')}>حذف الحساب</a>
+        </p>
 
         <button type="button" className="levels-btn" onClick={() => setShowLevels(true)}>كيف تعمل مستويات الصلاحيات؟</button>
       </div>
@@ -104,7 +107,7 @@ export default function LoginPage() {
             ); })}
           </div>
         </Modal>
-      )}      <LangButton className="" style={{ position: 'fixed', top: 14, insetInlineEnd: 14, zIndex: 50, padding: '6px 12px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--text)' }} />
+      )}      <LangButton className="" style={{ position: 'fixed', top: 14, insetInlineEnd: 14, zIndex: 50, padding: '6px 12px', minWidth: 44, minHeight: 44, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--text)' }} />
     </div>
   );
 }
