@@ -122,7 +122,7 @@ export function TabAccount({ me, reload, toast }) {
         <h3>الخصوصية والشروط</h3>
         <p className="muted small">اعرف ما نجمعه من بياناتك ولماذا، وكيف تطلب حذف حسابك.</p>
         <p style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
-          <a href={withBase('/privacy')}>سياسة الخصوصية</a><a href={withBase('/terms')}>الشروط والأحكام</a><a href={withBase('/account-deletion')}>حذف الحساب</a>
+          <a className="tap-link" href={withBase('/privacy')}>سياسة الخصوصية</a><a className="tap-link" href={withBase('/terms')}>الشروط والأحكام</a><a className="tap-link" href={withBase('/account-deletion')}>حذف الحساب</a>
         </p>
       </section>
     </div>

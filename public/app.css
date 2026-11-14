@@ -2846,3 +2846,46 @@ bdi.t,.ev-time,.ag-time{unicode-bidi:isolate;direction:ltr;display:inline-block}
 .toolbar>.grow.muted{flex:1 1 220px;min-width:0}
 .card.ann>div:first-child{gap:8px 10px}
 .card.ann>div:first-child .btn.sm{margin-inline-start:auto}
+
+/* ═════ QA8: نوافذ الهاتف (وسط الشاشة لا ورقة سفلية)، محاذاة الحقول، أحجام اللمس ═════ */
+.modal-card:focus{outline:none}
+@media (max-width:1023px){
+  /* النافذة تتوسط الشاشة بهوامش جانبية بدل ورقة سفلية بعرض كامل */
+  .modal{align-items:center;justify-content:center;padding:12px}
+  .modal-card,.modal-card.wide{width:100%;max-width:min(92vw,560px);max-height:85dvh;border-radius:18px;animation:pop .22s var(--ease);padding:20px 16px}
+  .modal-card::before{display:none}
+  /* أزرار الحفظ/الإلغاء ثابتة أسفل النافذة وتبقى ظاهرة بدون تمرير */
+  .modal-card .modal-actions{position:sticky;bottom:-20px;z-index:2;background:var(--panel);margin:16px -16px -20px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+  /* نافذة تفاصيل المهمة: بطاقة وسط الشاشة لا شاشة كاملة */
+  .modal:has(.td-card:not(.td-peek)){padding:12px;align-items:center;justify-content:center}
+  .modal-card.td-card,.modal-card.td-card:not(.td-peek),.modal-card.td-card.td-full{width:min(94vw,640px)!important;max-width:min(94vw,640px)!important;height:85dvh!important;max-height:85dvh!important;border-radius:18px!important;margin:0 auto}
+}
+
+/* حقول التاريخ والصفوف المزدوجة تنكمش داخل النافذة ولا تفيض خارجها */
+.row2>*{min-width:0}
+.modal .date-in,.row2 .date-in{min-width:0;width:100%}
+@media (max-width:560px){
+  .modal .row2:has(.date-in){grid-template-columns:1fr}
+}
+
+/* ارتفاع موحّد للحقول (44px) وخط 16px على اللمس لمنع تكبير iOS */
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not(.date-nat),select,.m-pick{min-height:44px}
+@media (pointer:coarse){ input,select,textarea{font-size:16px} }
+
+/* تباعد القوائم المتجاورة (بدل -4px و12px المتداخلة) */
+.m-pick{margin-bottom:12px}
+.tabs-row{margin-bottom:12px}
+@media (max-width:1023px){ .tabs-row+.toolbar{margin-top:0} .toolbar>.seg{padding:0} }
+
+/* أزرار متجاورة بمسافة واضحة (بدل 3px) */
+.btn.sm+.btn.sm,.btn+.btn.sm,td .btn+.btn{margin-inline-start:8px}
+
+/* أهداف لمس 44px لعناصر الإعدادات والألوان */
+@media (pointer:coarse),(max-width:1023px){
+  .sp-dir,.sp-sw,.bi-ic,.bi-c,.tab-pill,.tap-link{min-width:44px;min-height:44px}
+  .tap-link{display:inline-flex;align-items:center}
+  .bsw-name{overflow:visible;text-overflow:clip;white-space:normal}
+  .seg button span{font-size:.8rem}
+}
+.hr-doc{max-width:100%}
+@media (max-width:1023px){ .hr-wrap,.hr-doc{overflow-x:auto} }

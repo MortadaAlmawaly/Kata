@@ -44,10 +44,22 @@ export function Avatar({ name, size }) {
 export function Modal({ title, onClose, children, actions, wide, cardClass = '', noLock = false, center = false }) {
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const cardRef = useRef(null);
+  /* Escape يغلق النافذة العليا فقط (مكدّس النوافذ)، والتركيز يدخل النافذة عند فتحها ويرجع للزر الذي فتحها عند إغلاقها */
   useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape' && closeRef.current) closeRef.current(); };
+    const st = (window.__modalStack = window.__modalStack || []);
+    const me = {};
+    st.push(me);
+    const back = document.activeElement;
+    const onKey = e => { if (e.key === 'Escape' && closeRef.current && st[st.length - 1] === me) { e.stopPropagation(); closeRef.current(); } };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    const ft = setTimeout(() => { const c = cardRef.current; if (c && !c.contains(document.activeElement)) { try { c.focus({ preventScroll: true }); } catch (_) { /* تجاهل */ } } }, 0);
+    return () => {
+      clearTimeout(ft);
+      document.removeEventListener('keydown', onKey);
+      const i = st.indexOf(me); if (i >= 0) st.splice(i, 1);
+      try { if (back && back.focus && document.contains(back)) back.focus({ preventScroll: true }); } catch (_) { /* تجاهل */ }
+    };
   }, []);
   /* النافذة الجانبية المصغّرة (noLock) لا تجمّد التمرير ولا تغبّش الصفحة خلفها */
   useEffect(() => {
@@ -62,7 +74,6 @@ export function Modal({ title, onClose, children, actions, wide, cardClass = '',
     };
   }, [noLock]);
   /* رسالة الخطأ تظهر قرب الحقل: عند ظهورها نمرّر لها فوراً بدل أن تبقى مخفية أسفل النافذة */
-  const cardRef = useRef(null);
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return undefined;
@@ -78,7 +89,7 @@ export function Modal({ title, onClose, children, actions, wide, cardClass = '',
   }, []);
   return (
     <div className={`modal ${center ? 'modal-center' : ''}`} onMouseDown={e => { if (e.target === e.currentTarget && onClose) onClose(); }}>
-      <div ref={cardRef} className={`modal-card ${wide ? 'wide' : ''} ${cardClass}`} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={cardRef} className={`modal-card ${wide ? 'wide' : ''} ${cardClass}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
         <div className="modal-head">
           <h2>{title}</h2>
           <button type="button" className="icon-btn" aria-label="إغلاق" onClick={onClose}><FIcon n="x" size={16} /></button>

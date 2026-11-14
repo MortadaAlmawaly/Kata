@@ -135,8 +135,8 @@ export default function GoalsPage() {
         )}
         <span className="grow" />
         <div className="seg" role="group" aria-label="طريقة العرض">
-          <button className={view === 'cards' ? 'active' : ''} title="بطاقات" onClick={() => setView('cards')}><Icon name="projects" size={17} /></button>
-          <button className={view === 'tree' ? 'active' : ''} title="المواءمة (شجرة)" onClick={() => setView('tree')}><Icon name="team" size={17} /></button>
+          <button className={view === 'cards' ? 'active' : ''} title="بطاقات" aria-label="عرض بطاقات" aria-pressed={view === 'cards'} onClick={() => setView('cards')}><Icon name="projects" size={17} /> <span>بطاقات</span></button>
+          <button className={view === 'tree' ? 'active' : ''} title="المواءمة (شجرة)" aria-label="عرض المواءمة (شجرة)" aria-pressed={view === 'tree'} onClick={() => setView('tree')}><Icon name="team" size={17} /> <span>شجرة</span></button>
         </div>
         <button className="btn" onClick={() => setForm(true)}><Icon name="plus" /> هدف جديد</button>
       </div>
@@ -144,7 +144,7 @@ export default function GoalsPage() {
       {goals && !list.length && (
         <div className="empty-box"><span className="ico"><Icon name="goals" /></span>
           <p>{goals.length ? 'لا توجد أهداف تطابق الفلتر.' : 'لا توجد أهداف بعد. ابدأ بهدف واحد بنتائج قابلة للقياس.'}</p>
-          {!goals.length && <button className="btn" onClick={() => setForm(true)}>+ هدف جديد</button>}</div>
+          {!goals.length && <button className="btn" onClick={() => setForm(true)}><Icon name="plus" /> هدف جديد</button>}</div>
       )}
       {list.length > 0 && view === 'tree' && <ul className="gtree">{(kids.get(0) || []).map(node)}</ul>}
       {list.length > 0 && view === 'cards' && (
