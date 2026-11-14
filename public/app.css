@@ -2889,3 +2889,23 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):
 }
 .hr-doc{max-width:100%}
 @media (max-width:1023px){ .hr-wrap,.hr-doc{overflow-x:auto} }
+
+/* أزرار الإجراءات السريعة بالرئيسية: شبكة بأعمدة متساوية (2×2 بالهاتف) بدل أزرار متفاوتة العرض */
+.quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.quick>.btn,.quick>button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;margin:0;padding:10px 14px;box-sizing:border-box;white-space:nowrap}
+@media (max-width:520px){ .quick{grid-template-columns:repeat(2,minmax(0,1fr))} .quick>.btn,.quick>button{padding-inline:10px;font-size:.88rem} }
+
+/* محرر تخطيط الحقول بالهاتف: العمودان فوق بعض (بدل عمودين مضغوطين تُقصّ أزرارهما)، واللوحة تحتهما */
+@media (max-width:900px){
+  .lt-grid.ltx{grid-template-columns:minmax(0,1fr)}
+  .ltx-pal{position:static;max-height:none}
+}
+@media (max-width:720px){
+  .ltx-cols{grid-template-columns:minmax(0,1fr)!important}
+  .ltx-zone+.ltx-zone{border-inline-start:0;border-top:1px solid var(--line)}
+  .ltx-top{flex-wrap:wrap}
+  .ltx-row{flex-wrap:wrap;row-gap:6px}
+  .ltx-name{flex:1 1 40%;white-space:normal}
+  .ltx-acts{opacity:1;margin-inline-start:auto}
+  .ltx-acts button{width:36px;height:36px}
+}

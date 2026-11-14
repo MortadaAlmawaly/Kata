@@ -178,7 +178,7 @@ export default function TypeLayoutEditor({ types, fields, fieldLabels = {}, layo
       </div>
 
       <section className="ltx-main">
-        <p className="ltx-tip">هكذا ستظهر نافذة المهمة لنوع «{(types.find(t => t[0] === sel) || [])[1] || sel}». اسحب الحقول بين العمودين لترتيبها، وما ليس هنا لن يظهر.</p>
+        <p className="ltx-tip">هكذا ستظهر نافذة المهمة {types.length === 1 ? 'لكل المهام' : <>لنوع «{(types.find(t => t[0] === sel) || [])[1] || sel}»</>}. اسحب الحقول بين العمودين لترتيبها، وما ليس هنا لن يظهر.</p>
         <div className="ltx-task">
           <div className="ltx-top"><span className="ltx-key">KEY-12</span><span className="ltx-title">عنوان المهمة</span></div>
           <div className="ltx-cols">

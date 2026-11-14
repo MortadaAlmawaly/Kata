@@ -6,19 +6,20 @@ import { useConfirm, useToast } from '../../components/hooks';
 import { TabAccount, TabApprovals, TabCompany, TabIntegrations, TabNotifications, TabSecurity } from './tabs-basic';
 import { SpacesHome } from '../../components/SpaceSettings';
 import { TabAutomation, TabBoards, TabFields, TabInvites, TabIssueTypes, TabLabels, TabLeaves, TabPermissions } from './tabs-config';
+import { SHOW_TASK_TYPES } from '../../lib/tasks';
 
 /* «تخصيص المهام»: يجمع أنواع المهام وحقولها في صفحة واحدة بدل تبويبين منفصلين */
-const TASKCFG = [['types', 'أنواع المهام', TabIssueTypes], ['fields', 'حقول المهام', TabFields]];
+const TASKCFG = [['types', 'أنواع المهام', TabIssueTypes], ['fields', 'حقول المهام', TabFields]].filter(x => SHOW_TASK_TYPES || x[0] !== 'types');
 function TabTaskConfig(props) {
-  const [sub, setSub] = useState('types');
+  const [sub, setSub] = useState(TASKCFG[0][0]);
   useEffect(() => { try { const s = sessionStorage.getItem('kata-settask'); if (s && TASKCFG.some(x => x[0] === s)) setSub(s); } catch (_) { /* لا تخزين */ } }, []);
   const pickSub = s => { setSub(s); try { sessionStorage.setItem('kata-settask', s); } catch (_) { /* تجاهل */ } };
   const Cur = (TASKCFG.find(x => x[0] === sub) || TASKCFG[0])[2];
   return (
     <>
-      <div className="seg" role="group" aria-label="تخصيص المهام" style={{ marginBottom: 14 }}>
+      {TASKCFG.length > 1 && <div className="seg" role="group" aria-label="تخصيص المهام" style={{ marginBottom: 14 }}>
         {TASKCFG.map(([k, l]) => <button key={k} type="button" className={k === sub ? 'active' : ''} onClick={() => pickSub(k)}>{l}</button>)}
-      </div>
+      </div>}
       <Cur {...props} />
     </>
   );

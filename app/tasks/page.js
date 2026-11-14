@@ -10,7 +10,7 @@ import { hueOf, STATUS } from '../../lib/constants';
 import { fmtDate } from '../../lib/util';
 import { addDaysStr, dueInfo, todayStr } from '../../lib/util';
 import { copyText } from '../../lib/clipboard';
-import { cfShort, COLOR_PRI, COLOR_TYPE, makeCtx, PRI_ICON, PRI_ORDER } from '../../lib/tasks';
+import { cfShort, COLOR_PRI, COLOR_TYPE, makeCtx, PRI_ICON, PRI_ORDER, SHOW_TASK_TYPES } from '../../lib/tasks';
 import AppShell, { useMe } from '../../components/AppShell';
 import { Avatar, Icon, MobileTabs, Modal } from '../../components/ui';
 import { Bar } from '../../components/charts';
@@ -483,7 +483,7 @@ function Tasks() {
             {!backlog.length && <p className="muted small bl-empty">لا توجد مهام في قائمة الانتظار</p>}
           </div>
           <div className="bl-quick">
-            <TypeInput ctx={ctx} value={qType} onChange={setQType} className="input" placeholder="النوع (اختياري)" />
+            {SHOW_TASK_TYPES && <TypeInput ctx={ctx} value={qType} onChange={setQType} className="input" placeholder="النوع (اختياري)" />}
             <input className="input" maxLength={120} placeholder="+ أنشئ مهمة سريعة في قائمة الانتظار (Enter)" value={qTitle} onChange={e => setQTitle(e.target.value)}
               onKeyDown={async e => {
                 if (e.key !== 'Enter') return;
@@ -737,7 +737,7 @@ function SprintAction({ kind, sprint: s, live, onClose, onDone }) {
 }
 
 /* إعدادات العرض الشخصية (مثل View settings في Jira) */
-const VS_FIELDS = [['cover', 'صورة الغلاف'], ['type', 'نوع المهمة'], ['key', 'الرقم'], ['epic', 'المهمة الرئيسية'], ['priority', 'الأولوية'], ['assignee', 'المنفّذ'],
+const VS_FIELDS = [['cover', 'صورة الغلاف'], ...(SHOW_TASK_TYPES ? [['type', 'نوع المهمة']] : []), ['key', 'الرقم'], ['epic', 'المهمة الرئيسية'], ['priority', 'الأولوية'], ['assignee', 'المنفّذ'],
   ['points', 'نقاط القصة'], ['due', 'تاريخ التسليم'], ['labels', 'الوسوم'], ['checklist', 'قائمة التحقق'], ['comments', 'التعليقات'], ['progress', 'التقدّم'], ['days', 'أيام في العمود']];
 function ViewSettings({ vs, upd, view }) {
   const [open, setOpen] = useState(false);

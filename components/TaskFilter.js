@@ -1,6 +1,7 @@
 'use client';
 /* فلترة المهام على طريقة Jira: لوحة «تصفية» بثلاثة أوضاع (أساسي / متقدّم / JQL) + فلاتر محفوظة + «تجميع». */
 import { plural } from './hooks';
+import { SHOW_TASK_TYPES } from '../lib/tasks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { STATUS } from './../lib/constants';
 import { Avatar, Icon } from './ui';
@@ -23,7 +24,7 @@ export function buildFields(ctx, tasks, sprints) {
     { key: 'assignee', label: ctx.fl('assignee'), none: 'غير مُسنَد', me: true,
       opts: people.map(p => ({ v: String(p.id), label: p.name, avatar: p.name })), get: t => (t.assignee ? [String(t.assignee.id)] : []) },
     { key: 'status', label: ctx.fl('status'), opts: ctx.statusOpts('').map(([k, l]) => ({ v: k, label: l })), get: t => [t.status] },
-    { key: 'type', label: ctx.fl('type'), none: 'بدون نوع', opts: [...Object.entries(ctx.itype).map(([k, l]) => ({ v: k, label: l })), ...[...new Set(tasks.map(t => t.issueType).filter(x => x && !ctx.itype[x]))].map(x => ({ v: x, label: x }))], get: t => (t.issueType ? [t.issueType] : []) },
+    ...(SHOW_TASK_TYPES ? [{ key: 'type', label: ctx.fl('type'), none: 'بدون نوع', opts: [...Object.entries(ctx.itype).map(([k, l]) => ({ v: k, label: l })), ...[...new Set(tasks.map(t => t.issueType).filter(x => x && !ctx.itype[x]))].map(x => ({ v: x, label: x }))], get: t => (t.issueType ? [t.issueType] : []) }] : []),
     { key: 'labels', label: ctx.fl('labels'), none: 'بدون وسم', opts: labels.map(l => ({ v: l, label: l })), get: t => t.labels || [] },
     { key: 'priority', label: ctx.fl('priority'), opts: Object.entries(ctx.priority).map(([k, l]) => ({ v: k, label: l })), get: t => [t.priority] },
     { key: 'project', label: ctx.fl('project'), none: 'بدون مساحة',

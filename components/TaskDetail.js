@@ -9,7 +9,7 @@ import { copyText } from '../lib/clipboard';
 import { shrinkImage } from '../lib/image';
 import { capsOf } from '../lib/spacePerms';
 import MentionInput from './MentionInput';
-import { cfShort, fmtMin, IT_ICON, itKind, LINK_LABEL, parseMin, PRI_ICON, TH_FIELD } from '../lib/tasks';
+import { cfShort, fmtMin, IT_ICON, itKind, LINK_LABEL, parseMin, PRI_ICON, SHOW_TASK_TYPES, TH_FIELD } from '../lib/tasks';
 import { Avatar, Modal } from './ui';
 import { StatusMenu } from './StatusMenu';
 import CfInput from './CustomFields';
@@ -27,7 +27,7 @@ const TI = {
   SUBTASK: <><rect x="3" y="3" width="18" height="18" rx="4" fill="#4aa3c7" /><path d="M8 8h4v4H8zM12 14h4v4h-4zM10 12v3h2" fill="none" stroke="#fff" strokeWidth="1.6" /></>,
   OTHER: <><rect x="3" y="3" width="18" height="18" rx="4" fill="#6b7a90" /></>,
 };
-export const TypeIcon = ({ k, ctx }) => !k ? null : <span className="tyi" title={(ctx && ctx.itype[k]) || k}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">{TI.TASK}</svg></span>;
+export const TypeIcon = ({ k, ctx }) => !k || !SHOW_TASK_TYPES ? null : <span className="tyi" title={(ctx && ctx.itype[k]) || k}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">{TI.TASK}</svg></span>;
 
 /* أيقونة خطّية صغيرة لأزرار رأس النافذة */
 const HI = ({ d, sw = 2 }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
@@ -215,8 +215,8 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
   });
 
   const detailsRows = [
-                { key: 'type', node: <div className="fr"><label>{ctx.fl('type')}</label><div className="fv"><TypeIcon k={t.issueType} ctx={ctx} />
-                  {ed ? <TypeInput ctx={ctx} value={t.issueType} commit="blur" className="fin" onChange={v => patch({ issueType: v })} /> : <span>{t.issueType ? (ctx.itype[t.issueType] || t.issueType) : "—"}</span>}</div></div> },
+                ...(SHOW_TASK_TYPES ? [{ key: 'type', node: <div className="fr"><label>{ctx.fl('type')}</label><div className="fv"><TypeIcon k={t.issueType} ctx={ctx} />
+                  {ed ? <TypeInput ctx={ctx} value={t.issueType} commit="blur" className="fin" onChange={v => patch({ issueType: v })} /> : <span>{t.issueType ? (ctx.itype[t.issueType] || t.issueType) : "—"}</span>}</div></div> }] : []),
                 { key: 'priority', node: <div className="fr"><label>{ctx.fl('priority')}</label><div className="fv"><span className={`pri pri-${t.priority}`}><FIcon n="eq" size={14} /></span>
                   {ed ? <select className="fsel" value={t.priority} onChange={e => patch({ priority: e.target.value })}>{ctx.priorityOpts(t.priority).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
                     : <span>{ctx.priority[t.priority] || t.priority}</span>}</div></div> },
@@ -479,8 +479,8 @@ export default function TaskDetail({ id, ctx, onClose, onOpen, onEdit, onChanged
                 ))}
                 {ed && (
                   <div className="comment-box" style={{ marginTop: 8 }}>
-                    <select className="input" style={{ maxWidth: 130 }} value={childType || (t.issueType === 'EPIC' ? 'TASK' : 'SUBTASK')} onChange={e => setChildType(e.target.value)} aria-label="نوع المهمة">
-                      {ctx.itypeOpts('').filter(([k]) => k !== 'EPIC').map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+                    {SHOW_TASK_TYPES && <select className="input" style={{ maxWidth: 130 }} value={childType || (t.issueType === 'EPIC' ? 'TASK' : 'SUBTASK')} onChange={e => setChildType(e.target.value)} aria-label="نوع المهمة">
+                      {ctx.itypeOpts('').filter(([k]) => k !== 'EPIC').map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}
                     <input className="input" maxLength={120} value={childTitle} placeholder="ما الذي يجب إنجازه؟" onChange={e => setChildTitle(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('tdChildAdd').click(); } }} />
                     <button type="button" className="btn ghost" id="tdChildAdd" onClick={act(async () => {

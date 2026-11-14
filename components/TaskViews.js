@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { PRIORITY, STATUS } from '../lib/constants';
 import { fmtDate } from '../lib/util';
+import { SHOW_TASK_TYPES } from '../lib/tasks';
 import { addDaysStr, dayLabel, fmt, MONTHS, parseYMD, todayStr, WEEKDAYS, ymd } from '../lib/util';
 import { Avatar, Icon } from './ui';
 import { Bar, ChartBars, ChartLine, Ring } from './charts';
@@ -224,7 +225,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
   const countBy = (list, fn) => { const m = new Map(); list.forEach(t => { const k = fn(t); m.set(k, (m.get(k) || 0) + 1); }); return m; };
   const statusItems = Object.entries(STATUS).map(([k, l]) => ({ label: l, value: tasks.filter(t => t.status === k).length }));
   const prioItems = Object.entries(ctx.priority).map(([k, l]) => ({ label: l, value: tasks.filter(t => t.priority === k).length }));
-  const typeItems = Object.entries(ctx.itype).map(([k, l]) => ({ label: l, value: tasks.filter(t => t.issueType === k).length })).filter(x => x.value);
+  const typeItems = !SHOW_TASK_TYPES ? [] : Object.entries(ctx.itype).map(([k, l]) => ({ label: l, value: tasks.filter(t => t.issueType === k).length })).filter(x => x.value);
   void PRIORITY; void countBy;
 
   /* المنفّذون: مفتوحة / منجزة */
@@ -284,7 +285,7 @@ export function TaskReports({ tasks, ctx, sprints, onOpen }) {
               <b>{x.open}/{x.open + x.done}</b></div>
           )) : <p className="muted">لا توجد بيانات.</p>}
           <small className="muted">الأخضر منجزة · الأزرق مفتوحة</small></section>
-        <section className="card"><h3>الأولويات والأنواع</h3>
+        <section className="card"><h3>{SHOW_TASK_TYPES ? 'الأولويات والأنواع' : 'الأولويات'}</h3>
           <ChartBars items={prioItems} color="var(--violet,#8e4ec6)" w={420} h={160} />
           <div className="chips-row" style={{ marginTop: 8 }}>{typeItems.map(x => <span className="badge role" key={x.label}>{x.label} {x.value}</span>)}</div></section>
       </div>

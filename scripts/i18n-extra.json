@@ -1207,5 +1207,10 @@
  "شجرة": "Tree",
  "بطاقات": "Cards",
  "عرض بطاقات": "Cards view",
- "عرض المواءمة (شجرة)": "Alignment (tree) view"
+ "عرض المواءمة (شجرة)": "Alignment (tree) view",
+ "مسميات الأولويات": "Priority names",
+ "أولوياتك": "Your priorities",
+ "تخطيط حقول المهمة (خاص بهذه اللوحة)": "Task field layout (this board)",
+ "كل المهام": "All tasks",
+ "تخطيط الحقول": "Field layout"
 }

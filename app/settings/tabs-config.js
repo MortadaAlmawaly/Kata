@@ -5,7 +5,7 @@ import PermPicker from '../../components/PermPicker';
 import { api } from '../../lib/api';
 import { copyText } from '../../lib/clipboard';
 import { DEFAULT_LABELS, ETYPE, fmtDT, ITYPE, PAGES, PRIORITY, PSTATUS, ROLE, RTYPE, STATUS } from '../../lib/constants';
-import { CF_TYPE_AR, CORE_KEYS, FL_KEYS, MAIN_SECTIONS, rid } from '../../lib/tasks';
+import { CF_TYPE_AR, CORE_KEYS, FL_KEYS, MAIN_SECTIONS, rid, SHOW_TASK_TYPES } from '../../lib/tasks';
 import { Avatar, Modal } from '../../components/ui';
 import TypeLayoutEditor from '../../components/TypeLayoutEditor';
 import BoardForm from '../../components/BoardForm';
@@ -32,7 +32,7 @@ export function TabLabels({ me, reload, toast, ask }) {
     ['roles', 'الأدوار الوظيفية', ROLE, 'مثال: «رئيس قسم» بدل «مدير قسم»، «مدير فرع» بدل «مدير إدارة»'],
     ['taskStatus', 'حالات المهام', STATUS, ''], ['issueType', 'أنواع المهام', ITYPE, ''], ['priority', 'أولويات المهام', PRIORITY, ''],
     ['requestType', 'أنواع الطلبات', RTYPE, ''], ['eventType', 'أنواع المواعيد', ETYPE, ''], ['projectStatus', 'حالات المساحات', PSTATUS, ''],
-  ];
+  ].filter(([g]) => SHOW_TASK_TYPES || g !== 'issueType');
   const defaults = Object.fromEntries(groups.map(([g, , map]) => [g, DEFAULT_LABELS[g] || map]));
   const pages = PAGES.filter(p => p.id !== 'platform');
   const defPages = Object.fromEntries(pages.map(p => [p.id, p.title]));
@@ -259,13 +259,13 @@ function FieldForm({ d, secName, onClose, onSave, preset }) {
         {hasOpts && <label className="field"><span>الخيارات (خيار بكل سطر)</span><textarea rows={4} maxLength={2000} value={f.options} onChange={e => setF({ ...f, options: e.target.value })} /></label>}
         <label className="switch-row"><span><b>يظهر على بطاقة اللوحة</b><small className="muted">يُعرض الاسم والقيمة أسفل عنوان المهمة</small></span>
           <input type="checkbox" checked={f.card} onChange={e => setF({ ...f, card: e.target.checked })} /></label>
-        <div className="field"><span>يقتصر على أنواع مهام معيّنة (اتركه فارغاً للكل)</span>
+        {SHOW_TASK_TYPES && <div className="field"><span>يقتصر على أنواع مهام معيّنة (اتركه فارغاً للكل)</span>
           <div className="pick-list">
             {Object.entries(ITYPE).map(([k, l]) => (
               <label className="check" key={k}><input type="checkbox" checked={f.issueTypes.has(k)}
                 onChange={e => setF(s => { const n = new Set(s.issueTypes); if (e.target.checked) n.add(k); else n.delete(k); return { ...s, issueTypes: n }; })} /> {l}</label>
             ))}
-          </div></div>
+          </div></div>}
         <p className="err" role={err ? 'alert' : undefined}>{err}</p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>إلغاء</button>
@@ -655,7 +655,7 @@ export function TabIssueTypes({ me, reload, toast, ask }) {
         هذا التخطيط <b>الافتراضي لكل اللوحات</b>. لتخصيص شكل المهمة <b>للوحة معيّنة</b> (عروض الأسعار، الميديا، المبيعات…): من صفحة المهام اضغط «⋯» بجانب اسم اللوحة ← «تخصيص اللوحة» ← «تخطيط حقول المهمة».
       </div>
       <div className="toolbar" style={{ margin: '0 0 8px' }}><span className="grow" /><button type="button" className="btn" onClick={save}>حفظ التخطيط</button></div>
-      <TypeLayoutEditor types={[['NONE', 'بدون نوع'], ...Object.entries(ITYPE)]} fields={cfs} fieldLabels={st.fieldLabels || {}} layouts={layouts} setLayouts={setLayouts}
+      <TypeLayoutEditor types={!SHOW_TASK_TYPES ? [['NONE', 'كل المهام']] : [['NONE', 'بدون نوع'], ...Object.entries(ITYPE)]} fields={cfs} fieldLabels={st.fieldLabels || {}} layouts={layouts} setLayouts={setLayouts}
         onNewField={onNewField} toast={toast} ask={ask} />
       {newField && <FieldForm d={null} preset={newField.preset} secName={secName} onClose={() => { newField.resolve(null); setNewField(null); }} onSave={createField} />}
     </>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FIcon } from './Icon';
 import { api } from '../lib/api';
-import { fmtMin, parseMin, RECUR } from '../lib/tasks';
+import { fmtMin, parseMin, RECUR, SHOW_TASK_TYPES } from '../lib/tasks';
 import { ROLE, STATUS } from '../lib/constants';
 import { Modal } from './ui';
 import { shrinkImage } from '../lib/image';
@@ -142,8 +142,8 @@ export default function TaskForm({ ctx, task: ex, preset, onClose, onSaved, onEr
             <small className="muted">المهمة تظهر في اللوحة المختارة فقط</small></label>
         )}
         <div className="row2">
-          <label className="field"><span>النوع</span>
-            <TypeInput ctx={ctx} value={f.issueType} onChange={v => setF(x => ({ ...x, issueType: v }))} /></label>
+          {SHOW_TASK_TYPES && <label className="field"><span>النوع</span>
+            <TypeInput ctx={ctx} value={f.issueType} onChange={v => setF(x => ({ ...x, issueType: v }))} /></label>}
           <label className="field"><span>الأولوية</span>
             <select value={f.priority} onChange={set('priority')}>{ctx.priorityOpts(f.priority).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
           {!ex && (

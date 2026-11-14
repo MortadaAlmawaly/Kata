@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { STATUS, PRIORITY } from '../lib/constants';
-import { BOARD_CARD_FIELDS, CF_TYPE_AR, CORE_KEYS, FL_KEYS, ITYPE } from '../lib/tasks';
+import { BOARD_CARD_FIELDS, CF_TYPE_AR, CORE_KEYS, FL_KEYS, ITYPE, SHOW_TASK_TYPES } from '../lib/tasks';
 import { Avatar, Modal } from './ui';
 import TypeLayoutEditor from './TypeLayoutEditor';
 import WorkflowEditor from './WorkflowEditor';
@@ -15,7 +15,7 @@ const ROLE_AR = { VIEW: 'عارض', EDIT: 'محرّر', MANAGE: 'مدير الل
 
 export const BOARD_SECS = [
   ["general", "عام"], ["columns", "الأعمدة وسير العمل"], ["card", "شكل البطاقة"], ["access", "الوصول والصلاحيات"],
-  ["layout", "تخطيط حقول المهمة"], ["names", "مسميات الأنواع والأولويات"],
+  ["layout", "تخطيط حقول المهمة"], ["names", "مسميات الأولويات"],
 ];
 
 export default function BoardForm({ me, board, preset, boards, onClose, onSaved, onDeleted, onError, reloadMe, asPage = false }) {
@@ -216,12 +216,12 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
               <div className="bi-grid">{BOARD_ICONS.map(k => <button type="button" key={k} className={`bi-ic ${icon.k === k ? 'on' : ''}`} aria-label={k} onClick={() => setIcon(i => ({ ...i, k }))}><FIcon n={k} size={18} /></button>)}</div>
               <div className="bi-cols">{BOARD_ICON_COLORS.map(c => <button type="button" key={c} className={`bi-c ${icon.c === c ? 'on' : ''}`} style={{ background: c }} aria-label={c} onClick={() => setIcon(i => ({ ...i, c }))} />)}</div>
             </div></div>
-          <div className="field"><span>أنواع المهام المعروضة (اتركها فارغة للكل)</span>
+          {SHOW_TASK_TYPES && <div className="field"><span>أنواع المهام المعروضة (اتركها فارغة للكل)</span>
             <div className="pick-list">
               {[...Object.entries(ITYPE).filter(([k]) => !hide.has('it:' + k)).map(([k, l]) => [k, lab['it:' + k] || l]),
                 ...btypes.filter(t => (t.name || '').trim()).map(t => [t.key, t.name])]
                 .map(([k, l]) => <label className="check" key={k}><input type="checkbox" checked={issueTypes.has(k)} onChange={() => toggleSet(setIssueTypes, k)} /> {l}</label>)}
-            </div></div>
+            </div></div>}
         </div>
 
         <div className="bf-sec" hidden={asPage && sec !== 'columns'}><h3>الأعمدة</h3>
@@ -267,7 +267,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
             <label className="field"><span>الكثافة</span>
               <select value={density} onChange={e => setDensity(e.target.value)}><option value="comfortable">مريحة</option><option value="compact">مضغوطة</option></select></label>
             <label className="field"><span>شريط لوني جانبي حسب</span>
-              <select value={color} onChange={e => setColor(e.target.value)}><option value="none">بدون</option><option value="priority">الأولوية</option><option value="type">نوع المهمة</option><option value="assignee">المنفّذ</option><option value="jql">استعلام JQL</option></select></label>
+              <select value={color} onChange={e => setColor(e.target.value)}><option value="none">بدون</option><option value="priority">الأولوية</option>{SHOW_TASK_TYPES && <option value="type">نوع المهمة</option>}<option value="assignee">المنفّذ</option><option value="jql">استعلام JQL</option></select></label>
           </div>
           {color === 'jql' && (
             <div className="field"><span>قواعد اللون (تُطبَّق أول قاعدة تطابق)</span>
@@ -287,9 +287,9 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
         <div className="bf-sec" hidden={asPage && sec !== 'access'}><h3>الأشخاص وصلاحياتهم</h3>
           <PermsEditor value={perms} onChange={setPerms} dir={directory} />
         </div>
-        <div className="bf-sec" hidden={asPage && sec !== 'layout'}><h3>تخطيط حقول المهمة لكل نوع (خاص بهذه اللوحة)</h3>
+        <div className="bf-sec" hidden={asPage && sec !== 'layout'}><h3>{SHOW_TASK_TYPES ? 'تخطيط حقول المهمة لكل نوع (خاص بهذه اللوحة)' : 'تخطيط حقول المهمة (خاص بهذه اللوحة)'}</h3>
           <p className="muted small">كل شي بمكان واحد: أضف الحقول، سمّها، رتّبها، أخفها أو احذفها، لكل نوع مهمة بهذه اللوحة وحدها. الأنواع بلا تخصيص تتبع تخطيط الشركة.</p>
-          <TypeLayoutEditor types={[['NONE', 'بدون نوع'], ...Object.entries(ITYPE).filter(([k]) => !hide.has('it:' + k)).map(([k, l]) => [k, (lab['it:' + k] || l)]), ...btypes.filter(t => (t.name || '').trim()).map(t => [t.key, t.name])]} fields={[...(st.customFields || []), ...bfields]} fieldLabels={{ ...(st.fieldLabels || {}), ...lab }}
+          <TypeLayoutEditor types={!SHOW_TASK_TYPES ? [['NONE', 'كل المهام']] : [['NONE', 'بدون نوع'], ...Object.entries(ITYPE).filter(([k]) => !hide.has('it:' + k)).map(([k, l]) => [k, (lab['it:' + k] || l)]), ...btypes.filter(t => (t.name || '').trim()).map(t => [t.key, t.name])]} fields={[...(st.customFields || []), ...bfields]} fieldLabels={{ ...(st.fieldLabels || {}), ...lab }}
             compact={!asPage} layouts={tl} setLayouts={setTl} bfields={bfields} setBf={setBfByKey} deleteField={deleteField} lab={lab} setLab={setLab} inherit={st.typeLayouts || {}} toast={m => setErr(m)} ask={o => { if (window.confirm(o.text)) o.onOk(); }}
             onNewField={async preset => {
               const key = 'bf' + Math.random().toString(36).slice(2, 9);
@@ -312,7 +312,8 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
             </div>
           </details>
         </div>
-        <div className="bf-sec" hidden={asPage && sec !== 'names'}><h3>مسميات أنواع المهام والأولويات</h3>
+        <div className="bf-sec" hidden={asPage && sec !== 'names'}><h3>{SHOW_TASK_TYPES ? 'مسميات أنواع المهام والأولويات' : 'مسميات الأولويات'}</h3>
+          {SHOW_TASK_TYPES && <>
           <h4 className="bf-sub">أنواع المهام</h4>
           <div className="row2">
             {Object.entries(ITYPE).filter(([k]) => !hide.has('it:' + k)).map(([k, l]) => (
@@ -330,6 +331,7 @@ export default function BoardForm({ me, board, preset, boards, onClose, onSaved,
             <p className="muted small" style={{ marginTop: 8 }}>أنواع جاهزة محذوفة (اضغط للاستعادة):{' '}
               {Object.entries(ITYPE).filter(([k]) => hide.has('it:' + k)).map(([k, l]) => <button type="button" key={k} className="btn ghost sm" style={{ marginInlineStart: 4 }} onClick={() => toggleSet(setHide, 'it:' + k)}><FIcon n="undo" size={13} /> {l}</button>)}</p>
           )}
+          </>}
           <h4 className="bf-sub">الأولويات</h4>
           <div className="row2">
             {Object.entries(PRIORITY).map(([k, l]) => (
